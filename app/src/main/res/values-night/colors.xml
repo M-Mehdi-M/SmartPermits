@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+    <color name="primary">#3A6B9F</color>
+    <color name="primary_dark">#1E3A5F</color>
+    <color name="primary_light">#5B8DB8</color>
+    <color name="accent">#F0AD24</color>
+    <color name="accent_light">#F5C34A</color>
+    <color name="background">#0F1218</color>
+    <color name="card_bg">#1A1F2B</color>
+    <color name="text_primary">#E8EAED</color>
+    <color name="text_secondary">#9CA3AF</color>
+    <color name="status_submitted">#F59E0B</color>
+    <color name="status_approved">#22C55E</color>
+    <color name="status_rejected">#EF4444</color>
+    <color name="status_completed">#3B82F6</color>
+    <color name="status_pending">#EAB308</color>
+    <color name="gradient_start">#152C4A</color>
+    <color name="gradient_end">#1E3A5F</color>
+    <color name="btn_approve">#16A34A</color>
+    <color name="btn_reject">#DC2626</color>
+    <color name="divider">#2D3340</color>
+    <color name="input_bg">#242936</color>
+    <color name="trash_red">#EF4444</color>
+</resources>
+

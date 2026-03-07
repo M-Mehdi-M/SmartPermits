@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_dashboard"
+            android:icon="@android:drawable/ic_menu_today"
+            android:title="@string/nav_dashboard" />
+        <item
+            android:id="@+id/nav_pending"
+            android:icon="@android:drawable/ic_menu_agenda"
+            android:title="@string/nav_pending" />
+        <item
+            android:id="@+id/nav_reviewed"
+            android:icon="@android:drawable/ic_menu_recent_history"
+            android:title="@string/nav_reviewed" />
+        <item
+            android:id="@+id/nav_analytics"
+            android:icon="@android:drawable/ic_menu_sort_by_size"
+            android:title="Analytics" />
+    </group>
+
+    <item android:title="General">
+        <menu>
+            <item
+                android:id="@+id/nav_profile"
+                android:icon="@android:drawable/ic_menu_myplaces"
+                android:title="@string/nav_profile" />
+            <item
+                android:id="@+id/nav_edit_profile"
+                android:icon="@android:drawable/ic_menu_edit"
+                android:title="@string/nav_edit_profile" />
+            <item
+                android:id="@+id/nav_change_password"
+                android:icon="@android:drawable/ic_lock_lock"
+                android:title="Change Password" />
+            <item
+                android:id="@+id/nav_settings"
+                android:icon="@android:drawable/ic_menu_preferences"
+                android:title="@string/nav_settings" />
+            <item
+                android:id="@+id/nav_about"
+                android:icon="@android:drawable/ic_menu_info_details"
+                android:title="@string/nav_about" />
+        </menu>
+    </item>
+
+    <item android:title="">
+        <menu>
+            <item
+                android:id="@+id/nav_sign_out"
+                android:icon="@android:drawable/ic_menu_revert"
+                android:title="@string/nav_sign_out" />
+        </menu>
+    </item>
+</menu>
+
