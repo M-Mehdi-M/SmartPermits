@@ -23,10 +23,18 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.card.MaterialCardView;
 import com.google.android.material.chip.Chip;
 
+import org.osmdroid.api.IMapController;
+import org.osmdroid.config.Configuration;
+import org.osmdroid.tileprovider.tilesource.TileSourceFactory;
+import org.osmdroid.util.GeoPoint;
+import org.osmdroid.views.MapView;
+import org.osmdroid.views.overlay.Marker;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Locale;
 
 import okhttp3.ResponseBody;
 import project.smartpermits.api.RetrofitClient;
@@ -44,11 +52,18 @@ public class PermitDetailActivity extends AppCompatActivity {
     private MaterialCardView cardDescription, cardNotes, cardDocuments, cardEstTime;
     private RecyclerView recyclerDocuments;
     private ProgressBar progressBar;
+    private MaterialCardView cardMapDetail;
+    private MapView mapViewDetail;
+    private TextView tvMapCoordsDetail;
     private int permitId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        Configuration.getInstance().load(this, getSharedPreferences("osmdroid_prefs", MODE_PRIVATE));
+        Configuration.getInstance().setUserAgentValue(getPackageName());
+
         setContentView(R.layout.activity_permit_detail);
 
         tvPermitType = findViewById(R.id.tvPermitType);
@@ -72,6 +87,9 @@ public class PermitDetailActivity extends AppCompatActivity {
         cardEstTime = findViewById(R.id.cardEstTime);
         recyclerDocuments = findViewById(R.id.recyclerDocuments);
         progressBar = findViewById(R.id.progressBar);
+        cardMapDetail = findViewById(R.id.cardMapDetail);
+        mapViewDetail = findViewById(R.id.mapViewDetail);
+        tvMapCoordsDetail = findViewById(R.id.tvMapCoordsDetail);
         ImageButton btnBack = findViewById(R.id.btnBack);
 
         btnBack.setOnClickListener(v -> finish());
@@ -96,7 +114,14 @@ public class PermitDetailActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
+        if (mapViewDetail != null) mapViewDetail.onResume();
         if (permitId != -1) loadPermit();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (mapViewDetail != null) mapViewDetail.onPause();
     }
 
     private void loadPermit() {
@@ -157,6 +182,23 @@ public class PermitDetailActivity extends AppCompatActivity {
         if (estTime != null && !estTime.isEmpty() && "submitted".equals(permit.getStatus())) {
             cardEstTime.setVisibility(View.VISIBLE);
             tvEstTime.setText(estTime);
+        }
+
+        if (permit.getLatitude() != null && permit.getLongitude() != null) {
+            cardMapDetail.setVisibility(View.VISIBLE);
+            mapViewDetail.setTileSource(TileSourceFactory.MAPNIK);
+            mapViewDetail.setMultiTouchControls(true);
+            IMapController controller = mapViewDetail.getController();
+            controller.setZoom(15.0);
+            GeoPoint point = new GeoPoint(permit.getLatitude(), permit.getLongitude());
+            controller.setCenter(point);
+            Marker marker = new Marker(mapViewDetail);
+            marker.setPosition(point);
+            marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+            marker.setTitle("Work Location");
+            mapViewDetail.getOverlays().add(marker);
+            mapViewDetail.invalidate();
+            tvMapCoordsDetail.setText(String.format(Locale.US, "%.5f, %.5f", permit.getLatitude(), permit.getLongitude()));
         }
 
         if (permit.getDocuments() != null && !permit.getDocuments().isEmpty()) {

@@ -46,6 +46,12 @@ public class Permit {
     @SerializedName("renewed_from")
     private Integer renewedFrom;
 
+    @SerializedName("latitude")
+    private Double latitude;
+
+    @SerializedName("longitude")
+    private Double longitude;
+
     @SerializedName("estimated_processing_time")
     private String estimatedProcessingTime;
 
@@ -69,6 +75,8 @@ public class Permit {
     public String getUpdatedAt() { return updatedAt; }
     public List<Document> getDocuments() { return documents; }
     public Integer getRenewedFrom() { return renewedFrom; }
+    public Double getLatitude() { return latitude; }
+    public Double getLongitude() { return longitude; }
     public String getEstimatedProcessingTime() { return estimatedProcessingTime; }
     public String getDeletedAt() { return deletedAt; }
     public Integer getDaysUntilPermanentDelete() { return daysUntilPermanentDelete; }

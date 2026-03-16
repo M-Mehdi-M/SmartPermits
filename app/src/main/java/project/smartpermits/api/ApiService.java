@@ -58,6 +58,9 @@ public interface ApiService {
     @POST("auth/profile/avatar")
     Call<User> uploadAvatar(@Part MultipartBody.Part file);
 
+    @DELETE("auth/delete-account")
+    Call<MessageResponse> deleteAccount();
+
     @GET("permits")
     Call<List<Permit>> getMyPermits();
 
@@ -72,7 +75,7 @@ public interface ApiService {
 
     @Multipart
     @POST("permits/{id}/upload")
-    Call<Document> uploadDocument(@Path("id") int id, @Part MultipartBody.Part file);
+    Call<Document> uploadDocument(@Path("id") int id, @Part MultipartBody.Part file, @Part("document_label") okhttp3.RequestBody label);
 
     @POST("permits/{id}/pay")
     Call<Permit> payPermit(@Path("id") int id);

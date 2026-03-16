@@ -6,12 +6,13 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
 from models import db, User, Permit, Document, Comment, Appointment
-from datetime import datetime
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///smartpermits.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'smart-permits-secret-key-2026'
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(__file__), 'uploads')
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 
@@ -68,7 +69,7 @@ def seed_data():
         inspector = User(
             username='inspector1',
             email='inspector@city.gov',
-            password_hash=bcrypt.generate_password_hash('inspector123').decode('utf-8'),
+            password_hash=bcrypt.generate_password_hash('1q2w3e4r').decode('utf-8'),
             role='inspector',
             full_name='John Inspector'
         )
@@ -77,7 +78,7 @@ def seed_data():
         citizen = User(
             username='citizen1',
             email='citizen@email.com',
-            password_hash=bcrypt.generate_password_hash('citizen123').decode('utf-8'),
+            password_hash=bcrypt.generate_password_hash('1q2w3e4r').decode('utf-8'),
             role='citizen',
             full_name='Maria Popescu'
         )
@@ -99,6 +100,13 @@ def run_migrations():
             conn.execute(text("ALTER TABLE permits ADD COLUMN renewed_from INTEGER"))
         if 'deleted_at' not in permit_cols:
             conn.execute(text("ALTER TABLE permits ADD COLUMN deleted_at DATETIME"))
+        if 'latitude' not in permit_cols:
+            conn.execute(text("ALTER TABLE permits ADD COLUMN latitude FLOAT"))
+        if 'longitude' not in permit_cols:
+            conn.execute(text("ALTER TABLE permits ADD COLUMN longitude FLOAT"))
+        doc_cols = [c['name'] for c in insp.get_columns('documents')]
+        if 'document_label' not in doc_cols:
+            conn.execute(text("ALTER TABLE documents ADD COLUMN document_label VARCHAR(200) DEFAULT ''"))
         conn.commit()
 
 
@@ -193,6 +201,8 @@ def create_permit():
     data = request.get_json()
     permit_type = data.get('permit_type', '')
     description = data.get('description', '')
+    latitude = data.get('latitude')
+    longitude = data.get('longitude')
     if not permit_type:
         return jsonify({'error': 'Permit type is required'}), 400
     fee = FEE_TABLE.get(permit_type, 100.0)
@@ -201,10 +211,13 @@ def create_permit():
         permit_type=permit_type,
         description=description,
         status='submitted',
-        fee_amount=fee
+        fee_amount=fee,
+        latitude=latitude,
+        longitude=longitude
     )
     db.session.add(permit)
     db.session.commit()
+    db.session.refresh(permit)
     return jsonify(permit.to_dict()), 201
 
 
@@ -227,7 +240,8 @@ def upload_document(permit_id):
     filename = secure_filename(f"{permit_id}_{file.filename}")
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
-    doc = Document(permit_id=permit_id, file_path=filepath, file_name=filename)
+    document_label = request.form.get('document_label', '')
+    doc = Document(permit_id=permit_id, file_path=filepath, file_name=filename, document_label=document_label)
     db.session.add(doc)
     db.session.commit()
     return jsonify(doc.to_dict()), 201
@@ -688,6 +702,34 @@ def upload_avatar():
     user.avatar_url = filename
     db.session.commit()
     return jsonify(user.to_dict()), 200
+
+
+@app.route('/api/auth/delete-account', methods=['DELETE'])
+@jwt_required()
+def delete_account():
+    user_id = int(get_jwt_identity())
+    user = User.query.get_or_404(user_id)
+    permits = Permit.query.filter_by(user_id=user_id).all()
+    for permit in permits:
+        Comment.query.filter_by(permit_id=permit.id).delete()
+        Appointment.query.filter_by(permit_id=permit.id).delete()
+        for doc in permit.documents:
+            try:
+                os.remove(doc.file_path)
+            except OSError:
+                pass
+        Document.query.filter_by(permit_id=permit.id).delete()
+        db.session.delete(permit)
+    Comment.query.filter_by(user_id=user_id).delete()
+    Appointment.query.filter_by(user_id=user_id).delete()
+    if user.avatar_url:
+        try:
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], user.avatar_url))
+        except OSError:
+            pass
+    db.session.delete(user)
+    db.session.commit()
+    return jsonify({'message': 'Account deleted successfully'}), 200
 
 
 @app.route('/api/permit-types', methods=['GET'])

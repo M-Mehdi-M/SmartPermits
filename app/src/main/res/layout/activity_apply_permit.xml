@@ -154,6 +154,87 @@
                             android:textSize="16sp"
                             android:textStyle="bold"
                             android:layout_marginTop="8dp" />
+
+                        <LinearLayout
+                            android:id="@+id/mapContainer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:visibility="gone"
+                            android:layout_marginTop="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📍 Pin Work Location on Map"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/primary"
+                                android:layout_marginBottom="8dp" />
+
+                            <FrameLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="300dp">
+
+                                <org.osmdroid.views.MapView
+                                    android:id="@+id/mapView"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="match_parent"
+                                    android:clipToOutline="true" />
+
+                                <TextView
+                                    android:id="@+id/tvCrosshair"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_gravity="center"
+                                    android:text="📌"
+                                    android:textSize="32sp"
+                                    android:layout_marginBottom="16dp" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:id="@+id/tvLocationInfo"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Move the map, then press Pin Here"
+                                android:textSize="12sp"
+                                android:textColor="@color/text_secondary"
+                                android:layout_marginTop="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnPinHere"
+                                android:layout_width="match_parent"
+                                android:layout_height="48dp"
+                                android:text="📍 Pin Here"
+                                android:textSize="14sp"
+                                android:layout_marginTop="8dp"
+                                app:cornerRadius="12dp"
+                                android:backgroundTint="@color/accent" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/documentChecklistContainer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:visibility="gone"
+                            android:layout_marginTop="16dp">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="📋 Required Documents (Romanian Law)"
+                                android:textSize="14sp"
+                                android:textStyle="bold"
+                                android:textColor="@color/primary"
+                                android:layout_marginBottom="8dp" />
+
+                            <LinearLayout
+                                android:id="@+id/checklistItems"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical" />
+                        </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 

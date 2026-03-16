@@ -311,6 +311,18 @@
                 android:textSize="16sp"
                 app:cornerRadius="16dp"
                 android:backgroundTint="@color/btn_reject"
+                android:layout_marginTop="8dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDeleteAccount"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="Delete Account"
+                android:textSize="16sp"
+                android:textColor="#DC2626"
+                app:cornerRadius="16dp"
+                app:strokeColor="#DC2626"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="24dp" />
         </LinearLayout>

@@ -6,14 +6,17 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 
 ### Core Features
 - **Online Application Wizard** - Step-by-step permit application with permit type selection, description, and fee preview
-- **Multi-Document Upload** - Select multiple documents (ID, property deed, floor plans) from gallery or capture via camera; displayed as scrollable carousel
+- **Permit Location Map** - For Construction and Renovation permits, citizens pin the exact work location on an interactive OpenStreetMap (osmdroid). A crosshair overlay marks the center of the map — users drag the map to position it and press the "Pin Here" button to place the marker. The map pin with coordinates is visible to inspectors on the review screen and to citizens on the permit detail screen. No API key required
+- **Romanian-Law Document Checklist** - Each permit type displays a checklist of required documents based on Romanian legislation (e.g., Certificat de urbanism, Proiect tehnic DTAC, Avize utilități for Construction Permits). Each document has an individual upload button with a checkbox that marks green when uploaded
+- **Multi-Document Upload** - Select multiple documents (ID, property deed, floor plans) from gallery or capture via camera; displayed as scrollable carousel. Documents are tagged with labels matching the Romanian legal requirements
 - **Role-Based Dashboards** - Separate interfaces for citizens and inspectors with tailored workflows
 - **Navigation Drawer** - Professional side menu on both dashboards with quick access to all features
 - **Permit Tracking** - Real-time status tracking with color-coded chips (Submitted, Approved, Rejected, Completed)
 - **Permit History** - Filterable history view with tabs (All, Approved, Completed, Rejected)
-- **Inspector Review** - Inspectors view pending applications, review details, preview all attached documents in horizontal carousel, then approve or reject with notes
+- **Inspector Review** - Inspectors view pending applications, review details, see the work location on a map, preview all attached documents in a vertical ordered list with numbered labels (e.g., "#1 — Certificat de urbanism") and thumbnails, then approve or reject with notes
 - **Review History** - Inspectors can browse past reviewed permits filtered by outcome
 - **Payment Simulation** - Citizens pay fees for approved permits, changing status to Completed
+- **Delete Account** - Users can permanently delete their account and all associated data from the profile screen with confirmation dialog
 
 ### Advanced Features
 - **Push Notifications** - When an inspector approves/rejects a permit, notifications are sent to the citizen via Firebase Cloud Messaging (FCM). Comments and appointment scheduling also trigger notifications
@@ -55,6 +58,7 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 | [Glide](https://github.com/bumptech/glide) | Image loading and caching |
 | [Material Components](https://material.io/develop/android) | UI components (cards, chips, FAB, text inputs, switches) |
 | [MPAndroidChart](https://github.com/PhilJay/MPAndroidChart) | Pie charts and bar charts for analytics |
+| [osmdroid](https://github.com/osmdroid/osmdroid) | OpenStreetMap map view for permit location pinning (no API key needed) |
 | [SwipeRefreshLayout](https://developer.android.com/reference/androidx/swiperefreshlayout/widget/SwipeRefreshLayout) | Pull-to-refresh on dashboards |
 | [CameraX / FileProvider](https://developer.android.com/training/camera) | Camera capture and secure file sharing |
 | [Flask](https://flask.palletsprojects.com/) | Backend web framework |
@@ -197,10 +201,10 @@ docker run -p 5000:5000 smart-permits-api
 
 ## Default Test Accounts
 
-| Role      | Username    | Password      |
-|-----------|-------------|---------------|
-| Citizen   | citizen1    | citizen123    |
-| Inspector | inspector1  | inspector123  |
+| Role      | Username    | Password  |
+|-----------|-------------|-----------|
+| Citizen   | citizen1    | 1q2w3e4r  |
+| Inspector | inspector1  | 1q2w3e4r  |
 
 ## API Endpoints
 
@@ -213,6 +217,7 @@ docker run -p 5000:5000 smart-permits-api
 | GET    | `/api/auth/profile`              | Yes  | Get current user profile             |
 | PUT    | `/api/auth/profile`              | Yes  | Update profile (name, email)         |
 | POST   | `/api/auth/profile/avatar`       | Yes  | Upload profile avatar                |
+| DELETE | `/api/auth/delete-account`       | Yes  | Permanently delete user account      |
 | GET    | `/api/permits`                   | Yes  | Get user's permits (with search/filter) |
 | POST   | `/api/permits`                   | Yes  | Create new permit application        |
 | GET    | `/api/permits/{id}`              | Yes  | Get permit details                   |
@@ -240,6 +245,25 @@ docker run -p 5000:5000 smart-permits-api
 | approved  | Green  | Approved, awaiting payment           |
 | rejected  | Red    | Rejected by inspector                |
 | completed | Blue   | Approved and paid                    |
+
+## Required Documents per Permit Type (Romanian Law)
+
+Each permit type requires specific documents based on Romanian legislation. The app presents a checklist with individual upload buttons.
+
+| Permit Type | Required Documents |
+|---|---|
+| Construction Permit | Certificat de urbanism, Extras carte funciară (CF), Plan topografic vizat de OCPI, Proiect tehnic (DTAC) autorizat, Avize utilități (apă, gaz, electricitate), Studiu geotehnic, Dovada achitării taxei |
+| Renovation Permit | Certificat de urbanism, Releveu stare existentă, Proiect tehnic renovare, Acord asociație proprietari, Avize utilități afectate, Dovada achitării taxei |
+| Business License | Certificat înregistrare ORC, Act constitutiv societate, Contract spațiu / sediu social, Aviz PSI / ISU, Cazier fiscal, Certificat constatator ORC |
+| Food Service Permit | Autorizație sanitară veterinară (DSVSA), Plan HACCP, Contract dezinsecție și deratizare, Aviz de mediu, Certificat înregistrare ORC, Buletin analiză apă |
+| Event Permit | Cerere organizare eveniment, Plan de securitate, Aviz Poliție, Aviz ISU (pompieri), Contract salubrizare, Poliță asigurare răspundere civilă |
+| Signage Permit | Cerere amplasare firmă, Schița amplasament, Aviz urbanism / arhitectură, Acord proprietar imobil, Simulare foto montaj |
+| Demolition Permit | Certificat de urbanism, Extras carte funciară (CF), Proiect tehnic desființare (DTAD), Plan de demolare, Aviz de mediu, Studiu gestionarea deșeurilor, Dovada achitării taxei |
+| Occupancy Certificate | Proces verbal recepție la terminarea lucrărilor, Certificat de performanță energetică, Documentație cadastrală, Referatele verificatorilor de proiecte, Declarație conformitate instalații, Dovada achitării taxei |
+
+## Permit Location Map
+
+For **Construction Permit** and **Renovation Permit** types, the application includes an interactive OpenStreetMap (via osmdroid) where citizens drag the map to position a crosshair at the desired work location, then press the "Pin Here" button to place a marker. The coordinates (latitude/longitude) are stored with the permit and displayed on both the citizen's permit detail screen and the inspector's review screen. No Google Maps API key is required.
 
 ## Building
 

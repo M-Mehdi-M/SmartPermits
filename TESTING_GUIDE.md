@@ -39,7 +39,7 @@
 ### Step 3: Test Login
 
 1. App opens to login screen
-2. Enter: Username = `citizen1`, Password = `citizen123`
+2. Enter: Username = `citizen1`, Password = `1q2w3e4r`
 3. Tap Login
 4. You land on the Citizen Dashboard showing "Welcome, Maria Popescu"
 
@@ -47,10 +47,10 @@
 
 ## Default Test Accounts
 
-| Role      | Username    | Password      |
-|-----------|-------------|---------------|
-| Citizen   | citizen1    | citizen123    |
-| Inspector | inspector1  | inspector123  |
+| Role      | Username    | Password  |
+|-----------|-------------|-----------|
+| Citizen   | citizen1    | 1q2w3e4r  |
+| Inspector | inspector1  | 1q2w3e4r  |
 
 ---
 
@@ -66,9 +66,9 @@
 
 ### 2. User Login
 
-1. Enter `citizen1` / `citizen123` and tap Login
+1. Enter `citizen1` / `1q2w3e4r` and tap Login
 2. You land on Citizen Dashboard
-3. Try `inspector1` / `inspector123` for Inspector Dashboard
+3. Try `inspector1` / `1q2w3e4r` for Inspector Dashboard
 4. Invalid credentials show error toast
 5. Close and reopen app to verify auto-login (session persistence)
 
@@ -92,38 +92,48 @@
 3. Results filter in real-time
 4. Pull-to-refresh to reload pending permits
 
-### 5. Apply for Permit (Multi-Document Upload)
+### 5. Apply for Permit (Document Checklist + Map Location)
 
 1. From Citizen Dashboard, tap "Apply for Permit" FAB
-2. Step 1: Select permit type, enter description, see fee preview
-3. Tap "Next: Upload Documents"
-4. Step 2: Tap "Gallery" and select multiple images (hold to multi-select)
-5. Document count shows (e.g., "3 document(s) attached")
-6. First selected image shows as preview
-7. Tap "Camera" to capture a photo
-8. Tap "Submit Application"
-9. Step 3: Success screen appears
-10. Tap "Back to Dashboard" and see new permit
+2. Step 1: Select permit type from the dropdown
+3. A checklist of required documents (based on Romanian law) appears below the fee preview
+4. Each document in the checklist has a checkbox and "Upload" button
+5. Tap "Upload" next to any document to pick a file from device storage
+6. After upload, the checkbox turns green with a checkmark
+7. For "Construction Permit" or "Renovation Permit": an interactive map appears with a crosshair pin overlay
+8. Drag the map to position the crosshair at the desired work location
+9. Press the "Pin Here" button to place the marker
+10. Coordinates display below the map (e.g., "📍 44.43225, 26.10626")
+11. You can drag the map again and press "Pin Here" to move the pin
+12. Enter a description and see the fee preview
+13. Tap "Next: Upload Documents"
+14. Step 2: Optionally add more photos via Gallery or Camera
+15. Tap "Submit Application"
+16. Step 3: Success screen appears
+17. Tap "Back to Dashboard" and see new permit
 
-### 6. Permit Details and Estimated Processing Time
+### 6. Permit Details, Map, and Estimated Processing Time
 
 1. Tap any permit in the list
 2. See permit type, date, fee, payment status
-3. For "submitted" permits, see "Estimated Processing Time" card showing average processing time (e.g., "2.5 days")
-4. Description card shows if description was provided
-5. Documents card shows a horizontal carousel of all uploaded documents
-6. Tap any document thumbnail to open full-screen viewer
+3. For Construction/Renovation permits with a pinned location: a map card shows the work location with a marker
+4. Coordinates displayed below the map
+5. For "submitted" permits, see "Estimated Processing Time" card showing average processing time (e.g., "2.5 days")
+6. Description card shows if description was provided
+7. Documents card shows a horizontal carousel of all uploaded documents
+8. Tap any document thumbnail to open full-screen viewer
 
-### 7. Inspector Review with Document Carousel
+### 7. Inspector Review with Document Preview and Map
 
 1. Login as inspector
 2. Tap a pending permit
-3. See applicant info, description, and attached documents list
-4. Scroll through the document carousel (horizontal scroll)
-5. Tap any document to view full-size
-6. Add optional review notes
-7. Tap "Approve" or "Reject"
-8. Notification is sent to the citizen (if FCM is configured)
+3. See applicant info, description, and attached documents list with document labels (e.g., "• Certificat de urbanism — filename.jpg")
+4. Scroll through the document preview section — documents shown in a vertical ordered list with numbered labels (e.g., "#1 — Certificat de urbanism"), thumbnail image, and filename
+5. Tap any document row to view full-size in the Document Viewer
+6. For Construction/Renovation permits: a map card shows the pinned work location with coordinates
+7. Add optional review notes
+8. Tap "Approve" or "Reject"
+9. Notification is sent to the citizen (if FCM is configured)
 
 ### 8. In-App Chat / Comments
 
@@ -185,7 +195,7 @@
 ### 14. Change Password
 
 1. Open drawer menu and tap "Change Password"
-2. Enter current password (`citizen123` or `inspector123`)
+2. Enter current password (`1q2w3e4r`)
 3. Enter new password (min 6 characters)
 4. Confirm new password
 5. Tap "Change Password"
@@ -294,21 +304,34 @@
 10. Pull-to-refresh to reload trash contents
 11. Items in trash are automatically permanently deleted after 30 days
 
+### 24. Delete Account
+
+1. Login as any user (create a test account to try this)
+2. Open drawer and tap "My Profile"
+3. Scroll down and tap "Delete Account"
+4. A confirmation dialog appears warning that all data will be permanently deleted
+5. Tap "Delete" to confirm
+6. Toast shows "Account deleted"
+7. App returns to the login screen
+8. Try logging in with the deleted credentials — login fails
+
 ---
 
 ## Complete End-to-End Test Flow
 
 1. Register a new citizen account
 2. Apply for a "Construction Permit" with description and multiple photos
-3. Verify permit appears with "Submitted" status
-4. Search for it using the search bar
-5. Filter by "Submitted" status
-6. Logout
-7. Login as inspector (`inspector1` / `1q2w3e4r`)
-8. Search for the pending permit by applicant name
-9. Review the permit, view all documents in carousel
-10. Add a comment asking for more info
-11. Approve the permit with notes
+3. Drag the map and press "Pin Here" to pin a location in Step 1
+4. Upload required documents from the Romanian law checklist (Certificat de urbanism, Proiect tehnic, etc.)
+5. Verify permit appears with "Submitted" status
+6. Search for it using the search bar
+7. Filter by "Submitted" status
+8. Logout
+9. Login as inspector (`inspector1` / `1q2w3e4r`)
+10. Search for the pending permit by applicant name
+11. Review the permit, see the map with pinned location, view all documents in ordered list with numbered labels
+12. Add a comment asking for more info
+13. Approve the permit with notes
 12. Logout
 13. Login as citizen
 14. See notification (if FCM configured)
@@ -375,8 +398,8 @@
 | Table        | Columns                                                                         |
 |--------------|---------------------------------------------------------------------------------|
 | users        | id, username, email, password_hash, role, full_name, avatar_url, fcm_token      |
-| permits      | id, user_id, permit_type, description, status, fee_amount, is_paid, reviewer_notes, reviewed_by, renewed_from, created_at, updated_at |
-| documents    | id, permit_id, file_path, file_name, uploaded_at                                |
+| permits      | id, user_id, permit_type, description, status, fee_amount, is_paid, reviewer_notes, reviewed_by, renewed_from, latitude, longitude, created_at, updated_at |
+| documents    | id, permit_id, file_path, file_name, document_label, uploaded_at                                |
 | comments     | id, permit_id, user_id, message, created_at                                     |
 | appointments | id, permit_id, user_id, date, time_slot, status, notes, created_at              |
 
@@ -392,6 +415,19 @@
 | Renovation Permit     | $350.00 |
 | Demolition Permit     | $450.00 |
 | Occupancy Certificate | $120.00 |
+
+## Required Documents per Permit Type (Romanian Law)
+
+| Permit Type | Required Documents |
+|---|---|
+| Construction Permit | Certificat de urbanism, Extras carte funciară (CF), Plan topografic vizat de OCPI, Proiect tehnic (DTAC) autorizat, Avize utilități (apă, gaz, electricitate), Studiu geotehnic, Dovada achitării taxei |
+| Renovation Permit | Certificat de urbanism, Releveu stare existentă, Proiect tehnic renovare, Acord asociație proprietari, Avize utilități afectate, Dovada achitării taxei |
+| Business License | Certificat înregistrare ORC, Act constitutiv societate, Contract spațiu / sediu social, Aviz PSI / ISU, Cazier fiscal, Certificat constatator ORC |
+| Food Service Permit | Autorizație sanitară veterinară (DSVSA), Plan HACCP, Contract dezinsecție și deratizare, Aviz de mediu, Certificat înregistrare ORC, Buletin analiză apă |
+| Event Permit | Cerere organizare eveniment, Plan de securitate, Aviz Poliție, Aviz ISU (pompieri), Contract salubrizare, Poliță asigurare răspundere civilă |
+| Signage Permit | Cerere amplasare firmă, Schița amplasament, Aviz urbanism / arhitectură, Acord proprietar imobil, Simulare foto montaj |
+| Demolition Permit | Certificat de urbanism, Extras carte funciară (CF), Proiect tehnic desființare (DTAD), Plan de demolare, Aviz de mediu, Studiu gestionarea deșeurilor, Dovada achitării taxei |
+| Occupancy Certificate | Proces verbal recepție la terminarea lucrărilor, Certificat de performanță energetică, Documentație cadastrală, Referatele verificatorilor de proiecte, Declarație conformitate instalații, Dovada achitării taxei |
 
 ## File Locations
 - **APK Output**: `app/build/outputs/apk/debug/app-debug.apk`

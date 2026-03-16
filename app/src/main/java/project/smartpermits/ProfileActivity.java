@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -13,6 +14,10 @@ import com.bumptech.glide.Glide;
 import com.google.android.material.button.MaterialButton;
 
 import project.smartpermits.api.RetrofitClient;
+import project.smartpermits.models.MessageResponse;
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
 
 public class ProfileActivity extends AppCompatActivity {
 
@@ -36,6 +41,7 @@ public class ProfileActivity extends AppCompatActivity {
         MaterialButton btnSignOut = findViewById(R.id.btnSignOut);
         MaterialButton btnEditProfile = findViewById(R.id.btnEditProfile);
         MaterialButton btnChangePassword = findViewById(R.id.btnChangePassword);
+        MaterialButton btnDeleteAccount = findViewById(R.id.btnDeleteAccount);
 
         btnBack.setOnClickListener(v -> finish());
         btnEditProfile.setOnClickListener(v ->
@@ -44,6 +50,37 @@ public class ProfileActivity extends AppCompatActivity {
         btnChangePassword.setOnClickListener(v ->
             startActivity(new Intent(this, ChangePasswordActivity.class))
         );
+
+        btnDeleteAccount.setOnClickListener(v -> {
+            new AlertDialog.Builder(this)
+                    .setTitle("Delete Account")
+                    .setMessage("This will permanently delete your account, all your permits, documents, and data. This action cannot be undone.")
+                    .setPositiveButton("Delete", (d, w) -> {
+                        RetrofitClient.getInstance(this).getApi().deleteAccount()
+                                .enqueue(new Callback<MessageResponse>() {
+                                    @Override
+                                    public void onResponse(Call<MessageResponse> call, Response<MessageResponse> response) {
+                                        if (response.isSuccessful()) {
+                                            Toast.makeText(ProfileActivity.this, "Account deleted", Toast.LENGTH_LONG).show();
+                                            client.clearSession();
+                                            Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
+                                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                            startActivity(intent);
+                                            finish();
+                                        } else {
+                                            Toast.makeText(ProfileActivity.this, "Failed to delete account", Toast.LENGTH_SHORT).show();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void onFailure(Call<MessageResponse> call, Throwable t) {
+                                        Toast.makeText(ProfileActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                    }
+                                });
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
 
         btnSignOut.setOnClickListener(v -> {
             new AlertDialog.Builder(this)

@@ -41,6 +41,8 @@ class Permit(db.Model):
     reviewer_notes = db.Column(db.Text, nullable=True)
     reviewed_by = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     renewed_from = db.Column(db.Integer, nullable=True)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True, default=None)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -50,25 +52,28 @@ class Permit(db.Model):
 
     def to_dict(self):
         avg_time = None
-        reviewed = Permit.query.filter(
-            Permit.permit_type == self.permit_type,
-            Permit.status.in_(['approved', 'rejected', 'completed'])
-        ).all()
-        if reviewed:
-            total_hours = 0
-            count = 0
-            for p in reviewed:
-                if p.updated_at and p.created_at:
-                    diff = (p.updated_at - p.created_at).total_seconds() / 3600
-                    if diff > 0:
-                        total_hours += diff
-                        count += 1
-            if count > 0:
-                avg_hours = total_hours / count
-                if avg_hours < 24:
-                    avg_time = f"{int(avg_hours)} hours"
-                else:
-                    avg_time = f"{round(avg_hours / 24, 1)} days"
+        try:
+            reviewed = Permit.query.filter(
+                Permit.permit_type == self.permit_type,
+                Permit.status.in_(['approved', 'rejected', 'completed'])
+            ).all()
+            if reviewed:
+                total_hours = 0
+                count = 0
+                for p in reviewed:
+                    if p.updated_at and p.created_at:
+                        diff = (p.updated_at - p.created_at).total_seconds() / 3600
+                        if diff > 0:
+                            total_hours += diff
+                            count += 1
+                if count > 0:
+                    avg_hours = total_hours / count
+                    if avg_hours < 24:
+                        avg_time = f"{int(avg_hours)} hours"
+                    else:
+                        avg_time = f"{round(avg_hours / 24, 1)} days"
+        except Exception:
+            avg_time = None
 
         return {
             'id': self.id,
@@ -82,9 +87,11 @@ class Permit(db.Model):
             'reviewer_notes': self.reviewer_notes,
             'reviewed_by': self.reviewed_by,
             'renewed_from': self.renewed_from,
+            'latitude': self.latitude,
+            'longitude': self.longitude,
             'estimated_processing_time': avg_time,
-            'created_at': self.created_at.isoformat(),
-            'updated_at': self.updated_at.isoformat(),
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'deleted_at': self.deleted_at.isoformat() if self.deleted_at else None,
             'days_until_permanent_delete': max(0, 30 - (datetime.utcnow() - self.deleted_at).days) if self.deleted_at else None,
             'documents': [d.to_dict() for d in self.documents]
@@ -97,6 +104,7 @@ class Document(db.Model):
     permit_id = db.Column(db.Integer, db.ForeignKey('permits.id'), nullable=False)
     file_path = db.Column(db.String(300), nullable=False)
     file_name = db.Column(db.String(200), nullable=False)
+    document_label = db.Column(db.String(200), nullable=True, default='')
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def to_dict(self):
@@ -104,6 +112,7 @@ class Document(db.Model):
             'id': self.id,
             'permit_id': self.permit_id,
             'file_name': self.file_name,
+            'document_label': self.document_label or '',
             'uploaded_at': self.uploaded_at.isoformat()
         }
 
