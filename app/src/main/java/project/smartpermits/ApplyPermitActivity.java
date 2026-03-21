@@ -1,11 +1,6 @@
 package project.smartpermits;
 
-import android.Manifest;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
-import android.graphics.Color;
-import android.graphics.drawable.GradientDrawable;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -13,9 +8,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
@@ -26,8 +19,6 @@ import android.widget.ViewFlipper;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.FileProvider;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
@@ -43,10 +34,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -56,6 +44,7 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import project.smartpermits.api.RetrofitClient;
+import project.smartpermits.models.AiAnalysisResponse;
 import project.smartpermits.models.Document;
 import project.smartpermits.models.Permit;
 import project.smartpermits.models.PermitRequest;
@@ -70,8 +59,6 @@ public class ApplyPermitActivity extends AppCompatActivity {
     private Spinner spinnerPermitType;
     private TextInputEditText etDescription;
     private TextView tvFeePreview;
-    private ImageView ivDocument;
-    private LinearLayout placeholderPhoto;
     private ProgressBar progressBar;
     private LinearLayout mapContainer;
     private MapView mapView;
@@ -83,9 +70,6 @@ public class ApplyPermitActivity extends AppCompatActivity {
     private List<PermitType> permitTypes;
     private String selectedType = "";
     private double selectedFee = 0;
-    private Uri photoUri;
-    private File photoFile;
-    private java.util.ArrayList<File> documentFiles = new java.util.ArrayList<>();
     private int createdPermitId = -1;
 
     private Double selectedLatitude = null;
@@ -165,35 +149,6 @@ public class ApplyPermitActivity extends AppCompatActivity {
         });
     }
 
-    private final ActivityResultLauncher<Uri> cameraLauncher =
-            registerForActivityResult(new ActivityResultContracts.TakePicture(), result -> {
-                if (result && photoUri != null) {
-                    showPhoto(photoUri);
-                }
-            });
-
-    private final ActivityResultLauncher<String> galleryLauncher =
-            registerForActivityResult(new ActivityResultContracts.GetMultipleContents(), uris -> {
-                if (uris != null && !uris.isEmpty()) {
-                    photoUri = uris.get(0);
-                    showPhoto(photoUri);
-                    for (Uri uri : uris) {
-                        try {
-                            documentFiles.add(copyUriToFile(uri));
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    if (!documentFiles.isEmpty()) {
-                        photoFile = documentFiles.get(0);
-                    }
-                    Toast.makeText(this, documentFiles.size() + " document(s) selected", Toast.LENGTH_SHORT).show();
-                    TextView tvDocCount = findViewById(R.id.tvDocCount);
-                    if (tvDocCount != null) {
-                        tvDocCount.setText(documentFiles.size() + " document(s) attached");
-                    }
-                }
-            });
 
     private final ActivityResultLauncher<String> requiredDocLauncher =
             registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
@@ -214,14 +169,6 @@ public class ApplyPermitActivity extends AppCompatActivity {
                 }
             });
 
-    private final ActivityResultLauncher<String> cameraPermissionLauncher =
-            registerForActivityResult(new ActivityResultContracts.RequestPermission(), granted -> {
-                if (granted) {
-                    launchCamera();
-                } else {
-                    Toast.makeText(this, "Camera permission denied", Toast.LENGTH_SHORT).show();
-                }
-            });
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -236,8 +183,6 @@ public class ApplyPermitActivity extends AppCompatActivity {
         spinnerPermitType = findViewById(R.id.spinnerPermitType);
         etDescription = findViewById(R.id.etDescription);
         tvFeePreview = findViewById(R.id.tvFeePreview);
-        ivDocument = findViewById(R.id.ivDocument);
-        placeholderPhoto = findViewById(R.id.placeholderPhoto);
         progressBar = findViewById(R.id.progressBar);
         mapContainer = findViewById(R.id.mapContainer);
         mapView = findViewById(R.id.mapView);
@@ -247,18 +192,10 @@ public class ApplyPermitActivity extends AppCompatActivity {
         checklistItems = findViewById(R.id.checklistItems);
 
         ImageButton btnBack = findViewById(R.id.btnBack);
-        MaterialButton btnNext1 = findViewById(R.id.btnNext1);
-        MaterialButton btnCamera = findViewById(R.id.btnCamera);
-        MaterialButton btnGallery = findViewById(R.id.btnGallery);
-        MaterialButton btnSubmit = findViewById(R.id.btnSubmit);
+        MaterialButton btnSubmit = findViewById(R.id.btnNext1);
         MaterialButton btnBackToDashboard = findViewById(R.id.btnBackToDashboard);
-        FrameLayout framePhoto = findViewById(R.id.framePhoto);
 
         btnBack.setOnClickListener(v -> finish());
-        btnNext1.setOnClickListener(v -> goToStep2());
-        btnCamera.setOnClickListener(v -> checkCameraPermission());
-        btnGallery.setOnClickListener(v -> galleryLauncher.launch("image/*"));
-        framePhoto.setOnClickListener(v -> galleryLauncher.launch("image/*"));
         btnSubmit.setOnClickListener(v -> submitApplication());
         btnBackToDashboard.setOnClickListener(v -> finish());
 
@@ -274,6 +211,11 @@ public class ApplyPermitActivity extends AppCompatActivity {
         GeoPoint romaniaCenter = new GeoPoint(45.9432, 24.9668);
         controller.setCenter(romaniaCenter);
 
+        mapView.setOnTouchListener((v, event) -> {
+            v.getParent().requestDisallowInterceptTouchEvent(true);
+            return false;
+        });
+
         btnPinHere.setOnClickListener(v -> {
             GeoPoint center = (GeoPoint) mapView.getMapCenter();
             selectedLatitude = center.getLatitude();
@@ -283,7 +225,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
             }
             currentMarker = new Marker(mapView);
             currentMarker.setPosition(center);
-            currentMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
+            currentMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
             currentMarker.setTitle("Work Location");
             mapView.getOverlays().add(currentMarker);
             mapView.invalidate();
@@ -400,40 +342,6 @@ public class ApplyPermitActivity extends AppCompatActivity {
         }
     }
 
-    private void goToStep2() {
-        if (selectedType.isEmpty()) {
-            Toast.makeText(this, "Please select a permit type", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        viewFlipper.setDisplayedChild(1);
-    }
-
-    private void checkCameraPermission() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-            launchCamera();
-        } else {
-            cameraPermissionLauncher.launch(Manifest.permission.CAMERA);
-        }
-    }
-
-    private void launchCamera() {
-        try {
-            String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(new Date());
-            File storageDir = getExternalCacheDir();
-            photoFile = File.createTempFile("PERMIT_" + timeStamp + "_", ".jpg", storageDir);
-            photoUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", photoFile);
-            cameraLauncher.launch(photoUri);
-        } catch (IOException e) {
-            Toast.makeText(this, "Error creating photo file", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void showPhoto(Uri uri) {
-        ivDocument.setImageURI(uri);
-        ivDocument.setVisibility(View.VISIBLE);
-        placeholderPhoto.setVisibility(View.GONE);
-    }
-
     private File copyUriToFile(Uri uri) throws IOException {
         InputStream inputStream = getContentResolver().openInputStream(uri);
         File tempFile = File.createTempFile("upload_", ".jpg", getCacheDir());
@@ -449,6 +357,10 @@ public class ApplyPermitActivity extends AppCompatActivity {
     }
 
     private void submitApplication() {
+        if (selectedType.isEmpty()) {
+            Toast.makeText(this, "Please select a permit type", Toast.LENGTH_SHORT).show();
+            return;
+        }
         String description = etDescription.getText() != null ? etDescription.getText().toString().trim() : "";
 
         progressBar.setVisibility(View.VISIBLE);
@@ -498,13 +410,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
 
     private void uploadAllRequiredDocuments(int permitId, List<String> labels, int index) {
         if (index >= labels.size()) {
-            if (!documentFiles.isEmpty()) {
-                uploadGalleryDocuments(permitId, 0);
-            } else if (photoFile != null && photoFile.exists()) {
-                uploadSinglePhoto(permitId);
-            } else {
-                onSubmitSuccess();
-            }
+            onSubmitSuccess();
             return;
         }
         String label = labels.get(index);
@@ -530,50 +436,27 @@ public class ApplyPermitActivity extends AppCompatActivity {
                 });
     }
 
-    private void uploadGalleryDocuments(int permitId, int index) {
-        if (index >= documentFiles.size()) {
-            onSubmitSuccess();
-            return;
-        }
-        File file = documentFiles.get(index);
-        RequestBody requestFile = RequestBody.create(MediaType.parse("image/jpeg"), file);
-        MultipartBody.Part body = MultipartBody.Part.createFormData("file", file.getName(), requestFile);
-        RequestBody labelBody = RequestBody.create(MediaType.parse("text/plain"), "Additional Document");
-        RetrofitClient.getInstance(this).getApi()
-                .uploadDocument(permitId, body, labelBody)
-                .enqueue(new Callback<Document>() {
-                    @Override
-                    public void onResponse(Call<Document> call, Response<Document> response) {
-                        uploadGalleryDocuments(permitId, index + 1);
-                    }
-                    @Override
-                    public void onFailure(Call<Document> call, Throwable t) {
-                        uploadGalleryDocuments(permitId, index + 1);
-                    }
-                });
-    }
-
-    private void uploadSinglePhoto(int permitId) {
-        RequestBody requestFile = RequestBody.create(MediaType.parse("image/jpeg"), photoFile);
-        MultipartBody.Part body = MultipartBody.Part.createFormData("file", photoFile.getName(), requestFile);
-        RequestBody labelBody = RequestBody.create(MediaType.parse("text/plain"), "Photo");
-        RetrofitClient.getInstance(this).getApi()
-                .uploadDocument(permitId, body, labelBody)
-                .enqueue(new Callback<Document>() {
-                    @Override
-                    public void onResponse(Call<Document> call, Response<Document> response) {
-                        onSubmitSuccess();
-                    }
-                    @Override
-                    public void onFailure(Call<Document> call, Throwable t) {
-                        onSubmitSuccess();
-                    }
-                });
-    }
 
     private void onSubmitSuccess() {
-        progressBar.setVisibility(View.GONE);
-        viewFlipper.setDisplayedChild(2);
+        if (createdPermitId > 0) {
+            RetrofitClient.getInstance(this).getApi()
+                    .triggerAiAnalysis(createdPermitId)
+                    .enqueue(new Callback<AiAnalysisResponse>() {
+                        @Override
+                        public void onResponse(Call<AiAnalysisResponse> call, Response<AiAnalysisResponse> response) {
+                            progressBar.setVisibility(View.GONE);
+                            viewFlipper.setDisplayedChild(1);
+                        }
+                        @Override
+                        public void onFailure(Call<AiAnalysisResponse> call, Throwable t) {
+                            progressBar.setVisibility(View.GONE);
+                            viewFlipper.setDisplayedChild(1);
+                        }
+                    });
+        } else {
+            progressBar.setVisibility(View.GONE);
+            viewFlipper.setDisplayedChild(1);
+        }
     }
 
     @Override

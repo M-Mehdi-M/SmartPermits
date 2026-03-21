@@ -57,7 +57,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Citizen"
-                android:textColor="#B2DFDB"
+                android:textColor="@color/header_subtitle"
                 android:textSize="16sp"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="16dp" />
@@ -79,7 +79,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="4dp"
+                app:cardElevation="2dp"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout
@@ -210,7 +210,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardCornerRadius="16dp"
-                app:cardElevation="4dp"
+                app:cardElevation="2dp"
                 android:layout_marginBottom="16dp">
 
                 <LinearLayout

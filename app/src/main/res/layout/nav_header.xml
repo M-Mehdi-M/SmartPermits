@@ -12,7 +12,7 @@
         android:layout_width="64dp"
         android:layout_height="64dp"
         app:cardCornerRadius="32dp"
-        app:cardElevation="4dp"
+        app:cardElevation="2dp"
         android:layout_marginBottom="12dp">
 
         <ImageView
@@ -37,7 +37,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Citizen"
-        android:textColor="#B0C4DE"
+        android:textColor="@color/header_subtitle"
         android:textSize="14sp"
         android:layout_marginTop="2dp" />
 

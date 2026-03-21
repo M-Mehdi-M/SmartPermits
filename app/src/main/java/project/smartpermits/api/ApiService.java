@@ -4,6 +4,7 @@ import java.util.List;
 
 import okhttp3.MultipartBody;
 import okhttp3.ResponseBody;
+import project.smartpermits.models.AiAnalysisResponse;
 import project.smartpermits.models.AnalyticsResponse;
 import project.smartpermits.models.Appointment;
 import project.smartpermits.models.AppointmentRequest;
@@ -134,4 +135,7 @@ public interface ApiService {
 
     @GET("permit-types")
     Call<List<PermitType>> getPermitTypes();
+
+    @POST("permits/{id}/ai-analyze")
+    Call<AiAnalysisResponse> triggerAiAnalysis(@Path("id") int id);
 }

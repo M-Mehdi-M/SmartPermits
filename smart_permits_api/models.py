@@ -44,6 +44,7 @@ class Permit(db.Model):
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True, default=None)
+    ai_analysis = db.Column(db.Text, nullable=True, default=None)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     documents = db.relationship('Document', backref='permit', lazy=True)
@@ -90,6 +91,7 @@ class Permit(db.Model):
             'latitude': self.latitude,
             'longitude': self.longitude,
             'estimated_processing_time': avg_time,
+            'ai_analysis': self.ai_analysis,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'deleted_at': self.deleted_at.isoformat() if self.deleted_at else None,

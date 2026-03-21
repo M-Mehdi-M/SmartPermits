@@ -105,11 +105,11 @@ public class PermitAdapter extends RecyclerView.Adapter<PermitAdapter.ViewHolder
             int chipColor;
             int textColor = Color.WHITE;
             switch (status) {
-                case "submitted": chipColor = Color.parseColor("#E68A00"); break;
-                case "approved": chipColor = Color.parseColor("#16A34A"); break;
-                case "rejected": chipColor = Color.parseColor("#DC2626"); break;
-                case "completed": chipColor = Color.parseColor("#2563EB"); break;
-                default: chipColor = Color.parseColor("#6B7280"); break;
+                case "submitted": chipColor = Color.parseColor("#F59E0B"); break;
+                case "approved": chipColor = Color.parseColor("#10B981"); break;
+                case "rejected": chipColor = Color.parseColor("#EF4444"); break;
+                case "completed": chipColor = Color.parseColor("#6366F1"); break;
+                default: chipColor = Color.parseColor("#64748B"); break;
             }
             chipStatus.setChipBackgroundColor(ColorStateList.valueOf(chipColor));
             chipStatus.setTextColor(textColor);

@@ -1,14 +1,13 @@
 # SmartPermits
 
-A modern Android + Flask full-stack platform that digitizes the municipal permit and licensing process. Citizens can apply for permits, upload documents, and make payments while inspectors review, approve, or reject applications from their mobile dashboard.
+A modern Android + Flask full-stack platform that digitizes the municipal permit and licensing process. Citizens can apply for permits, upload documents, and make payments while inspectors review, approve, or reject applications from their mobile dashboard. Includes AI-powered document verification using Google Gemini.
 
 ## Features
 
 ### Core Features
-- **Online Application Wizard** - Step-by-step permit application with permit type selection, description, and fee preview
-- **Permit Location Map** - For Construction and Renovation permits, citizens pin the exact work location on an interactive OpenStreetMap (osmdroid). A crosshair overlay marks the center of the map — users drag the map to position it and press the "Pin Here" button to place the marker. The map pin with coordinates is visible to inspectors on the review screen and to citizens on the permit detail screen. No API key required
+- **Online Application** - Single-page permit application with permit type selection, description, fee preview, document upload checklist, and optional map location
+- **Permit Location Map** - For Construction and Renovation permits, citizens pin the exact work location on an interactive OpenStreetMap (osmdroid). A crosshair overlay marks the center of the map, users drag the map to position it and press the "Pin Here" button to place the marker. Touch events are properly intercepted so the map scrolls independently from the page. The map pin with coordinates is visible to inspectors on the review screen and to citizens on the permit detail screen. No API key required
 - **Romanian-Law Document Checklist** - Each permit type displays a checklist of required documents based on Romanian legislation (e.g., Certificat de urbanism, Proiect tehnic DTAC, Avize utilități for Construction Permits). Each document has an individual upload button with a checkbox that marks green when uploaded
-- **Multi-Document Upload** - Select multiple documents (ID, property deed, floor plans) from gallery or capture via camera; displayed as scrollable carousel. Documents are tagged with labels matching the Romanian legal requirements
 - **Role-Based Dashboards** - Separate interfaces for citizens and inspectors with tailored workflows
 - **Navigation Drawer** - Professional side menu on both dashboards with quick access to all features
 - **Permit Tracking** - Real-time status tracking with color-coded chips (Submitted, Approved, Rejected, Completed)
@@ -18,6 +17,11 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **Payment Simulation** - Citizens pay fees for approved permits, changing status to Completed
 - **Delete Account** - Users can permanently delete their account and all associated data from the profile screen with confirmation dialog
 
+### AI Features
+- **AI Document Verification** - When a citizen submits a permit application with uploaded documents, the system automatically sends all document images to Google Gemini 2.5 Flash in a single API request. The AI analyzes every document together, identifies document types, extracts key information (dates, names, stamps), checks completeness against Romanian legal requirements, flags issues (blurry images, expired dates, missing stamps, irrelevant files), and provides a structured recommendation. The inspector sees the full AI analysis card on the review screen before making a decision. Only one AI request is made per permit submission to minimize cost
+- **Manual AI Trigger** - If the AI analysis was not available at submission time (e.g., API key not configured), the inspector can manually trigger it from the review screen using the "Run AI Analysis" button
+- **Environment Variable Configuration** - The Gemini API key is stored in a `.env` file inside `smart_permits_api/`, never hardcoded. A `.env.example` file is provided as a template
+
 ### Advanced Features
 - **Push Notifications** - When an inspector approves/rejects a permit, notifications are sent to the citizen via Firebase Cloud Messaging (FCM). Comments and appointment scheduling also trigger notifications
 - **Analytics Dashboard** - Inspector statistics screen showing total permits reviewed, approval vs rejection ratio (pie chart), average review time, and busiest permit types (bar chart) using MPAndroidChart
@@ -26,10 +30,11 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **PDF Permit Certificate** - When a permit is Completed, a downloadable PDF certificate with QR code is generated using ReportLab
 - **Search & Filter** - Search bar and filter chips on both citizen and inspector dashboards to filter by permit type, status, applicant name, and date
 - **Estimated Processing Time** - Shows citizens average review time based on historical data for each permit type
-- **Dark Mode** - Toggle in Settings with manual dark mode switch, follow-system option, and proper dark theme colors for gradients and cards
+- **Dark Mode** - Toggle in Settings with manual dark mode switch, follow-system option, and proper dark theme colors
 - **Permit Renewal / Reapply** - For completed permits, Renew button creates a new application pre-filled with previous data. For rejected permits, Reapply button does the same
 - **Change Password** - Change Password option in profile/settings with current password verification
 - **User Profile Management** - Edit profile name, email, and upload avatar photo
+- **Trash / Recycle Bin** - Soft-delete permits to trash with 30-day auto-permanent-delete, restore option, and empty trash
 
 ### Infrastructure
 - **User Authentication** - Secure JWT-based login and registration with bcrypt password hashing
@@ -38,13 +43,23 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **Containerized Backend** - Dockerfile included for production-ready deployment
 - **FCM Integration** - Backend sends push notifications via Firebase Admin SDK when available
 
+## Design
+
+The app uses a modern **Indigo & Slate** color palette inspired by contemporary productivity apps:
+- **Primary**: Indigo (#6366F1) with violet gradient accents
+- **Background**: Clean slate-white (#F8FAFC) with pure white cards
+- **Dark mode**: Deep slate (#0F172A) with indigo/violet accents
+- **Cards**: Minimal elevation (2dp) for a flat, modern aesthetic
+- **Typography**: Clean hierarchy with slate-900 primary text and slate-500 secondary text
+
 ## Tech Stack
 
 - **Mobile**: Java (Android)
 - **Backend**: Python (Flask)
 - **Database**: SQLite (via Flask-SQLAlchemy)
+- **AI**: Google Gemini 2.5 Flash (document analysis)
 - **Authentication**: JWT (Flask-JWT-Extended)
-- **Min SDK**: 34 (Android 14)
+- **Min SDK**: 33 (Android 13)
 - **Target SDK**: 36
 - **Architecture**: Activity-based with Retrofit networking layer
 
@@ -60,7 +75,7 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 | [MPAndroidChart](https://github.com/PhilJay/MPAndroidChart) | Pie charts and bar charts for analytics |
 | [osmdroid](https://github.com/osmdroid/osmdroid) | OpenStreetMap map view for permit location pinning (no API key needed) |
 | [SwipeRefreshLayout](https://developer.android.com/reference/androidx/swiperefreshlayout/widget/SwipeRefreshLayout) | Pull-to-refresh on dashboards |
-| [CameraX / FileProvider](https://developer.android.com/training/camera) | Camera capture and secure file sharing |
+| [FileProvider](https://developer.android.com/training/camera) | Secure file sharing |
 | [Flask](https://flask.palletsprojects.com/) | Backend web framework |
 | [Flask-SQLAlchemy](https://flask-sqlalchemy.palletsprojects.com/) | ORM for database models |
 | [Flask-JWT-Extended](https://flask-jwt-extended.readthedocs.io/) | JWT authentication |
@@ -69,6 +84,9 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 | [ReportLab](https://www.reportlab.com/) | PDF certificate generation |
 | [qrcode](https://pypi.org/project/qrcode/) | QR code generation for certificates |
 | [firebase-admin](https://firebase.google.com/docs/admin/setup) | FCM push notifications from server |
+| [google-genai](https://pypi.org/project/google-genai/) | Google Gemini AI for document analysis |
+| [Pillow](https://pillow.readthedocs.io/) | Image processing for AI analysis |
+| [python-dotenv](https://pypi.org/project/python-dotenv/) | Environment variable management from .env files |
 
 ## Project Structure
 
@@ -82,9 +100,11 @@ SmartPermits/
 |   |   +-- PermitAdapter.java
 |   |   +-- PendingPermitAdapter.java
 |   |   +-- ChatAdapter.java
+|   |   +-- TrashAdapter.java
 |   +-- models/
 |   |   +-- User.java, Permit.java, Document.java
 |   |   +-- Comment.java, Appointment.java, PermitType.java
+|   |   +-- AiAnalysisResponse.java
 |   |   +-- AnalyticsResponse.java, FcmTokenRequest.java
 |   |   +-- LoginRequest/Response, RegisterRequest
 |   |   +-- PermitRequest, ReviewRequest, CommentRequest
@@ -106,6 +126,7 @@ SmartPermits/
 |   +-- ChangePasswordActivity.java
 |   +-- SettingsActivity.java
 |   +-- DocumentViewerActivity.java
+|   +-- TrashActivity.java
 |   +-- NotificationHelper.java
 |   +-- MainActivity.java
 +-- app/src/main/res/
@@ -120,9 +141,11 @@ SmartPermits/
 |   +-- models.py
 |   +-- requirements.txt
 |   +-- Dockerfile
+|   +-- .env.example
 |   +-- uploads/
 |   +-- instance/
 +-- TESTING_GUIDE.md
++-- AI_FEATURE_GUIDE.md
 +-- README.md
 ```
 
@@ -133,7 +156,7 @@ SmartPermits/
 - Android Studio Hedgehog (2023.1.1) or newer
 - JDK 11 or higher
 - Python 3.9+ (for backend)
-- Android device or emulator (API 34+)
+- Android device or emulator (API 33+)
 
 ### Backend Setup
 
@@ -156,12 +179,21 @@ SmartPermits/
    pip install -r requirements.txt
    ```
 
-4. Start the server:
+4. Configure your Gemini API key for AI document analysis:
+   ```bash
+   copy .env.example .env
+   ```
+   Edit `.env` and set your actual Gemini API key (get one at https://aistudio.google.com/apikey):
+   ```
+   GEMINI_API_KEY=your-actual-api-key-here
+   ```
+
+5. Start the server:
    ```bash
    python app.py
    ```
 
-5. Server runs on `http://0.0.0.0:5000` with auto-seeded test accounts
+6. Server runs on `http://0.0.0.0:5000` with auto-seeded test accounts
 
 ### Firebase Setup (Optional - for Push Notifications)
 
@@ -196,15 +228,15 @@ SmartPermits/
 ```bash
 cd smart_permits_api
 docker build -t smart-permits-api .
-docker run -p 5000:5000 smart-permits-api
+docker run -p 5000:5000 -e GEMINI_API_KEY=your-key-here smart-permits-api
 ```
 
 ## Default Test Accounts
 
-| Role      | Username    | Password  |
-|-----------|-------------|-----------|
-| Citizen   | citizen1    | 1q2w3e4r  |
-| Inspector | inspector1  | 1q2w3e4r  |
+| Role      | Username    | Password  | Full Name      |
+|-----------|-------------|-----------|----------------|
+| Citizen   | citizen1    | 1q2w3e4r  | Test User      |
+| Inspector | inspector1  | 1q2w3e4r  | Test Inspector |
 
 ## API Endpoints
 
@@ -222,8 +254,14 @@ docker run -p 5000:5000 smart-permits-api
 | POST   | `/api/permits`                   | Yes  | Create new permit application        |
 | GET    | `/api/permits/{id}`              | Yes  | Get permit details                   |
 | POST   | `/api/permits/{id}/upload`       | Yes  | Upload document to permit            |
+| POST   | `/api/permits/{id}/ai-analyze`   | Yes  | Trigger AI document analysis (once per permit) |
 | POST   | `/api/permits/{id}/pay`          | Yes  | Simulate payment                     |
 | POST   | `/api/permits/{id}/renew`        | Yes  | Renew/reapply for a permit           |
+| POST   | `/api/permits/{id}/trash`        | Yes  | Move permit to trash                 |
+| POST   | `/api/permits/{id}/restore`      | Yes  | Restore permit from trash            |
+| DELETE | `/api/permits/{id}/permanent-delete` | Yes | Permanently delete permit         |
+| GET    | `/api/permits/trash`             | Yes  | Get trashed permits                  |
+| DELETE | `/api/permits/trash/empty`       | Yes  | Empty trash                          |
 | GET    | `/api/permits/pending`           | Yes  | Get pending permits (inspector)      |
 | GET    | `/api/permits/reviewed`          | Yes  | Get reviewed permits (inspector)     |
 | POST   | `/api/permits/{id}/review`       | Yes  | Approve/reject permit                |
@@ -237,14 +275,36 @@ docker run -p 5000:5000 smart-permits-api
 | GET    | `/api/permit-types`              | No   | List available permit types          |
 | GET    | `/api/uploads/{filename}`        | No   | Download uploaded file               |
 
+## AI Document Analysis
+
+When a citizen submits a permit application with uploaded documents, the system automatically triggers AI analysis using Google Gemini 2.5 Flash. The flow:
+
+1. Citizen fills out permit details and uploads required documents from the checklist on a single page
+2. On submission, all documents are uploaded then a single POST request is sent to `/api/permits/{id}/ai-analyze`
+3. The backend collects all document images for the permit and sends them to Gemini in one request
+4. Gemini analyzes all documents together with a prompt that includes the permit type and Romanian legal requirements
+5. The analysis is stored in the permit record and displayed to the inspector on the review screen
+
+The AI analysis includes:
+- Document type identification for each uploaded file
+- Key information extraction (dates, names, addresses, stamps, signatures)
+- Completeness check against Romanian legal requirements
+- Detection of irrelevant or incorrect documents
+- Warnings about issues (blurry images, expired dates, missing stamps)
+- Overall recommendation for the inspector
+
+If the API key was not configured at submission time, the inspector can manually trigger AI analysis from the review screen using the "Run AI Analysis" button.
+
+Cost: one Gemini API call per permit submission.
+
 ## Permit Statuses
 
-| Status    | Color  | Description                          |
-|-----------|--------|--------------------------------------|
-| submitted | Orange | Awaiting inspector review            |
-| approved  | Green  | Approved, awaiting payment           |
-| rejected  | Red    | Rejected by inspector                |
-| completed | Blue   | Approved and paid                    |
+| Status    | Color   | Description                          |
+|-----------|---------|--------------------------------------|
+| submitted | Amber   | Awaiting inspector review            |
+| approved  | Emerald | Approved, awaiting payment           |
+| rejected  | Red     | Rejected by inspector                |
+| completed | Indigo  | Approved and paid                    |
 
 ## Required Documents per Permit Type (Romanian Law)
 
@@ -263,15 +323,12 @@ Each permit type requires specific documents based on Romanian legislation. The 
 
 ## Permit Location Map
 
-For **Construction Permit** and **Renovation Permit** types, the application includes an interactive OpenStreetMap (via osmdroid) where citizens drag the map to position a crosshair at the desired work location, then press the "Pin Here" button to place a marker. The coordinates (latitude/longitude) are stored with the permit and displayed on both the citizen's permit detail screen and the inspector's review screen. No Google Maps API key is required.
+For **Construction Permit** and **Renovation Permit** types, the application includes an interactive OpenStreetMap (via osmdroid) where citizens drag the map to position a crosshair at the desired work location, then press the "Pin Here" button to place a marker. The map properly intercepts touch events so scrolling the map does not scroll the page. The coordinates (latitude/longitude) are stored with the permit and displayed on both the citizen's permit detail screen and the inspector's review screen. No Google Maps API key is required.
 
 ## Building
 
 ```bash
-# Debug build
 ./gradlew assembleDebug
-
-# Release build
 ./gradlew assembleRelease
 ```
 

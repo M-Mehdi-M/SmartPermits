@@ -188,6 +188,10 @@ public class PermitDetailActivity extends AppCompatActivity {
             cardMapDetail.setVisibility(View.VISIBLE);
             mapViewDetail.setTileSource(TileSourceFactory.MAPNIK);
             mapViewDetail.setMultiTouchControls(true);
+            mapViewDetail.setOnTouchListener((v, event) -> {
+                v.getParent().requestDisallowInterceptTouchEvent(true);
+                return false;
+            });
             IMapController controller = mapViewDetail.getController();
             controller.setZoom(15.0);
             GeoPoint point = new GeoPoint(permit.getLatitude(), permit.getLongitude());
@@ -211,11 +215,11 @@ public class PermitDetailActivity extends AppCompatActivity {
 
         int chipColor;
         switch (status) {
-            case "submitted": chipColor = Color.parseColor("#E68A00"); break;
-            case "approved": chipColor = Color.parseColor("#16A34A"); break;
-            case "rejected": chipColor = Color.parseColor("#DC2626"); break;
-            case "completed": chipColor = Color.parseColor("#2563EB"); break;
-            default: chipColor = Color.parseColor("#6B7280"); break;
+            case "submitted": chipColor = Color.parseColor("#F59E0B"); break;
+            case "approved": chipColor = Color.parseColor("#10B981"); break;
+            case "rejected": chipColor = Color.parseColor("#EF4444"); break;
+            case "completed": chipColor = Color.parseColor("#6366F1"); break;
+            default: chipColor = Color.parseColor("#64748B"); break;
         }
         chipStatus.setChipBackgroundColor(ColorStateList.valueOf(chipColor));
         chipStatus.setTextColor(Color.WHITE);

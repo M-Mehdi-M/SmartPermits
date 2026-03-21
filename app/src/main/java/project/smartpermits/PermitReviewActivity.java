@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Locale;
 
 import project.smartpermits.api.RetrofitClient;
+import project.smartpermits.models.AiAnalysisResponse;
 import project.smartpermits.models.Document;
 import project.smartpermits.models.Permit;
 import project.smartpermits.models.ReviewRequest;
@@ -44,11 +45,11 @@ import retrofit2.Response;
 
 public class PermitReviewActivity extends AppCompatActivity {
 
-    private TextView tvApplicant, tvPermitType, tvDate, tvFee, tvDescription, tvDocuments;
+    private TextView tvApplicant, tvPermitType, tvDate, tvFee, tvDescription, tvDocuments, tvAiAnalysis;
     private TextInputEditText etNotes;
-    private MaterialButton btnApprove, btnReject, btnComments;
-    private MaterialCardView cardDescription, cardDocuments, cardMap;
-    private ProgressBar progressBar;
+    private MaterialButton btnApprove, btnReject, btnComments, btnRunAi;
+    private MaterialCardView cardDescription, cardDocuments, cardMap, cardAiAnalysis;
+    private ProgressBar progressBar, progressAi;
     private RecyclerView recyclerDocPreview;
     private LinearLayout documentPreviewContainer;
     private MapView mapViewReview;
@@ -77,11 +78,15 @@ public class PermitReviewActivity extends AppCompatActivity {
         cardDescription = findViewById(R.id.cardDescription);
         cardDocuments = findViewById(R.id.cardDocuments);
         cardMap = findViewById(R.id.cardMap);
+        cardAiAnalysis = findViewById(R.id.cardAiAnalysis);
+        tvAiAnalysis = findViewById(R.id.tvAiAnalysis);
         progressBar = findViewById(R.id.progressBar);
         recyclerDocPreview = findViewById(R.id.recyclerDocPreview);
         documentPreviewContainer = findViewById(R.id.documentPreviewContainer);
         mapViewReview = findViewById(R.id.mapViewReview);
         tvMapCoords = findViewById(R.id.tvMapCoords);
+        btnRunAi = findViewById(R.id.btnRunAi);
+        progressAi = findViewById(R.id.progressAi);
         ImageButton btnBack = findViewById(R.id.btnBack);
 
         btnBack.setOnClickListener(v -> finish());
@@ -105,6 +110,10 @@ public class PermitReviewActivity extends AppCompatActivity {
                 intent.putExtra("permit_id", permitId);
                 startActivity(intent);
             });
+        }
+
+        if (btnRunAi != null) {
+            btnRunAi.setOnClickListener(v -> triggerAiAnalysis());
         }
 
         loadPermit();
@@ -152,6 +161,16 @@ public class PermitReviewActivity extends AppCompatActivity {
             tvMapCoords.setText(String.format(Locale.US, "%.5f, %.5f", permit.getLatitude(), permit.getLongitude()));
         }
 
+        String aiAnalysis = permit.getAiAnalysis();
+        boolean isError = aiAnalysis != null && (aiAnalysis.startsWith("AI analysis unavailable") || aiAnalysis.startsWith("AI analysis failed"));
+        if (aiAnalysis != null && !aiAnalysis.isEmpty() && !isError) {
+            cardAiAnalysis.setVisibility(View.VISIBLE);
+            tvAiAnalysis.setText(aiAnalysis);
+            if (btnRunAi != null) btnRunAi.setVisibility(View.GONE);
+        } else {
+            if (btnRunAi != null) btnRunAi.setVisibility(View.VISIBLE);
+        }
+
         if (permit.getDocuments() != null && !permit.getDocuments().isEmpty()) {
             cardDocuments.setVisibility(View.VISIBLE);
             StringBuilder docs = new StringBuilder();
@@ -178,6 +197,10 @@ public class PermitReviewActivity extends AppCompatActivity {
     private void setupReviewMap(double lat, double lng) {
         mapViewReview.setTileSource(TileSourceFactory.MAPNIK);
         mapViewReview.setMultiTouchControls(true);
+        mapViewReview.setOnTouchListener((v, event) -> {
+            v.getParent().requestDisallowInterceptTouchEvent(true);
+            return false;
+        });
         IMapController controller = mapViewReview.getController();
         controller.setZoom(15.0);
         GeoPoint point = new GeoPoint(lat, lng);
@@ -219,6 +242,36 @@ public class PermitReviewActivity extends AppCompatActivity {
                         btnApprove.setEnabled(true);
                         btnReject.setEnabled(true);
                         Toast.makeText(PermitReviewActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void triggerAiAnalysis() {
+        if (btnRunAi != null) btnRunAi.setEnabled(false);
+        cardAiAnalysis.setVisibility(View.VISIBLE);
+        tvAiAnalysis.setText("Analyzing documents with AI...");
+        if (progressAi != null) progressAi.setVisibility(View.VISIBLE);
+
+        RetrofitClient.getInstance(this).getApi()
+                .triggerAiAnalysis(permitId)
+                .enqueue(new Callback<AiAnalysisResponse>() {
+                    @Override
+                    public void onResponse(Call<AiAnalysisResponse> call, Response<AiAnalysisResponse> response) {
+                        if (progressAi != null) progressAi.setVisibility(View.GONE);
+                        if (response.isSuccessful() && response.body() != null && response.body().getAiAnalysis() != null) {
+                            tvAiAnalysis.setText(response.body().getAiAnalysis());
+                            if (btnRunAi != null) btnRunAi.setVisibility(View.GONE);
+                        } else {
+                            tvAiAnalysis.setText("AI analysis failed. Try again later.");
+                            if (btnRunAi != null) btnRunAi.setEnabled(true);
+                        }
+                    }
+
+                    @Override
+                    public void onFailure(Call<AiAnalysisResponse> call, Throwable t) {
+                        if (progressAi != null) progressAi.setVisibility(View.GONE);
+                        tvAiAnalysis.setText("AI analysis error: " + t.getMessage());
+                        if (btnRunAi != null) btnRunAi.setEnabled(true);
                     }
                 });
     }

@@ -1,5 +1,17 @@
 import os
 import io
+_env_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+try:
+    from dotenv import load_dotenv
+    load_dotenv(_env_path, override=True)
+except ImportError:
+    if os.path.exists(_env_path):
+        with open(_env_path) as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith('#') and '=' in line:
+                    k, v = line.split('=', 1)
+                    os.environ[k.strip()] = v.strip()
 from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
@@ -71,7 +83,7 @@ def seed_data():
             email='inspector@city.gov',
             password_hash=bcrypt.generate_password_hash('1q2w3e4r').decode('utf-8'),
             role='inspector',
-            full_name='John Inspector'
+            full_name='Test Inspector'
         )
         db.session.add(inspector)
     if User.query.filter_by(username='citizen1').first() is None:
@@ -80,7 +92,7 @@ def seed_data():
             email='citizen@email.com',
             password_hash=bcrypt.generate_password_hash('1q2w3e4r').decode('utf-8'),
             role='citizen',
-            full_name='Maria Popescu'
+            full_name='Test User'
         )
         db.session.add(citizen)
     db.session.commit()
@@ -107,6 +119,9 @@ def run_migrations():
         doc_cols = [c['name'] for c in insp.get_columns('documents')]
         if 'document_label' not in doc_cols:
             conn.execute(text("ALTER TABLE documents ADD COLUMN document_label VARCHAR(200) DEFAULT ''"))
+        permit_cols2 = [c['name'] for c in insp.get_columns('permits')]
+        if 'ai_analysis' not in permit_cols2:
+            conn.execute(text("ALTER TABLE permits ADD COLUMN ai_analysis TEXT"))
         conn.commit()
 
 
@@ -245,6 +260,148 @@ def upload_document(permit_id):
     db.session.add(doc)
     db.session.commit()
     return jsonify(doc.to_dict()), 201
+
+
+REQUIRED_DOCUMENTS = {
+    'Construction Permit': [
+        'Certificat de urbanism',
+        'Extras carte funciară (CF)',
+        'Plan topografic vizat de OCPI',
+        'Proiect tehnic (DTAC) autorizat',
+        'Avize utilități (apă, gaz, electricitate)',
+        'Studiu geotehnic',
+        'Dovada achitării taxei',
+    ],
+    'Renovation Permit': [
+        'Certificat de urbanism',
+        'Releveu stare existentă',
+        'Proiect tehnic renovare',
+        'Acord asociație proprietari (dacă e cazul)',
+        'Avize utilități afectate',
+        'Dovada achitării taxei',
+    ],
+    'Business License': [
+        'Certificat înregistrare ORC (Registrul Comerțului)',
+        'Act constitutiv societate',
+        'Contract spațiu / sediu social',
+        'Aviz PSI / ISU',
+        'Cazier fiscal',
+        'Certificat constatator ORC',
+    ],
+    'Food Service Permit': [
+        'Autorizație sanitară veterinară (DSVSA)',
+        'Plan HACCP',
+        'Contract dezinsecție și deratizare',
+        'Aviz de mediu',
+        'Certificat înregistrare ORC',
+        'Buletin analiză apă',
+    ],
+    'Event Permit': [
+        'Cerere organizare eveniment',
+        'Plan de securitate',
+        'Aviz Poliție',
+        'Aviz ISU (pompieri)',
+        'Contract salubrizare',
+        'Poliță asigurare răspundere civilă',
+    ],
+    'Signage Permit': [
+        'Cerere amplasare firmă',
+        'Schița amplasament',
+        'Aviz urbanism / arhitectură',
+        'Acord proprietar imobil',
+        'Simulare foto montaj',
+    ],
+    'Demolition Permit': [
+        'Certificat de urbanism',
+        'Extras carte funciară (CF)',
+        'Proiect tehnic desființare (DTAD)',
+        'Plan de demolare',
+        'Aviz de mediu',
+        'Studiu privind gestionarea deșeurilor',
+        'Dovada achitării taxei',
+    ],
+    'Occupancy Certificate': [
+        'Proces verbal recepție la terminarea lucrărilor',
+        'Certificat de performanță energetică',
+        'Documentație cadastrală',
+        'Referatele verificatorilor de proiecte',
+        'Declarație conformitate instalații',
+        'Dovada achitării taxei',
+    ],
+}
+
+
+@app.route('/api/permits/<int:permit_id>/ai-analyze', methods=['POST'])
+@jwt_required()
+def ai_analyze(permit_id):
+    permit = Permit.query.get_or_404(permit_id)
+    if permit.ai_analysis and not permit.ai_analysis.startswith('AI analysis unavailable') and not permit.ai_analysis.startswith('AI analysis failed'):
+        return jsonify({'ai_analysis': permit.ai_analysis}), 200
+
+    api_key = os.environ.get('GEMINI_API_KEY', '')
+    if not api_key:
+        permit.ai_analysis = 'AI analysis unavailable: GEMINI_API_KEY not configured.'
+        db.session.commit()
+        return jsonify({'ai_analysis': permit.ai_analysis}), 200
+
+    docs = Document.query.filter_by(permit_id=permit_id).all()
+    if not docs:
+        permit.ai_analysis = 'No documents uploaded for analysis.'
+        db.session.commit()
+        return jsonify({'ai_analysis': permit.ai_analysis}), 200
+
+    try:
+        from google import genai
+        from PIL import Image
+
+        client = genai.Client(api_key=api_key)
+
+        required = REQUIRED_DOCUMENTS.get(permit.permit_type, [])
+        required_list = '\n'.join(f'  - {d}' for d in required) if required else '  (No specific list available)'
+
+        doc_labels = []
+        for i, d in enumerate(docs):
+            label = d.document_label if d.document_label else 'Unlabeled'
+            doc_labels.append(f'  Document {i+1}: "{label}" (file: {d.file_name})')
+        doc_list = '\n'.join(doc_labels)
+
+        prompt = (
+            f"You are an expert municipal permit document reviewer for Romanian permits.\n"
+            f"This is a \"{permit.permit_type}\" application.\n"
+            f"The applicant uploaded {len(docs)} document(s):\n{doc_list}\n\n"
+            f"Required documents for this permit type under Romanian law:\n{required_list}\n\n"
+            f"Analyze ALL the uploaded document images together. For each document:\n"
+            f"1. Identify what type of document it appears to be\n"
+            f"2. Extract key visible information (dates, names, addresses, stamps, signatures)\n"
+            f"3. Note any issues (blurry, incomplete, expired dates, missing stamps)\n\n"
+            f"Then provide:\n"
+            f"- Overall completeness assessment (which required documents appear present/missing)\n"
+            f"- Any warnings or concerns\n"
+            f"- Brief recommendation for the inspector\n\n"
+            f"Respond in a clear, structured format. Be concise but thorough."
+        )
+
+        contents = [prompt]
+        for d in docs:
+            try:
+                img = Image.open(d.file_path)
+                contents.append(img)
+            except Exception:
+                contents.append(f"[Could not load image: {d.file_name}]")
+
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=contents
+        )
+        analysis_text = response.text
+        permit.ai_analysis = analysis_text
+        db.session.commit()
+        return jsonify({'ai_analysis': permit.ai_analysis}), 200
+    except Exception as e:
+        error_msg = f'AI analysis failed: {str(e)}'
+        permit.ai_analysis = error_msg
+        db.session.commit()
+        return jsonify({'ai_analysis': error_msg}), 200
 
 
 @app.route('/api/permits/<int:permit_id>/pay', methods=['POST'])

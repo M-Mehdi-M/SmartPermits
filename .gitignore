@@ -32,3 +32,14 @@ google-services.json
 
 # Android Profiling
 *.hprof
+
+# Environment files
+.env
+smart_permits_api/.env
+
+# Python
+__pycache__/
+*.pyc
+smart_permits_api/venv/
+smart_permits_api/instance/
+smart_permits_api/uploads/

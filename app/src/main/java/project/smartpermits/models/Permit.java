@@ -55,6 +55,9 @@ public class Permit {
     @SerializedName("estimated_processing_time")
     private String estimatedProcessingTime;
 
+    @SerializedName("ai_analysis")
+    private String aiAnalysis;
+
     @SerializedName("deleted_at")
     private String deletedAt;
 
@@ -78,6 +81,7 @@ public class Permit {
     public Double getLatitude() { return latitude; }
     public Double getLongitude() { return longitude; }
     public String getEstimatedProcessingTime() { return estimatedProcessingTime; }
+    public String getAiAnalysis() { return aiAnalysis; }
     public String getDeletedAt() { return deletedAt; }
     public Integer getDaysUntilPermanentDelete() { return daysUntilPermanentDelete; }
 }
