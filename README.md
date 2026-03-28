@@ -6,21 +6,21 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 
 ### Core Features
 - **Online Application** - Single-page permit application with permit type selection, description, fee preview, document upload checklist, and optional map location
-- **Permit Location Map** - For Construction and Renovation permits, citizens pin the exact work location on an interactive OpenStreetMap (osmdroid). A crosshair overlay marks the center of the map, users drag the map to position it and press the "Pin Here" button to place the marker. Touch events are properly intercepted so the map scrolls independently from the page. The map pin with coordinates is visible to inspectors on the review screen and to citizens on the permit detail screen. No API key required
-- **Romanian-Law Document Checklist** - Each permit type displays a checklist of required documents based on Romanian legislation (e.g., Certificat de urbanism, Proiect tehnic DTAC, Avize utilități for Construction Permits). Each document has an individual upload button with a checkbox that marks green when uploaded
+- **Permit Location Map** - For Construction and Renovation permits, citizens pin the exact work location on an interactive OpenStreetMap (osmdroid). A crosshair overlay marks the center of the map, users drag the map to position it and press the "Pin Here" button to place the marker. Includes a location search bar where users can type a city or address name and the map navigates there using Android Geocoder. Touch events are properly intercepted so the map scrolls independently from the page. The map pin with coordinates is visible to inspectors on the review screen and to citizens on the permit detail screen. No API key required
+- **Document Checklist** - Each permit type displays a checklist of required documents (e.g., Urban Planning Certificate, Authorized Technical Project, Utility Approvals for Construction Permits). Each document has an individual upload button with a checkbox that marks green when uploaded
 - **Role-Based Dashboards** - Separate interfaces for citizens and inspectors with tailored workflows
 - **Navigation Drawer** - Professional side menu on both dashboards with quick access to all features
 - **Permit Tracking** - Real-time status tracking with color-coded chips (Submitted, Approved, Rejected, Completed)
 - **Permit History** - Filterable history view with tabs (All, Approved, Completed, Rejected)
-- **Inspector Review** - Inspectors view pending applications, review details, see the work location on a map, preview all attached documents in a vertical ordered list with numbered labels (e.g., "#1 — Certificat de urbanism") and thumbnails, then approve or reject with notes
+- **Inspector Review** - Inspectors view pending applications, review details, see the work location on a map, preview all attached documents in a vertical ordered list with numbered labels (e.g., "#1 — Urban Planning Certificate") and thumbnails, then approve or reject with notes
 - **Review History** - Inspectors can browse past reviewed permits filtered by outcome
 - **Payment Simulation** - Citizens pay fees for approved permits, changing status to Completed
 - **Delete Account** - Users can permanently delete their account and all associated data from the profile screen with confirmation dialog
 
 ### AI Features
-- **AI Document Verification** - When a citizen submits a permit application with uploaded documents, the system automatically sends all document images to Google Gemini 2.5 Flash in a single API request. The AI analyzes every document together, identifies document types, extracts key information (dates, names, stamps), checks completeness against Romanian legal requirements, flags issues (blurry images, expired dates, missing stamps, irrelevant files), and provides a structured recommendation. The inspector sees the full AI analysis card on the review screen before making a decision. Only one AI request is made per permit submission to minimize cost
+- **AI Document Verification** - When a citizen submits a permit application with uploaded documents, the system automatically sends all document images to Google Gemini 2.5 Flash in a single API request. The AI analyzes every document together, identifies document types, extracts key information (dates, names, stamps), checks completeness against permit requirements, flags issues (blurry images, expired dates, missing stamps, irrelevant files), and provides a structured recommendation. The AI analysis text is rendered with proper formatting (bold headings, bullet points, styled sections) using a markdown-to-Spannable converter. The inspector sees the full AI analysis card on the review screen before making a decision. Only one AI request is made per permit submission to minimize cost
 - **Manual AI Trigger** - If the AI analysis was not available at submission time (e.g., API key not configured), the inspector can manually trigger it from the review screen using the "Run AI Analysis" button
-- **Environment Variable Configuration** - The Gemini API key is stored in a `.env` file inside `smart_permits_api/`, never hardcoded. A `.env.example` file is provided as a template
+- **Environment Variable Configuration** - The Gemini API key is stored in a `.env` file inside `smart_permits_api/`, never hardcoded
 
 ### Advanced Features
 - **Push Notifications** - When an inspector approves/rejects a permit, notifications are sent to the citizen via Firebase Cloud Messaging (FCM). Comments and appointment scheduling also trigger notifications
@@ -29,6 +29,7 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **In-App Chat / Comments** - Comment thread on each permit where citizens ask questions and inspectors request additional documents
 - **PDF Permit Certificate** - When a permit is Completed, a downloadable PDF certificate with QR code is generated using ReportLab
 - **Search & Filter** - Search bar and filter chips on both citizen and inspector dashboards to filter by permit type, status, applicant name, and date
+- **Map Location Search** - Geocoder-based search field on the permit application map allowing users to type a city, address, or landmark and navigate the map directly to that location
 - **Estimated Processing Time** - Shows citizens average review time based on historical data for each permit type
 - **Dark Mode** - Toggle in Settings with manual dark mode switch, follow-system option, and proper dark theme colors
 - **Permit Renewal / Reapply** - For completed permits, Renew button creates a new application pre-filled with previous data. For rejected permits, Reapply button does the same
@@ -141,11 +142,10 @@ SmartPermits/
 |   +-- models.py
 |   +-- requirements.txt
 |   +-- Dockerfile
-|   +-- .env.example
+|   +-- .env
 |   +-- uploads/
 |   +-- instance/
 +-- TESTING_GUIDE.md
-+-- AI_FEATURE_GUIDE.md
 +-- README.md
 ```
 
@@ -179,11 +179,7 @@ SmartPermits/
    pip install -r requirements.txt
    ```
 
-4. Configure your Gemini API key for AI document analysis:
-   ```bash
-   copy .env.example .env
-   ```
-   Edit `.env` and set your actual Gemini API key (get one at https://aistudio.google.com/apikey):
+4. Configure your Gemini API key for AI document analysis. Edit `.env` and set your actual Gemini API key (get one at https://aistudio.google.com/apikey):
    ```
    GEMINI_API_KEY=your-actual-api-key-here
    ```
@@ -282,13 +278,14 @@ When a citizen submits a permit application with uploaded documents, the system 
 1. Citizen fills out permit details and uploads required documents from the checklist on a single page
 2. On submission, all documents are uploaded then a single POST request is sent to `/api/permits/{id}/ai-analyze`
 3. The backend collects all document images for the permit and sends them to Gemini in one request
-4. Gemini analyzes all documents together with a prompt that includes the permit type and Romanian legal requirements
+4. Gemini analyzes all documents together with a prompt that includes the permit type and required document list
 5. The analysis is stored in the permit record and displayed to the inspector on the review screen
+6. The AI response text is rendered with proper formatting (bold headings, bullet points, italic sections) using a markdown-to-Spannable converter
 
 The AI analysis includes:
 - Document type identification for each uploaded file
 - Key information extraction (dates, names, addresses, stamps, signatures)
-- Completeness check against Romanian legal requirements
+- Completeness check against required documents for the permit type
 - Detection of irrelevant or incorrect documents
 - Warnings about issues (blurry images, expired dates, missing stamps)
 - Overall recommendation for the inspector
@@ -306,24 +303,29 @@ Cost: one Gemini API call per permit submission.
 | rejected  | Red     | Rejected by inspector                |
 | completed | Indigo  | Approved and paid                    |
 
-## Required Documents per Permit Type (Romanian Law)
+## Required Documents per Permit Type
 
-Each permit type requires specific documents based on Romanian legislation. The app presents a checklist with individual upload buttons.
+Each permit type requires specific documents. The app presents a checklist with individual upload buttons.
 
 | Permit Type | Required Documents |
 |---|---|
-| Construction Permit | Certificat de urbanism, Extras carte funciară (CF), Plan topografic vizat de OCPI, Proiect tehnic (DTAC) autorizat, Avize utilități (apă, gaz, electricitate), Studiu geotehnic, Dovada achitării taxei |
-| Renovation Permit | Certificat de urbanism, Releveu stare existentă, Proiect tehnic renovare, Acord asociație proprietari, Avize utilități afectate, Dovada achitării taxei |
-| Business License | Certificat înregistrare ORC, Act constitutiv societate, Contract spațiu / sediu social, Aviz PSI / ISU, Cazier fiscal, Certificat constatator ORC |
-| Food Service Permit | Autorizație sanitară veterinară (DSVSA), Plan HACCP, Contract dezinsecție și deratizare, Aviz de mediu, Certificat înregistrare ORC, Buletin analiză apă |
-| Event Permit | Cerere organizare eveniment, Plan de securitate, Aviz Poliție, Aviz ISU (pompieri), Contract salubrizare, Poliță asigurare răspundere civilă |
-| Signage Permit | Cerere amplasare firmă, Schița amplasament, Aviz urbanism / arhitectură, Acord proprietar imobil, Simulare foto montaj |
-| Demolition Permit | Certificat de urbanism, Extras carte funciară (CF), Proiect tehnic desființare (DTAD), Plan de demolare, Aviz de mediu, Studiu gestionarea deșeurilor, Dovada achitării taxei |
-| Occupancy Certificate | Proces verbal recepție la terminarea lucrărilor, Certificat de performanță energetică, Documentație cadastrală, Referatele verificatorilor de proiecte, Declarație conformitate instalații, Dovada achitării taxei |
+| Construction Permit | Urban Planning Certificate, Land Registry Extract, Topographic Survey Plan, Authorized Technical Project, Utility Approvals (Water, Gas, Electricity), Geotechnical Study, Fee Payment Proof |
+| Renovation Permit | Urban Planning Certificate, Existing Condition Survey, Renovation Technical Project, Homeowners Association Approval (if applicable), Affected Utility Approvals, Fee Payment Proof |
+| Business License | Business Registration Certificate, Articles of Incorporation, Office Space Lease Agreement, Fire Safety Approval, Tax Clearance Certificate, Business Registry Certificate |
+| Food Service Permit | Veterinary Sanitary Authorization, HACCP Plan, Pest Control Service Contract, Environmental Approval, Business Registration Certificate, Water Quality Analysis Report |
+| Event Permit | Event Organization Request, Security Plan, Police Approval, Fire Department Approval, Sanitation Service Contract, Liability Insurance Policy |
+| Signage Permit | Signage Placement Request, Site Sketch, Urban Planning / Architecture Approval, Property Owner Agreement, Photo Simulation / Mockup |
+| Demolition Permit | Urban Planning Certificate, Land Registry Extract, Demolition Technical Project, Demolition Plan, Environmental Approval, Waste Management Study, Fee Payment Proof |
+| Occupancy Certificate | Work Completion Inspection Report, Energy Performance Certificate, Cadastral Documentation, Project Verifier Reports, Installation Compliance Declaration, Fee Payment Proof |
 
 ## Permit Location Map
 
-For **Construction Permit** and **Renovation Permit** types, the application includes an interactive OpenStreetMap (via osmdroid) where citizens drag the map to position a crosshair at the desired work location, then press the "Pin Here" button to place a marker. The map properly intercepts touch events so scrolling the map does not scroll the page. The coordinates (latitude/longitude) are stored with the permit and displayed on both the citizen's permit detail screen and the inspector's review screen. No Google Maps API key is required.
+For **Construction Permit** and **Renovation Permit** types, the application includes an interactive OpenStreetMap (via osmdroid) where citizens can:
+1. **Search for a location** using the search bar above the map - type a city, address, or landmark and tap "Search" to navigate the map there (powered by Android Geocoder)
+2. **Drag the map** to position a crosshair at the desired work location
+3. **Press "Pin Here"** to place a marker at the crosshair position
+
+The map properly intercepts touch events so scrolling the map does not scroll the page. The coordinates (latitude/longitude) are stored with the permit and displayed on both the citizen's permit detail screen and the inspector's review screen. No Google Maps API key is required.
 
 ## Building
 

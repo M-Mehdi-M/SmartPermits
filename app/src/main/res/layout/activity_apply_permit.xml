@@ -162,6 +162,36 @@
                                 android:textColor="@color/primary"
                                 android:layout_marginBottom="8dp" />
 
+                            <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical"
+                                android:layout_marginBottom="8dp">
+
+                                <com.google.android.material.textfield.TextInputEditText
+                                    android:id="@+id/etMapSearch"
+                                    android:layout_width="0dp"
+                                    android:layout_height="44dp"
+                                    android:layout_weight="1"
+                                    android:hint="Search city or address..."
+                                    android:textSize="13sp"
+                                    android:inputType="text"
+                                    android:background="@drawable/input_background"
+                                    android:paddingStart="12dp"
+                                    android:paddingEnd="12dp"
+                                    android:layout_marginEnd="8dp" />
+
+                                <com.google.android.material.button.MaterialButton
+                                    android:id="@+id/btnMapSearch"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="44dp"
+                                    android:text="Search"
+                                    android:textSize="12sp"
+                                    app:cornerRadius="12dp"
+                                    android:backgroundTint="@color/primary" />
+                            </LinearLayout>
+
                             <FrameLayout
                                 android:layout_width="match_parent"
                                 android:layout_height="300dp">
@@ -211,7 +241,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="📋 Required Documents (Romanian Law)"
+                                android:text="📋 Required Documents"
                                 android:textSize="14sp"
                                 android:textStyle="bold"
                                 android:textColor="@color/primary"

@@ -19,11 +19,7 @@
    pip install -r requirements.txt
    ```
 
-4. Configure the Gemini API key for AI document analysis:
-   ```
-   copy .env.example .env
-   ```
-   Edit `.env` and set your actual Gemini API key from https://aistudio.google.com/apikey
+4. Configure the Gemini API key for AI document analysis. Edit `.env` and set your actual Gemini API key from https://aistudio.google.com/apikey
 
 5. Start the server:
    ```
@@ -98,24 +94,25 @@
 3. Results filter in real-time
 4. Pull-to-refresh to reload pending permits
 
-### 5. Apply for Permit (Single Page with Document Checklist + Map + AI)
+### 5. Apply for Permit (Single Page with Document Checklist + Map Search + AI)
 
 1. From Citizen Dashboard, tap "Apply for Permit" FAB
 2. Select permit type from the dropdown
-3. A checklist of required documents (based on Romanian law) appears below the fee preview
+3. A checklist of required documents appears below the fee preview
 4. Each document in the checklist has a checkbox and "Upload" button
 5. Tap "Upload" next to any document to pick a file from device storage
 6. After upload, the checkbox turns green with a checkmark
-7. For "Construction Permit" or "Renovation Permit": an interactive map appears with a crosshair overlay
-8. Drag the map to position the crosshair at the desired work location (map scrolls independently from the page)
-9. Press the "Pin Here" button to place the marker at the exact crosshair position
-10. Coordinates display below the map
-11. You can drag the map again and press "Pin Here" to move the pin
-12. Enter a description and see the fee preview
-13. Tap "Submit Application"
-14. The app uploads all documents then automatically triggers AI analysis via Gemini
-15. Success screen appears
-16. Tap "Back to Dashboard" and see new permit
+7. For "Construction Permit" or "Renovation Permit": an interactive map appears with a crosshair overlay and a search bar
+8. **Map Location Search**: Type a city or address (e.g., "New York", "123 Main Street") in the search field above the map and tap "Search" to navigate the map to that location
+9. Drag the map to position the crosshair at the desired work location (map scrolls independently from the page)
+10. Press the "Pin Here" button to place the marker at the exact crosshair position
+11. Coordinates display below the map
+12. You can drag the map again and press "Pin Here" to move the pin
+13. Enter a description and see the fee preview
+14. Tap "Submit Application"
+15. The app uploads all documents then automatically triggers AI analysis via Gemini
+16. Success screen appears
+17. Tap "Back to Dashboard" and see new permit
 
 ### 6. Permit Details, Map, and Estimated Processing Time
 
@@ -132,11 +129,14 @@
 
 1. Login as inspector
 2. Tap a pending permit
-3. See the **AI Document Analysis** card at the top showing:
+3. See the **AI Document Analysis** card at the top showing properly formatted text with:
+   - Bold headings and section titles rendered correctly (no raw ** markers)
+   - Bullet points displayed as proper list items
+   - Italic text for emphasis where applicable
    - Document type identification for each uploaded file
    - Key information extracted (dates, names, addresses, stamps)
    - Detection of irrelevant or incorrect documents
-   - Completeness assessment against Romanian legal requirements
+   - Completeness assessment against required documents
    - Any warnings or concerns
    - Overall recommendation
 4. If no AI analysis exists, a "Run AI Analysis" button appears to manually trigger it
@@ -157,8 +157,9 @@
    - Overall: completeness score, missing documents, warnings
    - Detection of irrelevant or incorrect files
    - Recommendation for the inspector
-4. The analysis is stored permanently with the permit
-5. Subsequent views of the same permit show the cached analysis (no additional API calls)
+4. The analysis text is rendered with proper markdown formatting (bold, italic, bullets, headers)
+5. The analysis is stored permanently with the permit
+6. Subsequent views of the same permit show the cached analysis (no additional API calls)
 
 ### 9. In-App Chat / Comments
 
@@ -341,14 +342,27 @@
 7. App returns to the login screen
 8. Try logging in with the deleted credentials - login fails
 
+### 26. Map Location Search
+
+1. From Citizen Dashboard, tap "Apply for Permit"
+2. Select "Construction Permit" or "Renovation Permit"
+3. The map section appears with a search bar above it
+4. Type a city name (e.g., "London") in the search field
+5. Tap "Search" button
+6. The map navigates to the searched location and zooms in
+7. A toast shows the resolved address
+8. Type another address and search again to navigate elsewhere
+9. If the location is not found, a "Location not found" toast appears
+10. After navigating to the right area, drag the map and press "Pin Here" to set the exact location
+
 ---
 
 ## Complete End-to-End Test Flow
 
 1. Register a new citizen account
 2. Apply for a "Construction Permit" with description
-3. Upload required documents from the Romanian law checklist (Certificat de urbanism, Proiect tehnic, etc.)
-4. Drag the map and press "Pin Here" to pin a location (map scrolls independently from page)
+3. Upload required documents from the checklist (Urban Planning Certificate, Authorized Technical Project, etc.)
+4. Use the map search bar to navigate to a city, then drag the map and press "Pin Here" to pin a location
 5. Tap "Submit Application" - AI analysis runs automatically via Gemini
 6. Verify permit appears with "Submitted" status
 7. Search for it using the search bar
@@ -356,7 +370,7 @@
 9. Logout
 10. Login as inspector (`inspector1` / `1q2w3e4r`)
 11. Search for the pending permit by applicant name
-12. Open the permit and see the AI Document Analysis card with the Gemini assessment
+12. Open the permit and see the AI Document Analysis card with properly formatted text (bold, bullets, headers)
 13. Review the permit, see the map with pinned location, view all documents in ordered list
 14. Add a comment asking for more info
 15. Approve the permit with notes
@@ -423,6 +437,11 @@
 - If no key is configured at submission time, the inspector can trigger AI analysis manually using the "Run AI Analysis" button on the review screen
 - Restart the Flask server after creating or editing the `.env` file
 
+### Map Search Not Working
+- Ensure the device has internet connectivity (Geocoder requires network)
+- Try a well-known city name (e.g., "London", "Tokyo") for best results
+- If search fails, you can still manually drag the map to the desired location
+
 ### Map Not Scrolling Properly
 - The map intercepts touch events to scroll independently from the page
 - Use one finger to pan the map, pinch to zoom
@@ -453,22 +472,22 @@
 | Demolition Permit     | $450.00 |
 | Occupancy Certificate | $120.00 |
 
-## Required Documents per Permit Type (Romanian Law)
+## Required Documents per Permit Type
 
 | Permit Type | Required Documents |
 |---|---|
-| Construction Permit | Certificat de urbanism, Extras carte funciară (CF), Plan topografic vizat de OCPI, Proiect tehnic (DTAC) autorizat, Avize utilități (apă, gaz, electricitate), Studiu geotehnic, Dovada achitării taxei |
-| Renovation Permit | Certificat de urbanism, Releveu stare existentă, Proiect tehnic renovare, Acord asociație proprietari (dacă e cazul), Avize utilități afectate, Dovada achitării taxei |
-| Business License | Certificat înregistrare ORC (Registrul Comerțului), Act constitutiv societate, Contract spațiu / sediu social, Aviz PSI / ISU, Cazier fiscal, Certificat constatator ORC |
-| Food Service Permit | Autorizație sanitară veterinară (DSVSA), Plan HACCP, Contract dezinsecție și deratizare, Aviz de mediu, Certificat înregistrare ORC, Buletin analiză apă |
-| Event Permit | Cerere organizare eveniment, Plan de securitate, Aviz Poliție, Aviz ISU (pompieri), Contract salubrizare, Poliță asigurare răspundere civilă |
-| Signage Permit | Cerere amplasare firmă, Schița amplasament, Aviz urbanism / arhitectură, Acord proprietar imobil, Simulare foto montaj |
-| Demolition Permit | Certificat de urbanism, Extras carte funciară (CF), Proiect tehnic desființare (DTAD), Plan de demolare, Aviz de mediu, Studiu gestionarea deșeurilor, Dovada achitării taxei |
-| Occupancy Certificate | Proces verbal recepție la terminarea lucrărilor, Certificat de performanță energetică, Documentație cadastrală, Referatele verificatorilor de proiecte, Declarație conformitate instalații, Dovada achitării taxei |
+| Construction Permit | Urban Planning Certificate, Land Registry Extract, Topographic Survey Plan, Authorized Technical Project, Utility Approvals (Water, Gas, Electricity), Geotechnical Study, Fee Payment Proof |
+| Renovation Permit | Urban Planning Certificate, Existing Condition Survey, Renovation Technical Project, Homeowners Association Approval (if applicable), Affected Utility Approvals, Fee Payment Proof |
+| Business License | Business Registration Certificate, Articles of Incorporation, Office Space Lease Agreement, Fire Safety Approval, Tax Clearance Certificate, Business Registry Certificate |
+| Food Service Permit | Veterinary Sanitary Authorization, HACCP Plan, Pest Control Service Contract, Environmental Approval, Business Registration Certificate, Water Quality Analysis Report |
+| Event Permit | Event Organization Request, Security Plan, Police Approval, Fire Department Approval, Sanitation Service Contract, Liability Insurance Policy |
+| Signage Permit | Signage Placement Request, Site Sketch, Urban Planning / Architecture Approval, Property Owner Agreement, Photo Simulation / Mockup |
+| Demolition Permit | Urban Planning Certificate, Land Registry Extract, Demolition Technical Project, Demolition Plan, Environmental Approval, Waste Management Study, Fee Payment Proof |
+| Occupancy Certificate | Work Completion Inspection Report, Energy Performance Certificate, Cadastral Documentation, Project Verifier Reports, Installation Compliance Declaration, Fee Payment Proof |
 
 ## File Locations
 - **APK Output**: `app/build/outputs/apk/debug/app-debug.apk`
 - **Backend Database**: `smart_permits_api/instance/smartpermits.db`
 - **Uploaded Documents**: `smart_permits_api/uploads/`
 - **Backend Server**: `smart_permits_api/app.py`
-- **AI Config**: `smart_permits_api/.env` (create from `.env.example`)
+- **AI Config**: `smart_permits_api/.env`

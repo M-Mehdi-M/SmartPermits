@@ -264,69 +264,69 @@ def upload_document(permit_id):
 
 REQUIRED_DOCUMENTS = {
     'Construction Permit': [
-        'Certificat de urbanism',
-        'Extras carte funciară (CF)',
-        'Plan topografic vizat de OCPI',
-        'Proiect tehnic (DTAC) autorizat',
-        'Avize utilități (apă, gaz, electricitate)',
-        'Studiu geotehnic',
-        'Dovada achitării taxei',
+        'Urban Planning Certificate',
+        'Land Registry Extract',
+        'Topographic Survey Plan',
+        'Authorized Technical Project',
+        'Utility Approvals (Water, Gas, Electricity)',
+        'Geotechnical Study',
+        'Fee Payment Proof',
     ],
     'Renovation Permit': [
-        'Certificat de urbanism',
-        'Releveu stare existentă',
-        'Proiect tehnic renovare',
-        'Acord asociație proprietari (dacă e cazul)',
-        'Avize utilități afectate',
-        'Dovada achitării taxei',
+        'Urban Planning Certificate',
+        'Existing Condition Survey',
+        'Renovation Technical Project',
+        'Homeowners Association Approval (if applicable)',
+        'Affected Utility Approvals',
+        'Fee Payment Proof',
     ],
     'Business License': [
-        'Certificat înregistrare ORC (Registrul Comerțului)',
-        'Act constitutiv societate',
-        'Contract spațiu / sediu social',
-        'Aviz PSI / ISU',
-        'Cazier fiscal',
-        'Certificat constatator ORC',
+        'Business Registration Certificate',
+        'Articles of Incorporation',
+        'Office Space Lease Agreement',
+        'Fire Safety Approval',
+        'Tax Clearance Certificate',
+        'Business Registry Certificate',
     ],
     'Food Service Permit': [
-        'Autorizație sanitară veterinară (DSVSA)',
-        'Plan HACCP',
-        'Contract dezinsecție și deratizare',
-        'Aviz de mediu',
-        'Certificat înregistrare ORC',
-        'Buletin analiză apă',
+        'Veterinary Sanitary Authorization',
+        'HACCP Plan',
+        'Pest Control Service Contract',
+        'Environmental Approval',
+        'Business Registration Certificate',
+        'Water Quality Analysis Report',
     ],
     'Event Permit': [
-        'Cerere organizare eveniment',
-        'Plan de securitate',
-        'Aviz Poliție',
-        'Aviz ISU (pompieri)',
-        'Contract salubrizare',
-        'Poliță asigurare răspundere civilă',
+        'Event Organization Request',
+        'Security Plan',
+        'Police Approval',
+        'Fire Department Approval',
+        'Sanitation Service Contract',
+        'Liability Insurance Policy',
     ],
     'Signage Permit': [
-        'Cerere amplasare firmă',
-        'Schița amplasament',
-        'Aviz urbanism / arhitectură',
-        'Acord proprietar imobil',
-        'Simulare foto montaj',
+        'Signage Placement Request',
+        'Site Sketch',
+        'Urban Planning / Architecture Approval',
+        'Property Owner Agreement',
+        'Photo Simulation / Mockup',
     ],
     'Demolition Permit': [
-        'Certificat de urbanism',
-        'Extras carte funciară (CF)',
-        'Proiect tehnic desființare (DTAD)',
-        'Plan de demolare',
-        'Aviz de mediu',
-        'Studiu privind gestionarea deșeurilor',
-        'Dovada achitării taxei',
+        'Urban Planning Certificate',
+        'Land Registry Extract',
+        'Demolition Technical Project',
+        'Demolition Plan',
+        'Environmental Approval',
+        'Waste Management Study',
+        'Fee Payment Proof',
     ],
     'Occupancy Certificate': [
-        'Proces verbal recepție la terminarea lucrărilor',
-        'Certificat de performanță energetică',
-        'Documentație cadastrală',
-        'Referatele verificatorilor de proiecte',
-        'Declarație conformitate instalații',
-        'Dovada achitării taxei',
+        'Work Completion Inspection Report',
+        'Energy Performance Certificate',
+        'Cadastral Documentation',
+        'Project Verifier Reports',
+        'Installation Compliance Declaration',
+        'Fee Payment Proof',
     ],
 }
 
@@ -366,10 +366,10 @@ def ai_analyze(permit_id):
         doc_list = '\n'.join(doc_labels)
 
         prompt = (
-            f"You are an expert municipal permit document reviewer for Romanian permits.\n"
+            f"You are an expert municipal permit document reviewer.\n"
             f"This is a \"{permit.permit_type}\" application.\n"
             f"The applicant uploaded {len(docs)} document(s):\n{doc_list}\n\n"
-            f"Required documents for this permit type under Romanian law:\n{required_list}\n\n"
+            f"Required documents for this permit type:\n{required_list}\n\n"
             f"Analyze ALL the uploaded document images together. For each document:\n"
             f"1. Identify what type of document it appears to be\n"
             f"2. Extract key visible information (dates, names, addresses, stamps, signatures)\n"

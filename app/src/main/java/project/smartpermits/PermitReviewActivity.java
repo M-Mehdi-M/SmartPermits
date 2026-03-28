@@ -3,7 +3,11 @@ package project.smartpermits;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
+import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.TextUtils;
+import android.text.style.RelativeSizeSpan;
+import android.text.style.StyleSpan;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -165,7 +169,7 @@ public class PermitReviewActivity extends AppCompatActivity {
         boolean isError = aiAnalysis != null && (aiAnalysis.startsWith("AI analysis unavailable") || aiAnalysis.startsWith("AI analysis failed"));
         if (aiAnalysis != null && !aiAnalysis.isEmpty() && !isError) {
             cardAiAnalysis.setVisibility(View.VISIBLE);
-            tvAiAnalysis.setText(aiAnalysis);
+            tvAiAnalysis.setText(formatMarkdown(aiAnalysis));
             if (btnRunAi != null) btnRunAi.setVisibility(View.GONE);
         } else {
             if (btnRunAi != null) btnRunAi.setVisibility(View.VISIBLE);
@@ -259,7 +263,7 @@ public class PermitReviewActivity extends AppCompatActivity {
                     public void onResponse(Call<AiAnalysisResponse> call, Response<AiAnalysisResponse> response) {
                         if (progressAi != null) progressAi.setVisibility(View.GONE);
                         if (response.isSuccessful() && response.body() != null && response.body().getAiAnalysis() != null) {
-                            tvAiAnalysis.setText(response.body().getAiAnalysis());
+                            tvAiAnalysis.setText(formatMarkdown(response.body().getAiAnalysis()));
                             if (btnRunAi != null) btnRunAi.setVisibility(View.GONE);
                         } else {
                             tvAiAnalysis.setText("AI analysis failed. Try again later.");
@@ -286,6 +290,100 @@ public class PermitReviewActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         if (mapViewReview != null) mapViewReview.onPause();
+    }
+
+    private SpannableStringBuilder formatMarkdown(String raw) {
+        SpannableStringBuilder sb = new SpannableStringBuilder();
+        if (raw == null || raw.isEmpty()) return sb;
+
+        String[] lines = raw.split("\n");
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+
+            boolean isHeader = false;
+            float headerScale = 1.0f;
+            if (line.startsWith("### ")) {
+                line = line.substring(4);
+                isHeader = true;
+                headerScale = 1.1f;
+            } else if (line.startsWith("## ")) {
+                line = line.substring(3);
+                isHeader = true;
+                headerScale = 1.2f;
+            } else if (line.startsWith("# ")) {
+                line = line.substring(2);
+                isHeader = true;
+                headerScale = 1.3f;
+            }
+
+            if (line.startsWith("- ") || line.startsWith("* ")) {
+                line = "  \u2022 " + line.substring(2);
+            }
+
+            SpannableStringBuilder lineSb = new SpannableStringBuilder();
+            int pos = 0;
+            while (pos < line.length()) {
+                int boldStart = line.indexOf("**", pos);
+                if (boldStart == -1) {
+                    String segment = line.substring(pos);
+                    lineSb.append(processItalic(segment));
+                    break;
+                }
+                if (boldStart > pos) {
+                    lineSb.append(processItalic(line.substring(pos, boldStart)));
+                }
+                int boldEnd = line.indexOf("**", boldStart + 2);
+                if (boldEnd == -1) {
+                    lineSb.append(processItalic(line.substring(boldStart)));
+                    break;
+                }
+                String boldText = line.substring(boldStart + 2, boldEnd);
+                int start = lineSb.length();
+                lineSb.append(processItalic(boldText));
+                lineSb.setSpan(new StyleSpan(Typeface.BOLD), start, lineSb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                pos = boldEnd + 2;
+            }
+
+            if (isHeader) {
+                int start = sb.length();
+                sb.append(lineSb);
+                sb.setSpan(new StyleSpan(Typeface.BOLD), start, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                sb.setSpan(new RelativeSizeSpan(headerScale), start, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            } else {
+                sb.append(lineSb);
+            }
+
+            if (i < lines.length - 1) {
+                sb.append("\n");
+            }
+        }
+        return sb;
+    }
+
+    private SpannableStringBuilder processItalic(String text) {
+        SpannableStringBuilder sb = new SpannableStringBuilder();
+        int pos = 0;
+        while (pos < text.length()) {
+            int italicStart = text.indexOf("*", pos);
+            if (italicStart == -1) {
+                sb.append(text.substring(pos));
+                break;
+            }
+            if (italicStart > pos) {
+                sb.append(text.substring(pos, italicStart));
+            }
+            int italicEnd = text.indexOf("*", italicStart + 1);
+            if (italicEnd == -1) {
+                sb.append(text.substring(italicStart));
+                break;
+            }
+            String italicText = text.substring(italicStart + 1, italicEnd);
+            int start = sb.length();
+            sb.append(italicText);
+            sb.setSpan(new StyleSpan(Typeface.ITALIC), start, sb.length(), Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            pos = italicEnd + 1;
+        }
+        return sb;
     }
 
     private class DocCarouselAdapter extends RecyclerView.Adapter<DocCarouselAdapter.VH> {

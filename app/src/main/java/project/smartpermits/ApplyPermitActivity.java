@@ -1,6 +1,8 @@
 package project.smartpermits;
 
 import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -66,6 +68,8 @@ public class ApplyPermitActivity extends AppCompatActivity {
     private MaterialButton btnPinHere;
     private LinearLayout documentChecklistContainer;
     private LinearLayout checklistItems;
+    private TextInputEditText etMapSearch;
+    private MaterialButton btnMapSearch;
 
     private List<PermitType> permitTypes;
     private String selectedType = "";
@@ -83,69 +87,69 @@ public class ApplyPermitActivity extends AppCompatActivity {
     private static final Map<String, String[]> REQUIRED_DOCUMENTS = new LinkedHashMap<>();
     static {
         REQUIRED_DOCUMENTS.put("Construction Permit", new String[]{
-                "Certificat de urbanism",
-                "Extras carte funciară (CF)",
-                "Plan topografic vizat de OCPI",
-                "Proiect tehnic (DTAC) autorizat",
-                "Avize utilități (apă, gaz, electricitate)",
-                "Studiu geotehnic",
-                "Dovada achitării taxei"
+                "Urban Planning Certificate",
+                "Land Registry Extract",
+                "Topographic Survey Plan",
+                "Authorized Technical Project",
+                "Utility Approvals (Water, Gas, Electricity)",
+                "Geotechnical Study",
+                "Fee Payment Proof"
         });
         REQUIRED_DOCUMENTS.put("Renovation Permit", new String[]{
-                "Certificat de urbanism",
-                "Releveu stare existentă",
-                "Proiect tehnic renovare",
-                "Acord asociație proprietari (dacă e cazul)",
-                "Avize utilități afectate",
-                "Dovada achitării taxei"
+                "Urban Planning Certificate",
+                "Existing Condition Survey",
+                "Renovation Technical Project",
+                "Homeowners Association Approval (if applicable)",
+                "Affected Utility Approvals",
+                "Fee Payment Proof"
         });
         REQUIRED_DOCUMENTS.put("Business License", new String[]{
-                "Certificat înregistrare ORC (Registrul Comerțului)",
-                "Act constitutiv societate",
-                "Contract spațiu / sediu social",
-                "Aviz PSI / ISU",
-                "Cazier fiscal",
-                "Certificat constatator ORC"
+                "Business Registration Certificate",
+                "Articles of Incorporation",
+                "Office Space Lease Agreement",
+                "Fire Safety Approval",
+                "Tax Clearance Certificate",
+                "Business Registry Certificate"
         });
         REQUIRED_DOCUMENTS.put("Food Service Permit", new String[]{
-                "Autorizație sanitară veterinară (DSVSA)",
-                "Plan HACCP",
-                "Contract dezinsecție și deratizare",
-                "Aviz de mediu",
-                "Certificat înregistrare ORC",
-                "Buletin analiză apă"
+                "Veterinary Sanitary Authorization",
+                "HACCP Plan",
+                "Pest Control Service Contract",
+                "Environmental Approval",
+                "Business Registration Certificate",
+                "Water Quality Analysis Report"
         });
         REQUIRED_DOCUMENTS.put("Event Permit", new String[]{
-                "Cerere organizare eveniment",
-                "Plan de securitate",
-                "Aviz Poliție",
-                "Aviz ISU (pompieri)",
-                "Contract salubrizare",
-                "Poliță asigurare răspundere civilă"
+                "Event Organization Request",
+                "Security Plan",
+                "Police Approval",
+                "Fire Department Approval",
+                "Sanitation Service Contract",
+                "Liability Insurance Policy"
         });
         REQUIRED_DOCUMENTS.put("Signage Permit", new String[]{
-                "Cerere amplasare firmă",
-                "Schița amplasament",
-                "Aviz urbanism / arhitectură",
-                "Acord proprietar imobil",
-                "Simulare foto montaj"
+                "Signage Placement Request",
+                "Site Sketch",
+                "Urban Planning / Architecture Approval",
+                "Property Owner Agreement",
+                "Photo Simulation / Mockup"
         });
         REQUIRED_DOCUMENTS.put("Demolition Permit", new String[]{
-                "Certificat de urbanism",
-                "Extras carte funciară (CF)",
-                "Proiect tehnic desființare (DTAD)",
-                "Plan de demolare",
-                "Aviz de mediu",
-                "Studiu privind gestionarea deșeurilor",
-                "Dovada achitării taxei"
+                "Urban Planning Certificate",
+                "Land Registry Extract",
+                "Demolition Technical Project",
+                "Demolition Plan",
+                "Environmental Approval",
+                "Waste Management Study",
+                "Fee Payment Proof"
         });
         REQUIRED_DOCUMENTS.put("Occupancy Certificate", new String[]{
-                "Proces verbal recepție la terminarea lucrărilor",
-                "Certificat de performanță energetică",
-                "Documentație cadastrală",
-                "Referatele verificatorilor de proiecte",
-                "Declarație conformitate instalații",
-                "Dovada achitării taxei"
+                "Work Completion Inspection Report",
+                "Energy Performance Certificate",
+                "Cadastral Documentation",
+                "Project Verifier Reports",
+                "Installation Compliance Declaration",
+                "Fee Payment Proof"
         });
     }
 
@@ -190,6 +194,8 @@ public class ApplyPermitActivity extends AppCompatActivity {
         btnPinHere = findViewById(R.id.btnPinHere);
         documentChecklistContainer = findViewById(R.id.documentChecklistContainer);
         checklistItems = findViewById(R.id.checklistItems);
+        etMapSearch = findViewById(R.id.etMapSearch);
+        btnMapSearch = findViewById(R.id.btnMapSearch);
 
         ImageButton btnBack = findViewById(R.id.btnBack);
         MaterialButton btnSubmit = findViewById(R.id.btnNext1);
@@ -207,14 +213,39 @@ public class ApplyPermitActivity extends AppCompatActivity {
         mapView.setTileSource(TileSourceFactory.MAPNIK);
         mapView.setMultiTouchControls(true);
         IMapController controller = mapView.getController();
-        controller.setZoom(7.0);
-        GeoPoint romaniaCenter = new GeoPoint(45.9432, 24.9668);
-        controller.setCenter(romaniaCenter);
+        controller.setZoom(3.0);
+        GeoPoint defaultCenter = new GeoPoint(20.0, 0.0);
+        controller.setCenter(defaultCenter);
 
         mapView.setOnTouchListener((v, event) -> {
             v.getParent().requestDisallowInterceptTouchEvent(true);
             return false;
         });
+
+        if (btnMapSearch != null) {
+            btnMapSearch.setOnClickListener(v -> {
+                String query = etMapSearch.getText() != null ? etMapSearch.getText().toString().trim() : "";
+                if (query.isEmpty()) {
+                    Toast.makeText(this, "Enter a location to search", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                try {
+                    Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+                    java.util.List<Address> results = geocoder.getFromLocationName(query, 1);
+                    if (results != null && !results.isEmpty()) {
+                        Address addr = results.get(0);
+                        GeoPoint point = new GeoPoint(addr.getLatitude(), addr.getLongitude());
+                        mapView.getController().animateTo(point);
+                        mapView.getController().setZoom(14.0);
+                        Toast.makeText(this, "Found: " + addr.getAddressLine(0), Toast.LENGTH_SHORT).show();
+                    } else {
+                        Toast.makeText(this, "Location not found", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    Toast.makeText(this, "Search failed", Toast.LENGTH_SHORT).show();
+                }
+            });
+        }
 
         btnPinHere.setOnClickListener(v -> {
             GeoPoint center = (GeoPoint) mapView.getMapCenter();
