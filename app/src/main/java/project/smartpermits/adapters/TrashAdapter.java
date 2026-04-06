@@ -98,7 +98,7 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.ViewHolder> 
         }
 
         void bind(Permit permit) {
-            tvPermitType.setText(permit.getPermitType());
+            tvPermitType.setText(permit.getPermitType() != null ? permit.getPermitType() : "Unknown");
 
             Integer daysLeft = permit.getDaysUntilPermanentDelete();
             if (daysLeft != null) {
@@ -107,7 +107,7 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.ViewHolder> 
                 tvDaysLeft.setText("Scheduled for deletion");
             }
 
-            String status = permit.getStatus();
+            String status = permit.getStatus() != null ? permit.getStatus() : "unknown";
             chipStatus.setText(status.substring(0, 1).toUpperCase() + status.substring(1));
             int chipColor;
             switch (status) {

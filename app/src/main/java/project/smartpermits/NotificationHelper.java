@@ -1,19 +1,25 @@
 package project.smartpermits;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.os.Build;
 
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 
 public class NotificationHelper {
 
     private static final String CHANNEL_ID = "smart_permits_channel";
     private static final String CHANNEL_NAME = "SmartPermits Notifications";
+    private static final int NOTIFICATION_PERMISSION_CODE = 1001;
 
     public static void createChannel(Context context) {
         NotificationChannel channel = new NotificationChannel(
@@ -22,6 +28,17 @@ public class NotificationHelper {
         NotificationManager manager = context.getSystemService(NotificationManager.class);
         if (manager != null) {
             manager.createNotificationChannel(channel);
+        }
+    }
+
+    public static void requestPermissionIfNeeded(Activity activity) {
+        if (Build.VERSION.SDK_INT >= 33) {
+            if (ContextCompat.checkSelfPermission(activity, Manifest.permission.POST_NOTIFICATIONS)
+                    != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(activity,
+                        new String[]{Manifest.permission.POST_NOTIFICATIONS},
+                        NOTIFICATION_PERMISSION_CODE);
+            }
         }
     }
 

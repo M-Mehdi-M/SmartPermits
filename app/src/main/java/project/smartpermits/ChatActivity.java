@@ -1,6 +1,8 @@
 package project.smartpermits;
 
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
@@ -30,6 +32,14 @@ public class ChatActivity extends AppCompatActivity {
     private TextInputEditText etMessage;
     private ProgressBar progressBar;
     private int permitId;
+    private final Handler refreshHandler = new Handler(Looper.getMainLooper());
+    private final Runnable refreshRunnable = new Runnable() {
+        @Override
+        public void run() {
+            loadComments();
+            refreshHandler.postDelayed(this, 5000);
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +65,18 @@ public class ChatActivity extends AppCompatActivity {
         btnSend.setOnClickListener(v -> sendMessage());
 
         loadComments();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        refreshHandler.postDelayed(refreshRunnable, 5000);
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        refreshHandler.removeCallbacks(refreshRunnable);
     }
 
     private void loadComments() {

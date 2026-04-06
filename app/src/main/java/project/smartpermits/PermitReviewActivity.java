@@ -205,6 +205,7 @@ public class PermitReviewActivity extends AppCompatActivity {
             v.getParent().requestDisallowInterceptTouchEvent(true);
             return false;
         });
+        mapViewReview.getOverlays().clear();
         IMapController controller = mapViewReview.getController();
         controller.setZoom(15.0);
         GeoPoint point = new GeoPoint(lat, lng);
@@ -290,6 +291,12 @@ public class PermitReviewActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         if (mapViewReview != null) mapViewReview.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mapViewReview != null) mapViewReview.onDetach();
     }
 
     private SpannableStringBuilder formatMarkdown(String raw) {
@@ -415,8 +422,8 @@ public class PermitReviewActivity extends AppCompatActivity {
             imgParams.setMarginEnd(16);
             iv.setLayoutParams(imgParams);
             iv.setScaleType(ImageView.ScaleType.CENTER_CROP);
-            String url = RetrofitClient.getInstance(PermitReviewActivity.this).getBaseUrl() + "uploads/" + doc.getFileName();
-            Glide.with(PermitReviewActivity.this).load(url).centerCrop().into(iv);
+            String url = RetrofitClient.getInstance(row.getContext()).getBaseUrl() + "uploads/" + doc.getFileName();
+            Glide.with(row.getContext()).load(url).centerCrop().into(iv);
             row.addView(iv);
 
             LinearLayout textCol = new LinearLayout(PermitReviewActivity.this);

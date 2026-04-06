@@ -161,6 +161,7 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
         });
 
         NotificationHelper.createChannel(this);
+        NotificationHelper.requestPermissionIfNeeded(this);
     }
 
     @Override

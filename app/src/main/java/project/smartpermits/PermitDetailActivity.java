@@ -30,8 +30,6 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
@@ -145,10 +143,11 @@ public class PermitDetailActivity extends AppCompatActivity {
     }
 
     private void displayPermit(Permit permit) {
-        tvPermitType.setText(permit.getPermitType());
+        tvPermitType.setText(permit.getPermitType() != null ? permit.getPermitType() : "Unknown");
 
+        String type = permit.getPermitType() != null ? permit.getPermitType() : "";
         String icon;
-        switch (permit.getPermitType()) {
+        switch (type) {
             case "Construction Permit": icon = "\uD83C\uDFD7"; break;
             case "Business License": icon = "\uD83C\uDFE2"; break;
             case "Food Service Permit": icon = "\uD83C\uDF7D"; break;
@@ -167,6 +166,12 @@ public class PermitDetailActivity extends AppCompatActivity {
 
         tvFee.setText(String.format("$%.2f", permit.getFeeAmount()));
         tvPayment.setText(permit.isPaid() ? "Paid" : "Unpaid");
+
+        cardDescription.setVisibility(View.GONE);
+        cardNotes.setVisibility(View.GONE);
+        cardEstTime.setVisibility(View.GONE);
+        cardMapDetail.setVisibility(View.GONE);
+        cardDocuments.setVisibility(View.GONE);
 
         if (permit.getDescription() != null && !permit.getDescription().isEmpty()) {
             cardDescription.setVisibility(View.VISIBLE);
@@ -192,6 +197,7 @@ public class PermitDetailActivity extends AppCompatActivity {
                 v.getParent().requestDisallowInterceptTouchEvent(true);
                 return false;
             });
+            mapViewDetail.getOverlays().clear();
             IMapController controller = mapViewDetail.getController();
             controller.setZoom(15.0);
             GeoPoint point = new GeoPoint(permit.getLatitude(), permit.getLongitude());
@@ -210,7 +216,7 @@ public class PermitDetailActivity extends AppCompatActivity {
             recyclerDocuments.setAdapter(new DocCarouselAdapter(permit.getDocuments()));
         }
 
-        String status = permit.getStatus();
+        String status = permit.getStatus() != null ? permit.getStatus() : "unknown";
         chipStatus.setText(status.substring(0, 1).toUpperCase() + status.substring(1));
 
         int chipColor;
@@ -358,15 +364,23 @@ public class PermitDetailActivity extends AppCompatActivity {
                         btnCertificate.setEnabled(true);
                         if (response.isSuccessful() && response.body() != null) {
                             try {
-                                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                                File file = new File(dir, "permit_certificate_" + permitId + ".pdf");
-                                InputStream is = response.body().byteStream();
-                                FileOutputStream fos = new FileOutputStream(file);
-                                byte[] buf = new byte[4096];
-                                int len;
-                                while ((len = is.read(buf)) != -1) fos.write(buf, 0, len);
-                                fos.close();
-                                is.close();
+                                android.content.ContentValues values = new android.content.ContentValues();
+                                values.put(android.provider.MediaStore.Downloads.DISPLAY_NAME, "permit_certificate_" + permitId + ".pdf");
+                                values.put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/pdf");
+                                values.put(android.provider.MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                                android.net.Uri uri = getContentResolver().insert(
+                                        android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                                if (uri != null) {
+                                    java.io.OutputStream os = getContentResolver().openOutputStream(uri);
+                                    if (os != null) {
+                                        InputStream is = response.body().byteStream();
+                                        byte[] buf = new byte[4096];
+                                        int len;
+                                        while ((len = is.read(buf)) != -1) os.write(buf, 0, len);
+                                        os.close();
+                                        is.close();
+                                    }
+                                }
                                 Toast.makeText(PermitDetailActivity.this, "Certificate saved to Downloads", Toast.LENGTH_LONG).show();
                             } catch (Exception e) {
                                 Toast.makeText(PermitDetailActivity.this, "Save failed", Toast.LENGTH_SHORT).show();
@@ -380,6 +394,12 @@ public class PermitDetailActivity extends AppCompatActivity {
                         btnCertificate.setEnabled(true);
                     }
                 });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mapViewDetail != null) mapViewDetail.onDetach();
     }
 
     private class DocCarouselAdapter extends RecyclerView.Adapter<DocCarouselAdapter.VH> {

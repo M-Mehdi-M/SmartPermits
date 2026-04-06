@@ -63,9 +63,11 @@ public class ScheduleAppointmentActivity extends AppCompatActivity {
     private void showDatePicker() {
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_MONTH, 1);
-        new DatePickerDialog(this, (view, year, month, day) -> {
+        DatePickerDialog dialog = new DatePickerDialog(this, (view, year, month, day) -> {
             etDate.setText(String.format(Locale.US, "%04d-%02d-%02d", year, month + 1, day));
-        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH)).show();
+        }, cal.get(Calendar.YEAR), cal.get(Calendar.MONTH), cal.get(Calendar.DAY_OF_MONTH));
+        dialog.getDatePicker().setMinDate(cal.getTimeInMillis());
+        dialog.show();
     }
 
     private void schedule() {

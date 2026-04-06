@@ -77,7 +77,7 @@ public class PermitAdapter extends RecyclerView.Adapter<PermitAdapter.ViewHolder
         }
 
         void bind(Permit permit) {
-            tvPermitType.setText(permit.getPermitType());
+            tvPermitType.setText(permit.getPermitType() != null ? permit.getPermitType() : "Unknown");
             String date = permit.getCreatedAt();
             if (date != null && date.length() >= 10) {
                 date = date.substring(0, 10);
@@ -85,8 +85,9 @@ public class PermitAdapter extends RecyclerView.Adapter<PermitAdapter.ViewHolder
             tvPermitDate.setText(date);
             tvPermitFee.setText(String.format("Fee: $%.2f", permit.getFeeAmount()));
 
+            String type = permit.getPermitType() != null ? permit.getPermitType() : "";
             String icon;
-            switch (permit.getPermitType()) {
+            switch (type) {
                 case "Construction Permit": icon = "🏗"; break;
                 case "Business License": icon = "🏢"; break;
                 case "Food Service Permit": icon = "🍽"; break;
@@ -99,7 +100,7 @@ public class PermitAdapter extends RecyclerView.Adapter<PermitAdapter.ViewHolder
             }
             tvPermitIcon.setText(icon);
 
-            String status = permit.getStatus();
+            String status = permit.getStatus() != null ? permit.getStatus() : "unknown";
             chipStatus.setText(status.substring(0, 1).toUpperCase() + status.substring(1));
 
             int chipColor;

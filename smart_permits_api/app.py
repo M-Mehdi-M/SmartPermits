@@ -131,16 +131,33 @@ with app.app_context():
     seed_data()
 
 
+import re as _re
+
+def _valid_email(email):
+    return bool(_re.match(r'^[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$', email))
+
+def _get_current_user():
+    uid = int(get_jwt_identity())
+    return User.query.get(uid)
+
 @app.route('/api/auth/register', methods=['POST'])
 def register():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     username = data.get('username', '').strip()
     email = data.get('email', '').strip()
     password = data.get('password', '')
     role = data.get('role', 'citizen')
+    if role not in ('citizen', 'inspector'):
+        role = 'citizen'
     full_name = data.get('full_name', '').strip()
     if not username or not email or not password:
         return jsonify({'error': 'All fields are required'}), 400
+    if not _valid_email(email):
+        return jsonify({'error': 'Invalid email format'}), 400
+    if len(password) < 6:
+        return jsonify({'error': 'Password must be at least 6 characters'}), 400
+    if len(username) < 3:
+        return jsonify({'error': 'Username must be at least 3 characters'}), 400
     if User.query.filter((User.username == username) | (User.email == email)).first():
         return jsonify({'error': 'Username or email already exists'}), 409
     hashed = bcrypt.generate_password_hash(password).decode('utf-8')
@@ -153,7 +170,7 @@ def register():
 
 @app.route('/api/auth/login', methods=['POST'])
 def login():
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     username = data.get('username', '')
     password = data.get('password', '')
     user = User.query.filter_by(username=username).first()
@@ -168,7 +185,7 @@ def login():
 def change_password():
     user_id = int(get_jwt_identity())
     user = User.query.get_or_404(user_id)
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     current = data.get('current_password', '')
     new_pass = data.get('new_password', '')
     if not bcrypt.check_password_hash(user.password_hash, current):
@@ -185,7 +202,7 @@ def change_password():
 def save_fcm_token():
     user_id = int(get_jwt_identity())
     user = User.query.get_or_404(user_id)
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     user.fcm_token = data.get('fcm_token', '')
     db.session.commit()
     return jsonify({'message': 'Token saved'}), 200
@@ -213,7 +230,7 @@ def get_my_permits():
 @jwt_required()
 def create_permit():
     user_id = int(get_jwt_identity())
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     permit_type = data.get('permit_type', '')
     description = data.get('description', '')
     latitude = data.get('latitude')
@@ -239,19 +256,31 @@ def create_permit():
 @app.route('/api/permits/<int:permit_id>', methods=['GET'])
 @jwt_required()
 def get_permit(permit_id):
+    user_id = int(get_jwt_identity())
     permit = Permit.query.get_or_404(permit_id)
+    user = User.query.get(user_id)
+    if permit.user_id != user_id and (not user or user.role != 'inspector'):
+        return jsonify({'error': 'Unauthorized'}), 403
     return jsonify(permit.to_dict()), 200
 
+
+ALLOWED_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp', 'pdf', 'doc', 'docx'}
 
 @app.route('/api/permits/<int:permit_id>/upload', methods=['POST'])
 @jwt_required()
 def upload_document(permit_id):
+    user_id = int(get_jwt_identity())
     permit = Permit.query.get_or_404(permit_id)
+    if permit.user_id != user_id:
+        return jsonify({'error': 'Unauthorized'}), 403
     if 'file' not in request.files:
         return jsonify({'error': 'No file provided'}), 400
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'Empty filename'}), 400
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in ALLOWED_EXTENSIONS:
+        return jsonify({'error': 'File type not allowed'}), 400
     filename = secure_filename(f"{permit_id}_{file.filename}")
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
@@ -407,12 +436,16 @@ def ai_analyze(permit_id):
 @app.route('/api/permits/<int:permit_id>/pay', methods=['POST'])
 @jwt_required()
 def pay_permit(permit_id):
+    user_id = int(get_jwt_identity())
     permit = Permit.query.get_or_404(permit_id)
+    if permit.user_id != user_id:
+        return jsonify({'error': 'Unauthorized'}), 403
+    if permit.status != 'approved':
+        return jsonify({'error': 'Only approved permits can be paid'}), 400
     if permit.is_paid:
         return jsonify({'error': 'Already paid'}), 400
     permit.is_paid = True
-    if permit.status == 'approved':
-        permit.status = 'completed'
+    permit.status = 'completed'
     db.session.commit()
     return jsonify(permit.to_dict()), 200
 
@@ -444,7 +477,7 @@ def renew_permit(permit_id):
 @jwt_required()
 def get_pending_permits():
     user_id = int(get_jwt_identity())
-    user = User.query.get(user_id)
+    user = User.query.get_or_404(user_id)
     if user.role != 'inspector':
         return jsonify({'error': 'Unauthorized'}), 403
     search = request.args.get('search', '')
@@ -465,7 +498,7 @@ def get_pending_permits():
 @jwt_required()
 def get_reviewed_permits():
     user_id = int(get_jwt_identity())
-    user = User.query.get(user_id)
+    user = User.query.get_or_404(user_id)
     if user.role != 'inspector':
         return jsonify({'error': 'Unauthorized'}), 403
     permits = Permit.query.filter(Permit.reviewed_by == user_id, Permit.status.in_(['approved', 'rejected'])).order_by(Permit.updated_at.desc()).all()
@@ -476,13 +509,15 @@ def get_reviewed_permits():
 @jwt_required()
 def review_permit(permit_id):
     user_id = int(get_jwt_identity())
-    user = User.query.get(user_id)
+    user = User.query.get_or_404(user_id)
     if user.role != 'inspector':
         return jsonify({'error': 'Unauthorized'}), 403
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     action = data.get('action', '')
     notes = data.get('notes', '')
     permit = Permit.query.get_or_404(permit_id)
+    if permit.status != 'submitted':
+        return jsonify({'error': 'Permit has already been reviewed'}), 400
     if action not in ('approved', 'rejected'):
         return jsonify({'error': 'Action must be approved or rejected'}), 400
     permit.status = action
@@ -512,7 +547,7 @@ def get_comments(permit_id):
 def add_comment(permit_id):
     user_id = int(get_jwt_identity())
     Permit.query.get_or_404(permit_id)
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     message = data.get('message', '').strip()
     if not message:
         return jsonify({'error': 'Message is required'}), 400
@@ -539,14 +574,22 @@ def add_comment(permit_id):
 def schedule_appointment(permit_id):
     user_id = int(get_jwt_identity())
     permit = Permit.query.get_or_404(permit_id)
+    if permit.user_id != user_id:
+        return jsonify({'error': 'Unauthorized'}), 403
     if permit.status != 'approved':
         return jsonify({'error': 'Can only schedule for approved permits'}), 400
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     date = data.get('date', '')
     time_slot = data.get('time_slot', '')
     notes = data.get('notes', '')
     if not date or not time_slot:
         return jsonify({'error': 'Date and time slot are required'}), 400
+    try:
+        appt_date = datetime.strptime(date, '%Y-%m-%d').date()
+        if appt_date < datetime.utcnow().date():
+            return jsonify({'error': 'Cannot schedule in the past'}), 400
+    except ValueError:
+        return jsonify({'error': 'Invalid date format'}), 400
     existing = Appointment.query.filter_by(permit_id=permit_id, status='scheduled').first()
     if existing:
         return jsonify({'error': 'Appointment already scheduled'}), 400
@@ -586,7 +629,7 @@ def get_appointments():
 @jwt_required()
 def update_appointment(appt_id):
     appt = Appointment.query.get_or_404(appt_id)
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     new_status = data.get('status', '')
     if new_status in ('confirmed', 'cancelled', 'completed'):
         appt.status = new_status
@@ -778,7 +821,7 @@ def run_trash_cleanup():
 @jwt_required()
 def get_analytics():
     user_id = int(get_jwt_identity())
-    user = User.query.get(user_id)
+    user = User.query.get_or_404(user_id)
     if user.role != 'inspector':
         return jsonify({'error': 'Unauthorized'}), 403
 
@@ -831,10 +874,12 @@ def get_profile():
 def update_profile():
     user_id = int(get_jwt_identity())
     user = User.query.get_or_404(user_id)
-    data = request.get_json()
+    data = request.get_json(silent=True) or {}
     if 'full_name' in data and data['full_name'].strip():
         user.full_name = data['full_name'].strip()
     if 'email' in data and data['email'].strip():
+        if not _valid_email(data['email'].strip()):
+            return jsonify({'error': 'Invalid email format'}), 400
         existing = User.query.filter(User.email == data['email'].strip(), User.id != user_id).first()
         if existing:
             return jsonify({'error': 'Email already in use'}), 409

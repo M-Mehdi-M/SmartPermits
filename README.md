@@ -60,7 +60,7 @@ The app uses a modern **Indigo & Slate** color palette inspired by contemporary 
 - **Database**: SQLite (via Flask-SQLAlchemy)
 - **AI**: Google Gemini 2.5 Flash (document analysis)
 - **Authentication**: JWT (Flask-JWT-Extended)
-- **Min SDK**: 33 (Android 13)
+- **Min SDK**: 29 (Android 10)
 - **Target SDK**: 36
 - **Architecture**: Activity-based with Retrofit networking layer
 
@@ -156,7 +156,7 @@ SmartPermits/
 - Android Studio Hedgehog (2023.1.1) or newer
 - JDK 11 or higher
 - Python 3.9+ (for backend)
-- Android device or emulator (API 33+)
+- Android device or emulator (API 29+)
 
 ### Backend Setup
 

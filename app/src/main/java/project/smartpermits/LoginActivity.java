@@ -3,6 +3,7 @@ package project.smartpermits;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -136,6 +137,18 @@ public class LoginActivity extends AppCompatActivity {
 
         if (username.isEmpty() || password.isEmpty() || email.isEmpty() || fullName.isEmpty()) {
             Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (username.length() < 3) {
+            Toast.makeText(this, "Username must be at least 3 characters", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            Toast.makeText(this, "Please enter a valid email", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        if (password.length() < 6) {
+            Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
             return;
         }
 

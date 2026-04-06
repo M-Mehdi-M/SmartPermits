@@ -69,7 +69,7 @@ public class PendingPermitAdapter extends RecyclerView.Adapter<PendingPermitAdap
         }
 
         void bind(Permit permit) {
-            tvPermitType.setText(permit.getPermitType());
+            tvPermitType.setText(permit.getPermitType() != null ? permit.getPermitType() : "Unknown");
             tvApplicant.setText("By: " + (permit.getApplicantName() != null ? permit.getApplicantName() : "Unknown"));
 
             String date = permit.getCreatedAt();
@@ -85,8 +85,9 @@ public class PendingPermitAdapter extends RecyclerView.Adapter<PendingPermitAdap
                 tvDescription.setVisibility(View.GONE);
             }
 
+            String type = permit.getPermitType() != null ? permit.getPermitType() : "";
             String icon;
-            switch (permit.getPermitType()) {
+            switch (type) {
                 case "Construction Permit": icon = "🏗"; break;
                 case "Business License": icon = "🏢"; break;
                 case "Food Service Permit": icon = "🍽"; break;

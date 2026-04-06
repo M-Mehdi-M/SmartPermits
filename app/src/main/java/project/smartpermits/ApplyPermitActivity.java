@@ -229,21 +229,30 @@ public class ApplyPermitActivity extends AppCompatActivity {
                     Toast.makeText(this, "Enter a location to search", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                try {
-                    Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-                    java.util.List<Address> results = geocoder.getFromLocationName(query, 1);
-                    if (results != null && !results.isEmpty()) {
-                        Address addr = results.get(0);
-                        GeoPoint point = new GeoPoint(addr.getLatitude(), addr.getLongitude());
-                        mapView.getController().animateTo(point);
-                        mapView.getController().setZoom(14.0);
-                        Toast.makeText(this, "Found: " + addr.getAddressLine(0), Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(this, "Location not found", Toast.LENGTH_SHORT).show();
+                btnMapSearch.setEnabled(false);
+                new Thread(() -> {
+                    try {
+                        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+                        java.util.List<Address> results = geocoder.getFromLocationName(query, 1);
+                        runOnUiThread(() -> {
+                            btnMapSearch.setEnabled(true);
+                            if (results != null && !results.isEmpty()) {
+                                Address addr = results.get(0);
+                                GeoPoint point = new GeoPoint(addr.getLatitude(), addr.getLongitude());
+                                mapView.getController().animateTo(point);
+                                mapView.getController().setZoom(14.0);
+                                Toast.makeText(this, "Found: " + addr.getAddressLine(0), Toast.LENGTH_SHORT).show();
+                            } else {
+                                Toast.makeText(this, "Location not found", Toast.LENGTH_SHORT).show();
+                            }
+                        });
+                    } catch (Exception e) {
+                        runOnUiThread(() -> {
+                            btnMapSearch.setEnabled(true);
+                            Toast.makeText(this, "Search failed", Toast.LENGTH_SHORT).show();
+                        });
                     }
-                } catch (Exception e) {
-                    Toast.makeText(this, "Search failed", Toast.LENGTH_SHORT).show();
-                }
+                }).start();
             });
         }
 
@@ -361,7 +370,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
                 uploadBtn.setLayoutParams(btnParams);
                 uploadBtn.setOnClickListener(v -> {
                     pendingDocLabel = docName;
-                    requiredDocLauncher.launch("*/*");
+                    requiredDocLauncher.launch("image/*");
                 });
 
                 row.addView(cb);
@@ -374,16 +383,17 @@ public class ApplyPermitActivity extends AppCompatActivity {
     }
 
     private File copyUriToFile(Uri uri) throws IOException {
-        InputStream inputStream = getContentResolver().openInputStream(uri);
         File tempFile = File.createTempFile("upload_", ".jpg", getCacheDir());
-        FileOutputStream fos = new FileOutputStream(tempFile);
-        byte[] buffer = new byte[4096];
-        int len;
-        while ((len = inputStream.read(buffer)) != -1) {
-            fos.write(buffer, 0, len);
+        try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
+            if (inputStream == null) throw new IOException("Failed to open input stream");
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                byte[] buffer = new byte[4096];
+                int len;
+                while ((len = inputStream.read(buffer)) != -1) {
+                    fos.write(buffer, 0, len);
+                }
+            }
         }
-        fos.close();
-        inputStream.close();
         return tempFile;
     }
 
@@ -439,8 +449,13 @@ public class ApplyPermitActivity extends AppCompatActivity {
                 });
     }
 
+    private int uploadFailCount = 0;
+
     private void uploadAllRequiredDocuments(int permitId, List<String> labels, int index) {
         if (index >= labels.size()) {
+            if (uploadFailCount > 0) {
+                Toast.makeText(this, uploadFailCount + " document(s) failed to upload", Toast.LENGTH_LONG).show();
+            }
             onSubmitSuccess();
             return;
         }
@@ -458,10 +473,12 @@ public class ApplyPermitActivity extends AppCompatActivity {
                 .enqueue(new Callback<Document>() {
                     @Override
                     public void onResponse(Call<Document> call, Response<Document> response) {
+                        if (!response.isSuccessful()) uploadFailCount++;
                         uploadAllRequiredDocuments(permitId, labels, index + 1);
                     }
                     @Override
                     public void onFailure(Call<Document> call, Throwable t) {
+                        uploadFailCount++;
                         uploadAllRequiredDocuments(permitId, labels, index + 1);
                     }
                 });
@@ -500,5 +517,14 @@ public class ApplyPermitActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
         if (mapView != null) mapView.onPause();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (mapView != null) mapView.onDetach();
+        for (File f : requiredDocumentFiles.values()) {
+            if (f != null && f.exists()) f.delete();
+        }
     }
 }

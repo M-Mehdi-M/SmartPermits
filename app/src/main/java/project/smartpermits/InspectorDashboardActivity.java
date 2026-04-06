@@ -139,6 +139,7 @@ public class InspectorDashboardActivity extends AppCompatActivity implements Pen
         });
 
         NotificationHelper.createChannel(this);
+        NotificationHelper.requestPermissionIfNeeded(this);
     }
 
     @Override

@@ -2,6 +2,7 @@ package project.smartpermits;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
@@ -119,6 +120,10 @@ public class EditProfileActivity extends AppCompatActivity {
             etEmail.setError("Email is required");
             return;
         }
+        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+            etEmail.setError("Invalid email format");
+            return;
+        }
 
         progressBar.setVisibility(View.VISIBLE);
 
@@ -181,17 +186,24 @@ public class EditProfileActivity extends AppCompatActivity {
     }
 
     private File copyUriToFile(Uri uri) throws IOException {
-        InputStream inputStream = getContentResolver().openInputStream(uri);
         File tempFile = File.createTempFile("avatar_", ".jpg", getCacheDir());
-        FileOutputStream fos = new FileOutputStream(tempFile);
-        byte[] buffer = new byte[4096];
-        int len;
-        while ((len = inputStream.read(buffer)) != -1) {
-            fos.write(buffer, 0, len);
+        try (InputStream inputStream = getContentResolver().openInputStream(uri)) {
+            if (inputStream == null) throw new IOException("Failed to open input stream");
+            try (FileOutputStream fos = new FileOutputStream(tempFile)) {
+                byte[] buffer = new byte[4096];
+                int len;
+                while ((len = inputStream.read(buffer)) != -1) {
+                    fos.write(buffer, 0, len);
+                }
+            }
         }
-        fos.close();
-        inputStream.close();
         return tempFile;
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (avatarFile != null && avatarFile.exists()) avatarFile.delete();
     }
 }
 

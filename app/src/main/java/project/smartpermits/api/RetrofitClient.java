@@ -24,7 +24,7 @@ public class RetrofitClient {
                 .getSharedPreferences("smart_permits_prefs", Context.MODE_PRIVATE);
 
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
-        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BODY);
+        loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BASIC);
 
         Interceptor authInterceptor = chain -> {
             Request original = chain.request();
@@ -38,12 +38,26 @@ public class RetrofitClient {
             return chain.proceed(original);
         };
 
+        Interceptor responseInterceptor = chain -> {
+            okhttp3.Response response = chain.proceed(chain.request());
+            if (response.code() == 401) {
+                String token = prefs.getString("auth_token", "");
+                if (token != null && !token.isEmpty()) {
+                    prefs.edit().remove("auth_token").apply();
+                    android.content.Intent intent = new android.content.Intent("project.smartpermits.SESSION_EXPIRED");
+                    context.getApplicationContext().sendBroadcast(intent);
+                }
+            }
+            return response;
+        };
+
         OkHttpClient client = new OkHttpClient.Builder()
                 .addInterceptor(authInterceptor)
                 .addInterceptor(loggingInterceptor)
+                .addInterceptor(responseInterceptor)
                 .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(30, TimeUnit.SECONDS)
-                .writeTimeout(30, TimeUnit.SECONDS)
+                .readTimeout(60, TimeUnit.SECONDS)
+                .writeTimeout(60, TimeUnit.SECONDS)
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()

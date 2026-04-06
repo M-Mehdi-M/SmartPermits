@@ -53,28 +53,27 @@ class Permit(db.Model):
 
     def to_dict(self):
         avg_time = None
-        try:
-            reviewed = Permit.query.filter(
-                Permit.permit_type == self.permit_type,
-                Permit.status.in_(['approved', 'rejected', 'completed'])
-            ).all()
-            if reviewed:
-                total_hours = 0
-                count = 0
-                for p in reviewed:
-                    if p.updated_at and p.created_at:
-                        diff = (p.updated_at - p.created_at).total_seconds() / 3600
-                        if diff > 0:
-                            total_hours += diff
-                            count += 1
-                if count > 0:
-                    avg_hours = total_hours / count
+        if self.status == 'submitted':
+            try:
+                from sqlalchemy import func
+                result = db.session.query(
+                    func.avg(
+                        (func.julianday(Permit.updated_at) - func.julianday(Permit.created_at)) * 24
+                    )
+                ).filter(
+                    Permit.permit_type == self.permit_type,
+                    Permit.status.in_(['approved', 'rejected', 'completed']),
+                    Permit.updated_at.isnot(None),
+                    Permit.created_at.isnot(None)
+                ).scalar()
+                if result and result > 0:
+                    avg_hours = float(result)
                     if avg_hours < 24:
                         avg_time = f"{int(avg_hours)} hours"
                     else:
                         avg_time = f"{round(avg_hours / 24, 1)} days"
-        except Exception:
-            avg_time = None
+            except Exception:
+                avg_time = None
 
         return {
             'id': self.id,
