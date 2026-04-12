@@ -1,5 +1,6 @@
 package project.smartpermits;
 
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -15,6 +16,7 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -52,13 +54,14 @@ public class PermitReviewActivity extends AppCompatActivity {
     private TextView tvApplicant, tvPermitType, tvDate, tvFee, tvDescription, tvDocuments, tvAiAnalysis;
     private TextInputEditText etNotes;
     private MaterialButton btnApprove, btnReject, btnComments, btnRunAi;
-    private MaterialCardView cardDescription, cardDocuments, cardMap, cardAiAnalysis;
+    private MaterialCardView cardDescription, cardDocuments, cardMap, cardAiAnalysis, cardBlockchainReview;
     private ProgressBar progressBar, progressAi;
     private RecyclerView recyclerDocPreview;
     private LinearLayout documentPreviewContainer;
     private MapView mapViewReview;
     private TextView tvMapCoords;
     private int permitId;
+    private CharSequence fullAiText = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -84,6 +87,7 @@ public class PermitReviewActivity extends AppCompatActivity {
         cardMap = findViewById(R.id.cardMap);
         cardAiAnalysis = findViewById(R.id.cardAiAnalysis);
         tvAiAnalysis = findViewById(R.id.tvAiAnalysis);
+        cardBlockchainReview = findViewById(R.id.cardBlockchainReview);
         progressBar = findViewById(R.id.progressBar);
         recyclerDocPreview = findViewById(R.id.recyclerDocPreview);
         documentPreviewContainer = findViewById(R.id.documentPreviewContainer);
@@ -169,10 +173,18 @@ public class PermitReviewActivity extends AppCompatActivity {
         boolean isError = aiAnalysis != null && (aiAnalysis.startsWith("AI analysis unavailable") || aiAnalysis.startsWith("AI analysis failed"));
         if (aiAnalysis != null && !aiAnalysis.isEmpty() && !isError) {
             cardAiAnalysis.setVisibility(View.VISIBLE);
-            tvAiAnalysis.setText(formatMarkdown(aiAnalysis));
+            fullAiText = formatMarkdown(aiAnalysis);
+            tvAiAnalysis.setText(fullAiText);
+            tvAiAnalysis.setMaxLines(4);
+            tvAiAnalysis.setEllipsize(TextUtils.TruncateAt.END);
+            cardAiAnalysis.setOnClickListener(v -> showAiAnalysisDialog());
             if (btnRunAi != null) btnRunAi.setVisibility(View.GONE);
         } else {
-            if (btnRunAi != null) btnRunAi.setVisibility(View.VISIBLE);
+            cardAiAnalysis.setVisibility(View.VISIBLE);
+            tvAiAnalysis.setText("Analyzing documents with AI...");
+            if (btnRunAi != null) btnRunAi.setVisibility(View.GONE);
+            if (progressAi != null) progressAi.setVisibility(View.VISIBLE);
+            triggerAiAnalysis();
         }
 
         if (permit.getDocuments() != null && !permit.getDocuments().isEmpty()) {
@@ -196,6 +208,10 @@ public class PermitReviewActivity extends AppCompatActivity {
                 recyclerDocPreview.setAdapter(new DocCarouselAdapter(permit.getDocuments()));
             }
         }
+
+        if (cardBlockchainReview != null && "submitted".equals(permit.getStatus())) {
+            cardBlockchainReview.setVisibility(View.VISIBLE);
+        }
     }
 
     private void setupReviewMap(double lat, double lng) {
@@ -216,6 +232,23 @@ public class PermitReviewActivity extends AppCompatActivity {
         marker.setTitle("Work Location");
         mapViewReview.getOverlays().add(marker);
         mapViewReview.invalidate();
+    }
+
+    private void showAiAnalysisDialog() {
+        if (fullAiText == null) return;
+        ScrollView scrollView = new ScrollView(this);
+        scrollView.setPadding(48, 32, 48, 32);
+        TextView tv = new TextView(this);
+        tv.setText(fullAiText);
+        tv.setTextSize(14);
+        tv.setLineSpacing(0, 1.4f);
+        tv.setTextColor(getResources().getColor(R.color.text_primary, null));
+        scrollView.addView(tv);
+        new AlertDialog.Builder(this)
+                .setTitle("AI Document Analysis")
+                .setView(scrollView)
+                .setPositiveButton("Close", null)
+                .show();
     }
 
     private void reviewPermit(String action) {
@@ -264,7 +297,11 @@ public class PermitReviewActivity extends AppCompatActivity {
                     public void onResponse(Call<AiAnalysisResponse> call, Response<AiAnalysisResponse> response) {
                         if (progressAi != null) progressAi.setVisibility(View.GONE);
                         if (response.isSuccessful() && response.body() != null && response.body().getAiAnalysis() != null) {
-                            tvAiAnalysis.setText(formatMarkdown(response.body().getAiAnalysis()));
+                            fullAiText = formatMarkdown(response.body().getAiAnalysis());
+                            tvAiAnalysis.setText(fullAiText);
+                            tvAiAnalysis.setMaxLines(4);
+                            tvAiAnalysis.setEllipsize(TextUtils.TruncateAt.END);
+                            cardAiAnalysis.setOnClickListener(v -> showAiAnalysisDialog());
                             if (btnRunAi != null) btnRunAi.setVisibility(View.GONE);
                         } else {
                             tvAiAnalysis.setText("AI analysis failed. Try again later.");

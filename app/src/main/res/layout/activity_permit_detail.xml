@@ -351,6 +351,112 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardBlockchain"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Blockchain Notarization"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:layout_marginBottom="8dp"
+                        android:drawablePadding="8dp" />
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginBottom="6dp">
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="Status"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="13sp" />
+                        <TextView
+                            android:id="@+id/tvBlockchainStatus"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="2"
+                            android:textColor="@color/btn_approve"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:textAlignment="textEnd" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/layoutTxHash"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="6dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Transaction Hash"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:layout_marginBottom="2dp" />
+                        <TextView
+                            android:id="@+id/tvTxHash"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/primary"
+                            android:textSize="11sp"
+                            android:fontFamily="monospace"
+                            android:maxLines="2"
+                            android:ellipsize="middle" />
+                    </LinearLayout>
+                    <LinearLayout
+                        android:id="@+id/layoutDocHash"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginBottom="8dp"
+                        android:visibility="gone">
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Document Hash (SHA-256)"
+                            android:textColor="@color/text_secondary"
+                            android:textSize="12sp"
+                            android:layout_marginBottom="2dp" />
+                        <TextView
+                            android:id="@+id/tvDocHash"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textColor="@color/text_primary"
+                            android:textSize="10sp"
+                            android:fontFamily="monospace"
+                            android:maxLines="2"
+                            android:ellipsize="end" />
+                    </LinearLayout>
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnViewOnChain"
+                        android:layout_width="match_parent"
+                        android:layout_height="44dp"
+                        android:text="View on Etherscan"
+                        android:textSize="13sp"
+                        app:cornerRadius="12dp"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:textColor="@color/primary"
+                        app:strokeColor="@color/primary"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPay"
                 android:layout_width="match_parent"

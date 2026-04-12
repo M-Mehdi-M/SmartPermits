@@ -58,6 +58,15 @@ public class Permit {
     @SerializedName("ai_analysis")
     private String aiAnalysis;
 
+    @SerializedName("blockchain_hash")
+    private String blockchainHash;
+
+    @SerializedName("blockchain_tx_hash")
+    private String blockchainTxHash;
+
+    @SerializedName("blockchain_error")
+    private String blockchainError;
+
     @SerializedName("deleted_at")
     private String deletedAt;
 
@@ -82,6 +91,9 @@ public class Permit {
     public Double getLongitude() { return longitude; }
     public String getEstimatedProcessingTime() { return estimatedProcessingTime; }
     public String getAiAnalysis() { return aiAnalysis; }
+    public String getBlockchainHash() { return blockchainHash; }
+    public String getBlockchainTxHash() { return blockchainTxHash; }
+    public String getBlockchainError() { return blockchainError; }
     public String getDeletedAt() { return deletedAt; }
     public Integer getDaysUntilPermanentDelete() { return daysUntilPermanentDelete; }
 }

@@ -21,14 +21,21 @@
 
 4. Configure the Gemini API key for AI document analysis. Edit `.env` and set your actual Gemini API key from https://aistudio.google.com/apikey
 
-5. Start the server:
+5. Configure blockchain notarization (optional). Add to `.env`:
+   ```
+   ETH_PRIVATE_KEY=your-metamask-private-key
+   ETH_RPC_URL=https://sepolia.infura.io/v3/your-project-id
+   ETH_WALLET_ADDRESS=your-metamask-wallet-address
+   ```
+
+6. Start the server:
    ```
    python app.py
    ```
 
-6. Server runs on `http://0.0.0.0:5000`. Verify by visiting `http://localhost:5000/api/permit-types` in a browser.
+7. Server runs on `http://0.0.0.0:5000`. Verify by visiting `http://localhost:5000/api/permit-types` in a browser.
 
-7. Leave this terminal open.
+8. Leave this terminal open.
 
 ### Step 2: Run the Android App
 
@@ -40,7 +47,7 @@
 
 ### Step 3: Test Login
 
-1. App opens to login screen
+1. App opens to login screen with teal gradient background
 2. Enter: Username = `citizen1`, Password = `1q2w3e4r`
 3. Tap Login
 4. You land on the Citizen Dashboard showing "Welcome, Test User"
@@ -94,7 +101,7 @@
 3. Results filter in real-time
 4. Pull-to-refresh to reload pending permits
 
-### 5. Apply for Permit (Single Page with Document Checklist + Map Search + AI)
+### 5. Apply for Permit (Instant Submission)
 
 1. From Citizen Dashboard, tap "Apply for Permit" FAB
 2. Select permit type from the dropdown
@@ -102,66 +109,83 @@
 4. Each document in the checklist has a checkbox and "Upload" button
 5. Tap "Upload" next to any document to pick a file from device storage
 6. After upload, the checkbox turns green with a checkmark
-7. For "Construction Permit" or "Renovation Permit": an interactive map appears with a crosshair overlay and a search bar
-8. **Map Location Search**: Type a city or address (e.g., "New York", "123 Main Street") in the search field above the map and tap "Search" to navigate the map to that location
-9. Drag the map to position the crosshair at the desired work location (map scrolls independently from the page)
-10. Press the "Pin Here" button to place the marker at the exact crosshair position
-11. Coordinates display below the map
-12. You can drag the map again and press "Pin Here" to move the pin
-13. Enter a description and see the fee preview
-14. Tap "Submit Application"
-15. The app uploads all documents then automatically triggers AI analysis via Gemini
-16. Success screen appears
-17. Tap "Back to Dashboard" and see new permit
+7. The view stays on the document checklist area (does not scroll to map or open keyboard)
+8. For "Construction Permit" or "Renovation Permit": an interactive map appears with a crosshair overlay and a search bar
+9. Type a city or address in the search field above the map and tap "Search" to navigate
+10. Drag the map to position the crosshair at the desired work location
+11. Press the "Pin Here" button to place the marker
+12. Enter a description and see the fee preview
+13. Tap "Submit Application"
+14. Success screen appears immediately (AI analysis runs in the background)
+15. Tap "Back to Dashboard" and see new permit
 
 ### 6. Permit Details, Map, and Estimated Processing Time
 
 1. Tap any permit in the list
 2. See permit type, date, fee, payment status
-3. For Construction/Renovation permits with a pinned location: a map card shows the work location with a marker (map scrolls independently)
+3. For Construction/Renovation permits with a pinned location: a map card shows the work location with a marker
 4. Coordinates displayed below the map
-5. For "submitted" permits, see "Estimated Processing Time" card showing average processing time (e.g., "2.5 days")
+5. For "submitted" permits, see "Estimated Processing Time" card
 6. Description card shows if description was provided
 7. Documents card shows a horizontal carousel of all uploaded documents
 8. Tap any document thumbnail to open full-screen viewer
 
-### 7. Inspector Review with AI Analysis, Document Preview, and Map
+### 7. Inspector Review with Collapsible AI Analysis
 
 1. Login as inspector
 2. Tap a pending permit
-3. See the **AI Document Analysis** card at the top showing properly formatted text with:
-   - Bold headings and section titles rendered correctly (no raw ** markers)
-   - Bullet points displayed as proper list items
-   - Italic text for emphasis where applicable
+3. See the **AI Document Analysis** card showing a compact 4-line preview of the analysis
+4. The card displays "Tap to read full analysis" hint
+5. Tap the AI card to open a dialog with the full formatted analysis:
+   - Bold headings and section titles
+   - Bullet points as proper list items
    - Document type identification for each uploaded file
-   - Key information extracted (dates, names, addresses, stamps)
-   - Detection of irrelevant or incorrect documents
    - Completeness assessment against required documents
-   - Any warnings or concerns
+   - Warnings or concerns
    - Overall recommendation
-4. If no AI analysis exists, a "Run AI Analysis" button appears to manually trigger it
-5. See applicant info, description, and attached documents list with document labels
-6. Scroll through the document preview section
-7. Tap any document row to view full-size in the Document Viewer
-8. For Construction/Renovation permits: a map card shows the pinned work location (map scrolls independently)
-9. Add optional review notes
-10. Tap "Approve" or "Reject"
-11. Notification is sent to the citizen (if FCM is configured)
+6. Close the dialog and continue reviewing
+7. If no AI analysis exists, a "Run AI Analysis" button appears to manually trigger it
+8. See applicant info, description, and attached documents list
+9. For Construction/Renovation permits: map card shows pinned work location
+10. Add optional review notes
+11. Tap "Approve" or "Reject"
 
 ### 8. AI Document Analysis Details
 
-1. The AI analysis runs once per permit during submission
-2. If no GEMINI_API_KEY is configured, the inspector sees a "Run AI Analysis" button to trigger manually after configuring the key
-3. If the API key is configured, the analysis includes:
-   - Per-document: type identification, extracted info, quality assessment
-   - Overall: completeness score, missing documents, warnings
-   - Detection of irrelevant or incorrect files
-   - Recommendation for the inspector
-4. The analysis text is rendered with proper markdown formatting (bold, italic, bullets, headers)
+1. The AI analysis runs in the background when a permit is submitted (citizen does not wait)
+2. If no GEMINI_API_KEY is configured, the inspector sees a "Run AI Analysis" button
+3. The analysis is collapsible on the review screen (4-line preview, tap to expand)
+4. The full analysis opens in a scrollable dialog
 5. The analysis is stored permanently with the permit
-6. Subsequent views of the same permit show the cached analysis (no additional API calls)
+6. Subsequent views show the cached analysis (no additional API calls)
 
-### 9. In-App Chat / Comments
+### 9. Blockchain Permit Notarization
+
+1. Configure blockchain in `.env` (optional):
+   ```
+   ETH_PRIVATE_KEY=your-metamask-private-key
+   ETH_RPC_URL=https://sepolia.infura.io/v3/your-project-id
+   ETH_WALLET_ADDRESS=your-metamask-wallet-address
+   ```
+2. Get free Sepolia test ETH from https://sepoliafaucet.com/ or https://www.infura.io/faucet/sepolia
+3. Install web3: `pip install web3`
+4. Restart the Flask server
+5. Login as inspector and approve a pending permit
+6. The backend computes a SHA-256 hash of the permit data + all document files
+7. If blockchain is configured, the hash is written to the Ethereum Sepolia testnet
+8. Login as citizen and open the approved permit
+9. See the "Blockchain Notarization" card showing:
+   - "Verified on Blockchain" (green) if the on-chain transaction succeeded
+   - "Hash Recorded Locally" (amber) if blockchain was not configured
+   - Transaction hash in monospace font
+   - Document hash (SHA-256)
+   - "View on Etherscan" button
+10. Tap "View on Etherscan" to open the transaction on https://sepolia.etherscan.io/
+11. Download the PDF certificate and verify it includes the blockchain TX and QR code
+12. Without blockchain configured: the SHA-256 hash is still computed and stored
+13. Verify via API: visit `http://localhost:5000/api/permits/{id}/verify-blockchain` in a browser
+
+### 10. In-App Chat / Comments
 
 1. Open any permit detail (citizen or inspector)
 2. Tap "Comments" button
@@ -170,25 +194,24 @@
 5. Your messages appear on the right, others on the left
 6. Author name and role shown for each message
 7. Both citizen and inspector can send messages on the same permit
-8. New comment triggers notification to the other party
 
-### 10. Payment
+### 11. Payment
 
 1. Have an inspector approve a permit
 2. Login as citizen and open the approved permit
 3. Tap "Pay Now"
-4. Status changes to "Completed" (indigo chip)
+4. Status changes to "Completed" (teal chip)
 5. Payment status shows "Paid"
 
-### 11. PDF Certificate Download
+### 12. PDF Certificate Download
 
 1. Open a "Completed" permit (approved + paid)
 2. Tap "Download Certificate"
-3. PDF is saved to Downloads folder
-4. PDF contains: permit details table, applicant info, QR code for verification
-5. Open the PDF from Downloads to verify content
+3. PDF is saved to Downloads folder and automatically opens in the device's PDF viewer
+4. PDF contains: permit details table, applicant info, QR code for verification, blockchain transaction ID (if available)
+5. If no PDF viewer is installed, the file is still saved to Downloads
 
-### 12. Permit Renewal / Reapply
+### 13. Permit Renewal / Reapply
 
 1. Open a "Completed" permit
 2. Tap "Renew" button
@@ -196,7 +219,7 @@
 4. You are navigated to the new permit detail
 5. For "Rejected" permits, tap "Reapply" button (same behavior)
 
-### 13. Appointment Scheduling
+### 14. Appointment Scheduling
 
 1. Open an "Approved" permit (as citizen)
 2. Tap "Schedule Inspection"
@@ -206,9 +229,8 @@
 6. Add optional notes
 7. Tap "Schedule"
 8. Toast shows "Appointment scheduled!"
-9. Notification sent to inspectors
 
-### 14. Analytics Dashboard (Inspector)
+### 15. Analytics Dashboard (Inspector)
 
 1. Login as inspector
 2. Open drawer menu and tap "Analytics"
@@ -216,9 +238,8 @@
 4. Average processing time displayed
 5. Pie chart shows approval vs rejection ratio
 6. Bar chart shows busiest permit types
-7. Charts animate on load
 
-### 15. Change Password
+### 16. Change Password
 
 1. Open drawer menu and tap "Change Password"
 2. Enter current password (`1q2w3e4r`)
@@ -226,46 +247,39 @@
 4. Confirm new password
 5. Tap "Change Password"
 6. Toast shows "Password changed successfully"
-7. Login with new password to verify
 
-### 16. Dark Mode
+### 17. Dark Mode
 
 1. Open drawer menu and tap "Settings"
 2. Toggle "Dark Mode" switch
-3. App immediately switches to dark theme with deep slate background and indigo/violet accents
-4. Cards become dark slate, text becomes light
-5. Gradient headers use indigo/violet tones
+3. App switches to dark theme with deep grey background and teal accents
+4. Cards become dark grey, text becomes light
+5. Headers use dark teal tones
 6. Toggle "Follow System" to auto-detect system dark mode
 7. When Follow System is on, Dark Mode toggle is disabled
 8. Close and reopen app to verify dark mode persists
 
-### 17. Notifications Settings
+### 18. Notifications Settings
 
 1. In Settings, see "Notifications" section
 2. Toggle "Push Notifications" to enable/disable
-3. When enabled, you receive notifications for:
-   - Permit approved/rejected
-   - New comments on your permits
-   - Appointment scheduling
 
-### 18. Profile Management
+### 19. Profile Management
 
 1. Open drawer and tap "My Profile"
 2. See profile info: name, role, email
 3. Tap "Edit Profile" to change name and email
 4. Tap avatar change button to upload a new profile photo
-5. Changes reflect immediately across the app
 
-### 19. Edit Profile
+### 20. Edit Profile
 
 1. Open drawer and tap "Edit Profile"
 2. Change full name or email
 3. Tap "Save Changes"
 4. Tap the camera FAB to change avatar
 5. Select an image from gallery
-6. Avatar uploads automatically
 
-### 20. Navigation Drawer (Citizen)
+### 21. Navigation Drawer (Citizen)
 
 1. Tap the menu icon (top left)
 2. Test all menu items:
@@ -279,7 +293,7 @@
    - About (shows dialog)
    - Sign Out (with confirmation)
 
-### 21. Navigation Drawer (Inspector)
+### 22. Navigation Drawer (Inspector)
 
 1. Login as inspector
 2. Tap the menu icon
@@ -295,7 +309,7 @@
    - About
    - Sign Out
 
-### 22. Document Viewer
+### 23. Document Viewer
 
 1. Open a permit with uploaded documents
 2. Tap a document thumbnail
@@ -303,21 +317,16 @@
 4. File name shown in header
 5. Loading indicator during image load
 6. Error state with retry button if load fails
-7. Back button returns to previous screen
 
-### 23. Push Notifications
+### 24. Push Notifications
 
 1. Configure Firebase (optional):
    - Place `google-services.json` in `app/` directory
    - Place `firebase-service-account.json` in `smart_permits_api/` directory
 2. Without Firebase: notifications work locally within the app
 3. With Firebase: cross-device push notifications work
-4. Notifications appear when:
-   - Inspector approves/rejects a permit
-   - Someone comments on a permit
-   - An appointment is scheduled
 
-### 24. Trash / Recycle Bin
+### 25. Trash / Recycle Bin
 
 1. Open any permit detail as a citizen
 2. Scroll down and tap "Move to Trash"
@@ -325,35 +334,31 @@
 4. Permit disappears from dashboard
 5. Open drawer menu and tap "Trash"
 6. See the trashed permit with "X days until permanent deletion" label
-7. Tap "Restore" to move it back to your permits
-8. Tap "Delete" to permanently delete a single permit (confirmation required)
-9. Tap the trash icon in the header to "Empty Trash" (deletes all items permanently)
-10. Pull-to-refresh to reload trash contents
-11. Items in trash are automatically permanently deleted after 30 days
+7. Tap "Restore" to move it back
+8. Tap "Delete" to permanently delete (confirmation required)
+9. Tap the trash icon in the header to "Empty Trash"
 
-### 25. Delete Account
+### 26. Delete Account
 
 1. Login as any user (create a test account to try this)
 2. Open drawer and tap "My Profile"
 3. Scroll down and tap "Delete Account"
-4. A confirmation dialog appears warning that all data will be permanently deleted
+4. A confirmation dialog appears
 5. Tap "Delete" to confirm
-6. Toast shows "Account deleted"
-7. App returns to the login screen
-8. Try logging in with the deleted credentials - login fails
+6. App returns to login screen
+7. Try logging in with deleted credentials - login fails
 
-### 26. Map Location Search
+### 27. Map Location Search
 
 1. From Citizen Dashboard, tap "Apply for Permit"
 2. Select "Construction Permit" or "Renovation Permit"
 3. The map section appears with a search bar above it
 4. Type a city name (e.g., "London") in the search field
 5. Tap "Search" button
-6. The map navigates to the searched location and zooms in
-7. A toast shows the resolved address
-8. Type another address and search again to navigate elsewhere
-9. If the location is not found, a "Location not found" toast appears
-10. After navigating to the right area, drag the map and press "Pin Here" to set the exact location
+6. The map navigates to the searched location
+7. Type another address and search again
+8. If the location is not found, a "Location not found" toast appears
+9. After navigating, drag the map and press "Pin Here" to set the exact location
 
 ---
 
@@ -361,37 +366,38 @@
 
 1. Register a new citizen account
 2. Apply for a "Construction Permit" with description
-3. Upload required documents from the checklist (Urban Planning Certificate, Authorized Technical Project, etc.)
-4. Use the map search bar to navigate to a city, then drag the map and press "Pin Here" to pin a location
-5. Tap "Submit Application" - AI analysis runs automatically via Gemini
+3. Upload required documents from the checklist
+4. Use the map search to navigate to a city, then pin a location
+5. Tap "Submit Application" - success screen appears immediately
 6. Verify permit appears with "Submitted" status
 7. Search for it using the search bar
 8. Filter by "Submitted" status
 9. Logout
 10. Login as inspector (`inspector1` / `1q2w3e4r`)
 11. Search for the pending permit by applicant name
-12. Open the permit and see the AI Document Analysis card with properly formatted text (bold, bullets, headers)
-13. Review the permit, see the map with pinned location, view all documents in ordered list
-14. Add a comment asking for more info
-15. Approve the permit with notes
-16. Logout
-17. Login as citizen
-18. See notification (if FCM configured)
-19. Open the approved permit, see reviewer notes
-20. Read and reply to the comment
-21. Schedule an inspection appointment
-22. Pay the permit fee
-23. Download the PDF certificate
-24. Verify certificate has QR code and correct details
-25. Renew the permit (creates new application)
-26. Change password in Settings
-27. Toggle dark mode on/off
-28. Edit profile name and avatar
-29. Move one permit to Trash
-30. Open Trash, verify permit is there
-31. Restore the permit from Trash
-32. Move it to Trash again, permanently delete it
-33. Logout and login with new password
+12. Open the permit and see the collapsible AI analysis card (4-line preview)
+13. Tap the AI card to open full analysis dialog with formatted text
+14. Close dialog and review the permit, see the map, view documents
+15. Add a comment asking for more info
+16. Approve the permit with notes
+17. Verify the Flask terminal shows blockchain notarization logs
+18. Logout
+19. Login as citizen
+20. Open the approved permit, see reviewer notes
+21. See the "Blockchain Notarization" card with transaction hash
+22. Read and reply to the comment
+23. Schedule an inspection appointment
+24. Pay the permit fee
+25. Download the PDF certificate (auto-opens in PDF viewer)
+26. Verify certificate has QR code, correct details, and blockchain TX ID
+27. Renew the permit
+28. Change password in Settings
+29. Toggle dark mode on/off (verify teal color scheme in both modes)
+30. Edit profile name and avatar
+31. Move one permit to Trash
+32. Restore it from Trash
+33. Move it to Trash again, permanently delete it
+34. Logout and login with new password
 
 ---
 
@@ -412,9 +418,10 @@
 - Check server logs for errors
 - Re-login if JWT token expired
 
-### PDF Certificate Not Downloading
+### PDF Certificate Not Opening
 - Ensure `reportlab` and `qrcode` are installed: `pip install reportlab qrcode[pil]`
 - Permit must be in "Completed" status (approved + paid)
+- The PDF auto-opens after download; ensure a PDF viewer is installed on the device
 - Check storage permission on device
 
 ### Dark Mode Not Applying
@@ -430,22 +437,28 @@
 
 ### AI Analysis Not Working
 - Ensure `GEMINI_API_KEY` is set in the `.env` file
-- The `.env` file must be in the `smart_permits_api/` directory (same folder as `app.py`)
-- Check that `google-genai` and `Pillow` are installed: `pip install google-genai Pillow`
+- The `.env` file must be in the `smart_permits_api/` directory
+- Check that `google-genai` and `Pillow` are installed
 - Check the Flask server terminal for error messages
-- Verify your API key is valid at https://aistudio.google.com/apikey
-- If no key is configured at submission time, the inspector can trigger AI analysis manually using the "Run AI Analysis" button on the review screen
-- Restart the Flask server after creating or editing the `.env` file
+- If no key is configured at submission time, the inspector can trigger AI analysis manually
+- Restart the Flask server after editing the `.env` file
+
+### Upload Goes to Wrong Place or Opens Keyboard
+- This has been fixed. After uploading a document, focus is cleared and keyboard is hidden
+- If the issue persists, restart the app
 
 ### Map Search Not Working
-- Ensure the device has internet connectivity (Geocoder requires network)
-- Try a well-known city name (e.g., "London", "Tokyo") for best results
-- If search fails, you can still manually drag the map to the desired location
+- Ensure the device has internet connectivity
+- Try a well-known city name (e.g., "London", "Tokyo")
+- If search fails, manually drag the map to the desired location
 
-### Map Not Scrolling Properly
-- The map intercepts touch events to scroll independently from the page
-- Use one finger to pan the map, pinch to zoom
-- If the page scrolls instead, try touching directly on the map area
+### Blockchain Notarization Not Working
+- Ensure `ETH_PRIVATE_KEY`, `ETH_RPC_URL`, and `ETH_WALLET_ADDRESS` are set in `.env`
+- Check that `web3` is installed: `pip install web3`
+- Ensure your MetaMask wallet has Sepolia test ETH
+- Verify your Infura/Alchemy Sepolia RPC URL is correct
+- If blockchain is not configured, the SHA-256 hash is still computed and stored locally
+- Restart the Flask server after editing `.env`
 
 ---
 
@@ -454,7 +467,7 @@
 | Table        | Columns                                                                         |
 |--------------|---------------------------------------------------------------------------------|
 | users        | id, username, email, password_hash, role, full_name, avatar_url, fcm_token      |
-| permits      | id, user_id, permit_type, description, status, fee_amount, is_paid, reviewer_notes, reviewed_by, renewed_from, latitude, longitude, ai_analysis, created_at, updated_at, deleted_at |
+| permits      | id, user_id, permit_type, description, status, fee_amount, is_paid, reviewer_notes, reviewed_by, renewed_from, latitude, longitude, ai_analysis, blockchain_hash, blockchain_tx_hash, blockchain_error, created_at, updated_at, deleted_at |
 | documents    | id, permit_id, file_path, file_name, document_label, uploaded_at                |
 | comments     | id, permit_id, user_id, message, created_at                                     |
 | appointments | id, permit_id, user_id, date, time_slot, status, notes, created_at              |
@@ -491,3 +504,5 @@
 - **Uploaded Documents**: `smart_permits_api/uploads/`
 - **Backend Server**: `smart_permits_api/app.py`
 - **AI Config**: `smart_permits_api/.env`
+- **Blockchain Config**: `smart_permits_api/.env` (ETH_PRIVATE_KEY, ETH_RPC_URL, ETH_WALLET_ADDRESS)
+- **Blockchain Module**: `smart_permits_api/blockchain.py`

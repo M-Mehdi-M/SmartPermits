@@ -38,7 +38,7 @@
 
         <activity android:name=".MainActivity" android:exported="false" />
         <activity android:name=".CitizenDashboardActivity" android:exported="false" />
-        <activity android:name=".ApplyPermitActivity" android:exported="false" />
+        <activity android:name=".ApplyPermitActivity" android:exported="false" android:windowSoftInputMode="stateAlwaysHidden|adjustResize" />
         <activity android:name=".PermitDetailActivity" android:exported="false" />
         <activity android:name=".InspectorDashboardActivity" android:exported="false" />
         <activity android:name=".PermitReviewActivity" android:exported="false" />

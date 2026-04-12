@@ -3,12 +3,14 @@ package project.smartpermits;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,7 +32,6 @@ import org.osmdroid.util.GeoPoint;
 import org.osmdroid.views.MapView;
 import org.osmdroid.views.overlay.Marker;
 
-import java.io.InputStream;
 import java.util.List;
 import java.util.Locale;
 
@@ -47,12 +48,15 @@ public class PermitDetailActivity extends AppCompatActivity {
     private TextView tvPermitType, tvIcon, tvDate, tvFee, tvPayment, tvDescription, tvNotes, tvEstTime;
     private Chip chipStatus;
     private MaterialButton btnPay, btnRenew, btnCertificate, btnComments, btnSchedule, btnTrash;
-    private MaterialCardView cardDescription, cardNotes, cardDocuments, cardEstTime;
+    private MaterialCardView cardDescription, cardNotes, cardDocuments, cardEstTime, cardBlockchain;
     private RecyclerView recyclerDocuments;
     private ProgressBar progressBar;
     private MaterialCardView cardMapDetail;
     private MapView mapViewDetail;
     private TextView tvMapCoordsDetail;
+    private TextView tvBlockchainStatus, tvTxHash, tvDocHash;
+    private LinearLayout layoutTxHash, layoutDocHash;
+    private MaterialButton btnViewOnChain;
     private int permitId;
 
     @Override
@@ -88,6 +92,13 @@ public class PermitDetailActivity extends AppCompatActivity {
         cardMapDetail = findViewById(R.id.cardMapDetail);
         mapViewDetail = findViewById(R.id.mapViewDetail);
         tvMapCoordsDetail = findViewById(R.id.tvMapCoordsDetail);
+        cardBlockchain = findViewById(R.id.cardBlockchain);
+        tvBlockchainStatus = findViewById(R.id.tvBlockchainStatus);
+        tvTxHash = findViewById(R.id.tvTxHash);
+        tvDocHash = findViewById(R.id.tvDocHash);
+        layoutTxHash = findViewById(R.id.layoutTxHash);
+        layoutDocHash = findViewById(R.id.layoutDocHash);
+        btnViewOnChain = findViewById(R.id.btnViewOnChain);
         ImageButton btnBack = findViewById(R.id.btnBack);
 
         btnBack.setOnClickListener(v -> finish());
@@ -172,6 +183,7 @@ public class PermitDetailActivity extends AppCompatActivity {
         cardEstTime.setVisibility(View.GONE);
         cardMapDetail.setVisibility(View.GONE);
         cardDocuments.setVisibility(View.GONE);
+        cardBlockchain.setVisibility(View.GONE);
 
         if (permit.getDescription() != null && !permit.getDescription().isEmpty()) {
             cardDescription.setVisibility(View.VISIBLE);
@@ -216,6 +228,28 @@ public class PermitDetailActivity extends AppCompatActivity {
             recyclerDocuments.setAdapter(new DocCarouselAdapter(permit.getDocuments()));
         }
 
+        String bcHash = permit.getBlockchainHash();
+        String bcTxHash = permit.getBlockchainTxHash();
+        if (bcHash != null && !bcHash.isEmpty()) {
+            cardBlockchain.setVisibility(View.VISIBLE);
+            if (bcTxHash != null && !bcTxHash.isEmpty()) {
+                tvBlockchainStatus.setText("Verified on Blockchain");
+                tvBlockchainStatus.setTextColor(Color.parseColor("#10B981"));
+                layoutTxHash.setVisibility(View.VISIBLE);
+                tvTxHash.setText(bcTxHash);
+                btnViewOnChain.setVisibility(View.VISIBLE);
+                btnViewOnChain.setOnClickListener(v -> {
+                    String url = "https://sepolia.etherscan.io/tx/" + bcTxHash;
+                    startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+                });
+            } else {
+                tvBlockchainStatus.setText("Hash Recorded Locally");
+                tvBlockchainStatus.setTextColor(Color.parseColor("#F59E0B"));
+            }
+            layoutDocHash.setVisibility(View.VISIBLE);
+            tvDocHash.setText(bcHash);
+        }
+
         String status = permit.getStatus() != null ? permit.getStatus() : "unknown";
         chipStatus.setText(status.substring(0, 1).toUpperCase() + status.substring(1));
 
@@ -224,7 +258,7 @@ public class PermitDetailActivity extends AppCompatActivity {
             case "submitted": chipColor = Color.parseColor("#F59E0B"); break;
             case "approved": chipColor = Color.parseColor("#10B981"); break;
             case "rejected": chipColor = Color.parseColor("#EF4444"); break;
-            case "completed": chipColor = Color.parseColor("#6366F1"); break;
+            case "completed": chipColor = Color.parseColor("#0D9488"); break;
             default: chipColor = Color.parseColor("#64748B"); break;
         }
         chipStatus.setChipBackgroundColor(ColorStateList.valueOf(chipColor));
@@ -356,44 +390,87 @@ public class PermitDetailActivity extends AppCompatActivity {
     private void downloadCertificate() {
         progressBar.setVisibility(View.VISIBLE);
         btnCertificate.setEnabled(false);
-        RetrofitClient.getInstance(this).getApi().downloadCertificate(permitId)
-                .enqueue(new Callback<ResponseBody>() {
-                    @Override
-                    public void onResponse(Call<ResponseBody> call, Response<ResponseBody> response) {
+        new Thread(() -> {
+            try {
+                retrofit2.Response<ResponseBody> response = RetrofitClient.getInstance(this)
+                        .getApi().downloadCertificate(permitId).execute();
+                if (!response.isSuccessful() || response.body() == null) {
+                    String errMsg = "Download failed (HTTP " + response.code() + ")";
+                    try {
+                        if (response.errorBody() != null) {
+                            errMsg = response.errorBody().string();
+                        }
+                    } catch (Exception ignored) {}
+                    String finalMsg = errMsg;
+                    runOnUiThread(() -> {
                         progressBar.setVisibility(View.GONE);
                         btnCertificate.setEnabled(true);
-                        if (response.isSuccessful() && response.body() != null) {
-                            try {
-                                android.content.ContentValues values = new android.content.ContentValues();
-                                values.put(android.provider.MediaStore.Downloads.DISPLAY_NAME, "permit_certificate_" + permitId + ".pdf");
-                                values.put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/pdf");
-                                values.put(android.provider.MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
-                                android.net.Uri uri = getContentResolver().insert(
-                                        android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
-                                if (uri != null) {
-                                    java.io.OutputStream os = getContentResolver().openOutputStream(uri);
-                                    if (os != null) {
-                                        InputStream is = response.body().byteStream();
-                                        byte[] buf = new byte[4096];
-                                        int len;
-                                        while ((len = is.read(buf)) != -1) os.write(buf, 0, len);
-                                        os.close();
-                                        is.close();
-                                    }
-                                }
-                                Toast.makeText(PermitDetailActivity.this, "Certificate saved to Downloads", Toast.LENGTH_LONG).show();
-                            } catch (Exception e) {
-                                Toast.makeText(PermitDetailActivity.this, "Save failed", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, finalMsg, Toast.LENGTH_LONG).show();
+                    });
+                    return;
+                }
+                byte[] pdfBytes = response.body().bytes();
+                if (pdfBytes == null || pdfBytes.length < 50) {
+                    runOnUiThread(() -> {
+                        progressBar.setVisibility(View.GONE);
+                        btnCertificate.setEnabled(true);
+                        Toast.makeText(this, "Empty response from server", Toast.LENGTH_SHORT).show();
+                    });
+                    return;
+                }
+                String header = new String(pdfBytes, 0, Math.min(5, pdfBytes.length));
+                if (!header.startsWith("%PDF")) {
+                    String preview = new String(pdfBytes, 0, Math.min(200, pdfBytes.length));
+                    runOnUiThread(() -> {
+                        progressBar.setVisibility(View.GONE);
+                        btnCertificate.setEnabled(true);
+                        Toast.makeText(this, "Server error: " + preview, Toast.LENGTH_LONG).show();
+                    });
+                    return;
+                }
+                String fileName = "permit_certificate_" + permitId + ".pdf";
+                java.io.File cacheFile = new java.io.File(getCacheDir(), fileName);
+                try (java.io.FileOutputStream fos = new java.io.FileOutputStream(cacheFile)) {
+                    fos.write(pdfBytes);
+                    fos.flush();
+                }
+                try {
+                    android.content.ContentValues values = new android.content.ContentValues();
+                    values.put(android.provider.MediaStore.Downloads.DISPLAY_NAME, fileName);
+                    values.put(android.provider.MediaStore.Downloads.MIME_TYPE, "application/pdf");
+                    values.put(android.provider.MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                    android.net.Uri dlUri = getContentResolver().insert(
+                            android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                    if (dlUri != null) {
+                        try (java.io.OutputStream os = getContentResolver().openOutputStream(dlUri)) {
+                            if (os != null) {
+                                os.write(pdfBytes);
+                                os.flush();
                             }
                         }
                     }
-
-                    @Override
-                    public void onFailure(Call<ResponseBody> call, Throwable t) {
-                        progressBar.setVisibility(View.GONE);
-                        btnCertificate.setEnabled(true);
-                    }
+                } catch (Exception ignored) {}
+                runOnUiThread(() -> {
+                    progressBar.setVisibility(View.GONE);
+                    btnCertificate.setEnabled(true);
+                    Toast.makeText(this, "Certificate saved to Downloads", Toast.LENGTH_LONG).show();
+                    try {
+                        android.net.Uri fileUri = androidx.core.content.FileProvider.getUriForFile(
+                                this, getPackageName() + ".fileprovider", cacheFile);
+                        Intent openIntent = new Intent(Intent.ACTION_VIEW);
+                        openIntent.setDataAndType(fileUri, "application/pdf");
+                        openIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                        startActivity(openIntent);
+                    } catch (Exception ignored) {}
                 });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    progressBar.setVisibility(View.GONE);
+                    btnCertificate.setEnabled(true);
+                    Toast.makeText(this, "Download error: " + e.toString(), Toast.LENGTH_LONG).show();
+                });
+            }
+        }).start();
     }
 
     @Override

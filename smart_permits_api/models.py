@@ -45,6 +45,9 @@ class Permit(db.Model):
     longitude = db.Column(db.Float, nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True, default=None)
     ai_analysis = db.Column(db.Text, nullable=True, default=None)
+    blockchain_hash = db.Column(db.String(66), nullable=True, default=None)
+    blockchain_tx_hash = db.Column(db.String(70), nullable=True, default=None)
+    blockchain_error = db.Column(db.String(500), nullable=True, default=None)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     documents = db.relationship('Document', backref='permit', lazy=True)
@@ -91,6 +94,9 @@ class Permit(db.Model):
             'longitude': self.longitude,
             'estimated_processing_time': avg_time,
             'ai_analysis': self.ai_analysis,
+            'blockchain_hash': self.blockchain_hash,
+            'blockchain_tx_hash': self.blockchain_tx_hash,
+            'blockchain_error': self.blockchain_error,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'deleted_at': self.deleted_at.isoformat() if self.deleted_at else None,

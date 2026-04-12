@@ -122,6 +122,12 @@ def run_migrations():
         permit_cols2 = [c['name'] for c in insp.get_columns('permits')]
         if 'ai_analysis' not in permit_cols2:
             conn.execute(text("ALTER TABLE permits ADD COLUMN ai_analysis TEXT"))
+        if 'blockchain_hash' not in permit_cols2:
+            conn.execute(text("ALTER TABLE permits ADD COLUMN blockchain_hash VARCHAR(66)"))
+        if 'blockchain_tx_hash' not in permit_cols2:
+            conn.execute(text("ALTER TABLE permits ADD COLUMN blockchain_tx_hash VARCHAR(70)"))
+        if 'blockchain_error' not in permit_cols2:
+            conn.execute(text("ALTER TABLE permits ADD COLUMN blockchain_error VARCHAR(500)"))
         conn.commit()
 
 
@@ -523,6 +529,16 @@ def review_permit(permit_id):
     permit.status = action
     permit.reviewer_notes = notes
     permit.reviewed_by = user_id
+    if action == 'approved':
+        try:
+            from blockchain import notarize_permit
+            docs = Document.query.filter_by(permit_id=permit_id).all()
+            permit_hash, tx_hash, bc_error = notarize_permit(permit, docs, app.config['UPLOAD_FOLDER'])
+            permit.blockchain_hash = permit_hash
+            permit.blockchain_tx_hash = tx_hash
+            permit.blockchain_error = bc_error
+        except Exception as e:
+            permit.blockchain_error = f'Notarization failed: {str(e)}'
     db.session.commit()
     status_text = 'Approved' if action == 'approved' else 'Rejected'
     send_push_notification(
@@ -639,6 +655,24 @@ def update_appointment(appt_id):
     return jsonify(appt.to_dict()), 200
 
 
+@app.route('/api/permits/<int:permit_id>/verify-blockchain', methods=['GET'])
+def verify_blockchain(permit_id):
+    permit = Permit.query.get_or_404(permit_id)
+    if not permit.blockchain_hash:
+        return jsonify({'verified': False, 'error': 'No blockchain record for this permit'}), 200
+    result = {
+        'permit_id': permit.id,
+        'permit_type': permit.permit_type,
+        'status': permit.status,
+        'blockchain_hash': permit.blockchain_hash,
+        'blockchain_tx_hash': permit.blockchain_tx_hash,
+        'verified': permit.blockchain_tx_hash is not None,
+        'etherscan_url': f'https://sepolia.etherscan.io/tx/{permit.blockchain_tx_hash}' if permit.blockchain_tx_hash else None,
+        'error': permit.blockchain_error
+    }
+    return jsonify(result), 200
+
+
 @app.route('/api/permits/<int:permit_id>/certificate', methods=['GET'])
 @jwt_required()
 def get_certificate(permit_id):
@@ -647,13 +681,17 @@ def get_certificate(permit_id):
         return jsonify({'error': 'Certificate only available for completed permits'}), 400
     try:
         from reportlab.lib.pagesizes import A4
-        from reportlab.lib import colors
+        from reportlab.lib import colors as rl_colors
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib.units import cm
+        from xml.sax.saxutils import escape as xml_escape
         import qrcode
 
-        qr = qrcode.make(f"SmartPermits-Verify-{permit.id}-{permit.permit_type}")
+        qr_data = f"SmartPermits-Verify-{permit.id}-{permit.permit_type}"
+        if permit.blockchain_tx_hash:
+            qr_data = f"https://sepolia.etherscan.io/tx/{permit.blockchain_tx_hash}"
+        qr = qrcode.make(qr_data)
         qr_buffer = io.BytesIO()
         qr.save(qr_buffer, format='PNG')
         qr_buffer.seek(0)
@@ -664,35 +702,49 @@ def get_certificate(permit_id):
         pdf_buffer = io.BytesIO()
         doc = SimpleDocTemplate(pdf_buffer, pagesize=A4)
         styles = getSampleStyleSheet()
-        title_style = ParagraphStyle('Title2', parent=styles['Title'], fontSize=24, textColor=colors.HexColor('#1E3A5F'))
-        subtitle = ParagraphStyle('Sub', parent=styles['Normal'], fontSize=14, textColor=colors.grey)
+        title_style = ParagraphStyle('Title2', parent=styles['Title'], fontSize=24, textColor=rl_colors.HexColor('#1E3A5F'))
+        subtitle_style = ParagraphStyle('Sub', parent=styles['Normal'], fontSize=14, textColor=rl_colors.grey)
+        cell_style = ParagraphStyle('Cell', parent=styles['Normal'], fontSize=10, leading=14)
+        header_style = ParagraphStyle('HdrCell', parent=styles['Normal'], fontSize=11, leading=14, textColor=rl_colors.white, fontName='Helvetica-Bold')
+
+        def _cell(text):
+            return Paragraph(xml_escape(str(text or '')), cell_style)
+
+        def _hdr(text):
+            return Paragraph(xml_escape(str(text or '')), header_style)
 
         elements = []
         elements.append(Paragraph("SmartPermits", title_style))
-        elements.append(Paragraph("Official Permit Certificate", subtitle))
+        elements.append(Paragraph("Official Permit Certificate", subtitle_style))
         elements.append(Spacer(1, 1 * cm))
 
+        applicant_name = permit.applicant.full_name if permit.applicant else ''
+        issued = permit.updated_at.strftime('%Y-%m-%d') if permit.updated_at else ''
+        applied = permit.created_at.strftime('%Y-%m-%d') if permit.created_at else ''
+
         data = [
-            ['Field', 'Details'],
-            ['Certificate ID', f'SP-{permit.id:05d}'],
-            ['Permit Type', permit.permit_type],
-            ['Applicant', permit.applicant.full_name if permit.applicant else ''],
-            ['Description', permit.description or 'N/A'],
-            ['Fee Amount', f'${permit.fee_amount:.2f}'],
-            ['Status', 'COMPLETED'],
-            ['Issued Date', permit.updated_at.strftime('%Y-%m-%d')],
-            ['Application Date', permit.created_at.strftime('%Y-%m-%d')],
+            [_hdr('Field'), _hdr('Details')],
+            [_cell('Certificate ID'), _cell(f'SP-{permit.id:05d}')],
+            [_cell('Permit Type'), _cell(permit.permit_type)],
+            [_cell('Applicant'), _cell(applicant_name)],
+            [_cell('Description'), _cell(permit.description or 'N/A')],
+            [_cell('Fee Amount'), _cell(f'${permit.fee_amount:.2f}')],
+            [_cell('Status'), _cell('COMPLETED')],
+            [_cell('Issued Date'), _cell(issued)],
+            [_cell('Application Date'), _cell(applied)],
         ]
+        if permit.blockchain_tx_hash:
+            data.append([_cell('Blockchain TX'), _cell(permit.blockchain_tx_hash)])
+        if permit.blockchain_hash:
+            data.append([_cell('Document Hash'), _cell(permit.blockchain_hash)])
 
         table = Table(data, colWidths=[5 * cm, 10 * cm])
         table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1E3A5F')),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, -1), 11),
-            ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor('#F4F6F9')]),
+            ('BACKGROUND', (0, 0), (-1, 0), rl_colors.HexColor('#1E3A5F')),
+            ('GRID', (0, 0), (-1, -1), 0.5, rl_colors.grey),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [rl_colors.white, rl_colors.HexColor('#F4F6F9')]),
             ('PADDING', (0, 0), (-1, -1), 8),
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
         ]))
         elements.append(table)
         elements.append(Spacer(1, 1 * cm))
@@ -700,14 +752,21 @@ def get_certificate(permit_id):
         elements.append(Spacer(1, 0.3 * cm))
         elements.append(RLImage(qr_path, width=4 * cm, height=4 * cm))
         elements.append(Spacer(1, 1 * cm))
-        elements.append(Paragraph("This document is digitally generated by SmartPermits Platform.", ParagraphStyle('Footer', parent=styles['Normal'], fontSize=9, textColor=colors.grey)))
+        elements.append(Paragraph("This document is digitally generated by SmartPermits Platform.", ParagraphStyle('Footer', parent=styles['Normal'], fontSize=9, textColor=rl_colors.grey)))
 
         doc.build(elements)
-        pdf_buffer.seek(0)
-        os.remove(qr_path)
-        return send_file(pdf_buffer, mimetype='application/pdf', as_attachment=True, download_name=f'permit_certificate_{permit.id}.pdf')
-    except ImportError:
-        return jsonify({'error': 'PDF generation libraries not installed'}), 500
+        pdf_bytes = pdf_buffer.getvalue()
+        pdf_buffer.close()
+        try:
+            os.remove(qr_path)
+        except OSError:
+            pass
+        resp = app.response_class(pdf_bytes, mimetype='application/pdf')
+        resp.headers['Content-Disposition'] = f'attachment; filename=permit_certificate_{permit.id}.pdf'
+        resp.headers['Content-Length'] = str(len(pdf_bytes))
+        return resp
+    except Exception as e:
+        return jsonify({'error': f'Certificate generation failed: {str(e)}'}), 500
 
 
 @app.route('/api/permits/<int:permit_id>/trash', methods=['POST'])

@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
@@ -163,7 +164,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
                         CheckBox cb = requiredDocumentChecks.get(pendingDocLabel);
                         if (cb != null) {
                             cb.setChecked(true);
-                            cb.setText(pendingDocLabel + "  ✅");
+                            cb.setText(pendingDocLabel + "  \u2705");
                         }
                         Toast.makeText(this, pendingDocLabel + " uploaded", Toast.LENGTH_SHORT).show();
                     } catch (IOException e) {
@@ -171,6 +172,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
                     }
                     pendingDocLabel = null;
                 }
+                hideKeyboardAndClearFocus();
             });
 
 
@@ -209,6 +211,18 @@ public class ApplyPermitActivity extends AppCompatActivity {
         loadPermitTypes();
     }
 
+    private void hideKeyboardAndClearFocus() {
+        View focus = getCurrentFocus();
+        if (focus != null) {
+            focus.clearFocus();
+        }
+        InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            View decor = getWindow().getDecorView();
+            imm.hideSoftInputFromWindow(decor.getWindowToken(), 0);
+        }
+    }
+
     private void setupMap() {
         mapView.setTileSource(TileSourceFactory.MAPNIK);
         mapView.setMultiTouchControls(true);
@@ -230,6 +244,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
                     return;
                 }
                 btnMapSearch.setEnabled(false);
+                hideKeyboardAndClearFocus();
                 new Thread(() -> {
                     try {
                         Geocoder geocoder = new Geocoder(this, Locale.getDefault());
@@ -486,24 +501,18 @@ public class ApplyPermitActivity extends AppCompatActivity {
 
 
     private void onSubmitSuccess() {
+        progressBar.setVisibility(View.GONE);
+        viewFlipper.setDisplayedChild(1);
+
         if (createdPermitId > 0) {
             RetrofitClient.getInstance(this).getApi()
                     .triggerAiAnalysis(createdPermitId)
                     .enqueue(new Callback<AiAnalysisResponse>() {
                         @Override
-                        public void onResponse(Call<AiAnalysisResponse> call, Response<AiAnalysisResponse> response) {
-                            progressBar.setVisibility(View.GONE);
-                            viewFlipper.setDisplayedChild(1);
-                        }
+                        public void onResponse(Call<AiAnalysisResponse> call, Response<AiAnalysisResponse> response) {}
                         @Override
-                        public void onFailure(Call<AiAnalysisResponse> call, Throwable t) {
-                            progressBar.setVisibility(View.GONE);
-                            viewFlipper.setDisplayedChild(1);
-                        }
+                        public void onFailure(Call<AiAnalysisResponse> call, Throwable t) {}
                     });
-        } else {
-            progressBar.setVisibility(View.GONE);
-            viewFlipper.setDisplayedChild(1);
         }
     }
 

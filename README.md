@@ -1,6 +1,6 @@
 # SmartPermits
 
-A modern Android + Flask full-stack platform that digitizes the municipal permit and licensing process. Citizens can apply for permits, upload documents, and make payments while inspectors review, approve, or reject applications from their mobile dashboard. Includes AI-powered document verification using Google Gemini.
+A modern Android + Flask full-stack platform that digitizes the municipal permit and licensing process. Citizens can apply for permits, upload documents, and make payments while inspectors review, approve, or reject applications from their mobile dashboard. Includes AI-powered document verification using Google Gemini and blockchain permit notarization on Ethereum Sepolia for tamper-proof audit trails.
 
 ## Features
 
@@ -18,16 +18,19 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **Delete Account** - Users can permanently delete their account and all associated data from the profile screen with confirmation dialog
 
 ### AI Features
-- **AI Document Verification** - When a citizen submits a permit application with uploaded documents, the system automatically sends all document images to Google Gemini 2.5 Flash in a single API request. The AI analyzes every document together, identifies document types, extracts key information (dates, names, stamps), checks completeness against permit requirements, flags issues (blurry images, expired dates, missing stamps, irrelevant files), and provides a structured recommendation. The AI analysis text is rendered with proper formatting (bold headings, bullet points, styled sections) using a markdown-to-Spannable converter. The inspector sees the full AI analysis card on the review screen before making a decision. Only one AI request is made per permit submission to minimize cost
+- **AI Document Verification** - When a citizen submits a permit application with uploaded documents, the system automatically sends all document images to Google Gemini 2.5 Flash in a single API request. The AI analyzes every document together, identifies document types, extracts key information (dates, names, stamps), checks completeness against permit requirements, flags issues (blurry images, expired dates, missing stamps, irrelevant files), and provides a structured recommendation. The AI analysis is rendered with formatted text (bold headings, bullet points, styled sections) using a markdown-to-Spannable converter. The inspector sees a collapsible AI analysis card on the review screen — showing a compact 4-line preview, tappable to open the full analysis in a dialog. Only one AI request is made per permit submission to minimize cost
+- **Instant Submission** - Permit submission is instant for the citizen. The AI analysis runs in the background (fire-and-forget) so the user sees the success screen immediately without waiting. The inspector can view the analysis when it completes, or trigger it manually if needed
 - **Manual AI Trigger** - If the AI analysis was not available at submission time (e.g., API key not configured), the inspector can manually trigger it from the review screen using the "Run AI Analysis" button
 - **Environment Variable Configuration** - The Gemini API key is stored in a `.env` file inside `smart_permits_api/`, never hardcoded
 
 ### Advanced Features
+- **Blockchain Permit Notarization** - When an inspector approves a permit, a SHA-256 hash of the permit data and all uploaded documents is computed and written to the Ethereum Sepolia testnet via web3.py. This creates a tamper-proof, publicly verifiable record that the permit was issued at a specific time with specific documents. The blockchain transaction hash and document hash are stored with the permit and displayed on the permit detail screen. Citizens and inspectors can tap "View on Etherscan" to see the on-chain record. The PDF certificate includes the blockchain transaction ID and a QR code linking to the Etherscan page. No real ETH is required (Sepolia testnet uses free test ETH)
+- **Blockchain Hash Verification** - Users can verify a permit's blockchain hash via a dedicated verify endpoint that confirms on-chain integrity
 - **Push Notifications** - When an inspector approves/rejects a permit, notifications are sent to the citizen via Firebase Cloud Messaging (FCM). Comments and appointment scheduling also trigger notifications
 - **Analytics Dashboard** - Inspector statistics screen showing total permits reviewed, approval vs rejection ratio (pie chart), average review time, and busiest permit types (bar chart) using MPAndroidChart
 - **Appointment Scheduling** - After approval, citizens schedule on-site inspection appointments using a date picker and time slot selector
 - **In-App Chat / Comments** - Comment thread on each permit where citizens ask questions and inspectors request additional documents
-- **PDF Permit Certificate** - When a permit is Completed, a downloadable PDF certificate with QR code is generated using ReportLab
+- **PDF Permit Certificate** - When a permit is Completed, a downloadable PDF certificate with QR code is generated using ReportLab. The certificate auto-opens in the device's PDF viewer after download
 - **Search & Filter** - Search bar and filter chips on both citizen and inspector dashboards to filter by permit type, status, applicant name, and date
 - **Map Location Search** - Geocoder-based search field on the permit application map allowing users to type a city, address, or landmark and navigate the map directly to that location
 - **Estimated Processing Time** - Shows citizens average review time based on historical data for each permit type
@@ -46,12 +49,14 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 
 ## Design
 
-The app uses a modern **Indigo & Slate** color palette inspired by contemporary productivity apps:
-- **Primary**: Indigo (#6366F1) with violet gradient accents
-- **Background**: Clean slate-white (#F8FAFC) with pure white cards
-- **Dark mode**: Deep slate (#0F172A) with indigo/violet accents
-- **Cards**: Minimal elevation (2dp) for a flat, modern aesthetic
-- **Typography**: Clean hierarchy with slate-900 primary text and slate-500 secondary text
+The app uses a clean, minimalist **Teal & Neutral** color palette inspired by modern apps like WhatsApp and Facebook:
+- **Primary**: Teal (#0D9488) with subtle gradient accents
+- **Background**: Clean near-white (#FAFAFA) with pure white cards
+- **Dark mode**: Deep grey (#111827) with bright teal (#2DD4BF) accents
+- **Cards**: Minimal elevation (1dp) for a flat, modern aesthetic
+- **Headers**: Subtle teal gradient with rounded bottom corners
+- **Typography**: Clean hierarchy with grey-900 primary text and grey-500 secondary text
+- **Status chips**: Amber (submitted), Green (approved), Red (rejected), Teal (completed)
 
 ## Tech Stack
 
@@ -59,6 +64,7 @@ The app uses a modern **Indigo & Slate** color palette inspired by contemporary 
 - **Backend**: Python (Flask)
 - **Database**: SQLite (via Flask-SQLAlchemy)
 - **AI**: Google Gemini 2.5 Flash (document analysis)
+- **Blockchain**: Ethereum Sepolia testnet via web3.py (permit notarization)
 - **Authentication**: JWT (Flask-JWT-Extended)
 - **Min SDK**: 29 (Android 10)
 - **Target SDK**: 36
@@ -88,6 +94,7 @@ The app uses a modern **Indigo & Slate** color palette inspired by contemporary 
 | [google-genai](https://pypi.org/project/google-genai/) | Google Gemini AI for document analysis |
 | [Pillow](https://pillow.readthedocs.io/) | Image processing for AI analysis |
 | [python-dotenv](https://pypi.org/project/python-dotenv/) | Environment variable management from .env files |
+| [web3.py](https://web3py.readthedocs.io/) | Ethereum blockchain interaction for permit notarization |
 
 ## Project Structure
 
@@ -140,6 +147,7 @@ SmartPermits/
 +-- smart_permits_api/
 |   +-- app.py
 |   +-- models.py
+|   +-- blockchain.py
 |   +-- requirements.txt
 |   +-- Dockerfile
 |   +-- .env
@@ -184,12 +192,20 @@ SmartPermits/
    GEMINI_API_KEY=your-actual-api-key-here
    ```
 
-5. Start the server:
+5. Configure blockchain notarization (optional but recommended). Add to `.env`:
+   ```
+   ETH_PRIVATE_KEY=your-metamask-private-key
+   ETH_RPC_URL=https://sepolia.infura.io/v3/your-project-id
+   ETH_WALLET_ADDRESS=your-metamask-wallet-address
+   ```
+   Get free Sepolia test ETH from https://sepoliafaucet.com/ or https://www.infura.io/faucet/sepolia
+
+6. Start the server:
    ```bash
    python app.py
    ```
 
-6. Server runs on `http://0.0.0.0:5000` with auto-seeded test accounts
+7. Server runs on `http://0.0.0.0:5000` with auto-seeded test accounts
 
 ### Firebase Setup (Optional - for Push Notifications)
 
@@ -224,7 +240,7 @@ SmartPermits/
 ```bash
 cd smart_permits_api
 docker build -t smart-permits-api .
-docker run -p 5000:5000 -e GEMINI_API_KEY=your-key-here smart-permits-api
+docker run -p 5000:5000 -e GEMINI_API_KEY=your-key-here -e ETH_PRIVATE_KEY=your-key -e ETH_RPC_URL=your-url -e ETH_WALLET_ADDRESS=your-address smart-permits-api
 ```
 
 ## Default Test Accounts
@@ -260,27 +276,30 @@ docker run -p 5000:5000 -e GEMINI_API_KEY=your-key-here smart-permits-api
 | DELETE | `/api/permits/trash/empty`       | Yes  | Empty trash                          |
 | GET    | `/api/permits/pending`           | Yes  | Get pending permits (inspector)      |
 | GET    | `/api/permits/reviewed`          | Yes  | Get reviewed permits (inspector)     |
-| POST   | `/api/permits/{id}/review`       | Yes  | Approve/reject permit                |
+| POST   | `/api/permits/{id}/review`       | Yes  | Approve/reject permit (triggers blockchain notarization on approval) |
 | GET    | `/api/permits/{id}/comments`     | Yes  | Get permit comments                  |
 | POST   | `/api/permits/{id}/comments`     | Yes  | Add comment to permit                |
 | POST   | `/api/permits/{id}/appointment`  | Yes  | Schedule inspection appointment      |
 | GET    | `/api/appointments`              | Yes  | Get appointments                     |
 | PUT    | `/api/appointments/{id}`         | Yes  | Update appointment status            |
-| GET    | `/api/permits/{id}/certificate`  | Yes  | Download PDF certificate             |
+| GET    | `/api/permits/{id}/certificate`  | Yes  | Download PDF certificate (includes blockchain TX if available) |
 | GET    | `/api/permits/stats/analytics`   | Yes  | Get analytics data (inspector)       |
 | GET    | `/api/permit-types`              | No   | List available permit types          |
 | GET    | `/api/uploads/{filename}`        | No   | Download uploaded file               |
+| GET    | `/api/permits/{id}/verify-blockchain` | No | Verify permit blockchain record    |
 
 ## AI Document Analysis
 
 When a citizen submits a permit application with uploaded documents, the system automatically triggers AI analysis using Google Gemini 2.5 Flash. The flow:
 
 1. Citizen fills out permit details and uploads required documents from the checklist on a single page
-2. On submission, all documents are uploaded then a single POST request is sent to `/api/permits/{id}/ai-analyze`
-3. The backend collects all document images for the permit and sends them to Gemini in one request
-4. Gemini analyzes all documents together with a prompt that includes the permit type and required document list
-5. The analysis is stored in the permit record and displayed to the inspector on the review screen
-6. The AI response text is rendered with proper formatting (bold headings, bullet points, italic sections) using a markdown-to-Spannable converter
+2. On submission, all documents are uploaded, and the success screen appears immediately
+3. AI analysis runs in the background (fire-and-forget) — the citizen does not wait for it
+4. The backend collects all document images for the permit and sends them to Gemini in one request
+5. Gemini analyzes all documents together with a prompt that includes the permit type and required document list
+6. The analysis is stored in the permit record
+7. The inspector sees a collapsible AI analysis card on the review screen — showing a 4-line preview. Tapping the card opens a full-screen dialog with the complete formatted analysis
+8. The AI response text is rendered with formatting (bold headings, bullet points, italic sections) using a markdown-to-Spannable converter
 
 The AI analysis includes:
 - Document type identification for each uploaded file
@@ -294,6 +313,33 @@ If the API key was not configured at submission time, the inspector can manually
 
 Cost: one Gemini API call per permit submission.
 
+## Blockchain Permit Notarization
+
+Every time an inspector approves a permit, the system creates an immutable audit trail on the Ethereum Sepolia blockchain:
+
+1. A SHA-256 hash is computed from the permit data (ID, type, description, status) and all uploaded document files
+2. The hash is written to the Ethereum Sepolia testnet as transaction data via web3.py
+3. The blockchain transaction hash and document hash are stored in the database
+4. The permit detail screen shows a "Blockchain Notarization" card with:
+   - Verification status (green "Verified on Blockchain" or amber "Hash Recorded Locally")
+   - Transaction hash (clickable monospace text)
+   - Document hash (SHA-256)
+   - "View on Etherscan" button that opens the transaction on the public block explorer
+5. The PDF certificate includes the blockchain transaction ID and a QR code linking to the Etherscan page
+
+This creates a tamper-proof, publicly verifiable record. Anyone can verify a permit's authenticity by checking the on-chain hash. No real ETH is required (Sepolia is a free testnet).
+
+If blockchain credentials are not configured (ETH_PRIVATE_KEY, ETH_RPC_URL, ETH_WALLET_ADDRESS in .env), the SHA-256 hash is still computed and stored locally, but no on-chain transaction is made.
+
+### Blockchain Setup (Free)
+1. Install MetaMask browser extension (https://metamask.io/) and create a wallet
+2. Switch to Sepolia Test Network
+3. Get free test ETH from https://sepoliafaucet.com/ or https://www.infura.io/faucet/sepolia
+4. Create a free account at https://infura.io/ or https://www.alchemy.com/ and create a project to get a Sepolia RPC URL
+5. Export your private key from MetaMask and add all three values to `.env`
+
+Cost: $0.00 (Sepolia testnet is free, Infura free tier provides 100,000 requests/day).
+
 ## Permit Statuses
 
 | Status    | Color   | Description                          |
@@ -301,7 +347,7 @@ Cost: one Gemini API call per permit submission.
 | submitted | Amber   | Awaiting inspector review            |
 | approved  | Emerald | Approved, awaiting payment           |
 | rejected  | Red     | Rejected by inspector                |
-| completed | Indigo  | Approved and paid                    |
+| completed | Teal    | Approved and paid                    |
 
 ## Required Documents per Permit Type
 

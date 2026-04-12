@@ -33,7 +33,6 @@ import retrofit2.http.PUT;
 import retrofit2.http.Part;
 import retrofit2.http.Path;
 import retrofit2.http.Query;
-import retrofit2.http.Streaming;
 
 public interface ApiService {
 
@@ -126,7 +125,6 @@ public interface ApiService {
     @PUT("appointments/{id}")
     Call<Appointment> updateAppointment(@Path("id") int id, @Body AppointmentRequest request);
 
-    @Streaming
     @GET("permits/{id}/certificate")
     Call<ResponseBody> downloadCertificate(@Path("id") int id);
 
@@ -138,4 +136,7 @@ public interface ApiService {
 
     @POST("permits/{id}/ai-analyze")
     Call<AiAnalysisResponse> triggerAiAnalysis(@Path("id") int id);
+
+    @GET("permits/{id}/verify-blockchain")
+    Call<ResponseBody> verifyBlockchain(@Path("id") int id);
 }

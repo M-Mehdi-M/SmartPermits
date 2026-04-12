@@ -69,7 +69,7 @@
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:layout_marginBottom="12dp">
+                        android:layout_marginBottom="4dp">
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -85,6 +85,14 @@
                             android:layout_marginStart="8dp"
                             android:background="@drawable/circle_green" />
                     </LinearLayout>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Tap to read full analysis"
+                        android:textSize="12sp"
+                        android:textColor="@color/text_secondary"
+                        android:layout_marginBottom="8dp" />
 
                     <TextView
                         android:id="@+id/tvAiAnalysis"
@@ -406,6 +414,38 @@
                             android:minLines="3"
                             android:gravity="top" />
                     </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardBlockchainReview"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Blockchain Notarization"
+                        android:textSize="14sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/primary"
+                        android:layout_marginBottom="8dp" />
+                    <TextView
+                        android:id="@+id/tvBlockchainNote"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="When approved, a SHA-256 hash of this permit and all documents will be written to the Ethereum Sepolia blockchain, creating a tamper-proof record."
+                        android:textColor="@color/text_secondary"
+                        android:textSize="12sp"
+                        android:lineSpacingMultiplier="1.3" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
