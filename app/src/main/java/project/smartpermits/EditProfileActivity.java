@@ -35,6 +35,11 @@ import retrofit2.Response;
 
 public class EditProfileActivity extends AppCompatActivity {
 
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(project.smartpermits.LocaleHelper.applyLocale(newBase));
+    }
+
     private TextInputEditText etFullName, etEmail, etUsername;
     private ImageView ivAvatar;
     private ProgressBar progressBar;

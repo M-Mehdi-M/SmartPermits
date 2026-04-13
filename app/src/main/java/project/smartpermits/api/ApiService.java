@@ -126,7 +126,7 @@ public interface ApiService {
     Call<Appointment> updateAppointment(@Path("id") int id, @Body AppointmentRequest request);
 
     @GET("permits/{id}/certificate")
-    Call<ResponseBody> downloadCertificate(@Path("id") int id);
+    Call<ResponseBody> downloadCertificate(@Path("id") int id, @Query("lang") String lang);
 
     @GET("permits/stats/analytics")
     Call<AnalyticsResponse> getAnalytics();
@@ -135,8 +135,11 @@ public interface ApiService {
     Call<List<PermitType>> getPermitTypes();
 
     @POST("permits/{id}/ai-analyze")
-    Call<AiAnalysisResponse> triggerAiAnalysis(@Path("id") int id);
+    Call<AiAnalysisResponse> triggerAiAnalysis(@Path("id") int id, @Query("lang") String lang);
 
     @GET("permits/{id}/verify-blockchain")
     Call<ResponseBody> verifyBlockchain(@Path("id") int id);
+
+    @GET("permits/{id}/timeline")
+    Call<java.util.List<project.smartpermits.models.PermitEvent>> getTimeline(@Path("id") int id);
 }

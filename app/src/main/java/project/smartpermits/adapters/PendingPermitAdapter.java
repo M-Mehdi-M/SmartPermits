@@ -1,5 +1,6 @@
 package project.smartpermits.adapters;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.ArrayList;
 import java.util.List;
 
+import project.smartpermits.PermitTypeHelper;
 import project.smartpermits.R;
 import project.smartpermits.models.Permit;
 
@@ -69,8 +71,9 @@ public class PendingPermitAdapter extends RecyclerView.Adapter<PendingPermitAdap
         }
 
         void bind(Permit permit) {
-            tvPermitType.setText(permit.getPermitType() != null ? permit.getPermitType() : "Unknown");
-            tvApplicant.setText("By: " + (permit.getApplicantName() != null ? permit.getApplicantName() : "Unknown"));
+            Context context = itemView.getContext();
+            tvPermitType.setText(permit.getPermitType() != null ? PermitTypeHelper.localizeType(context, permit.getPermitType()) : context.getString(R.string.unknown));
+            tvApplicant.setText(context.getString(R.string.by_applicant, permit.getApplicantName() != null ? permit.getApplicantName() : context.getString(R.string.unknown)));
 
             String date = permit.getCreatedAt();
             if (date != null && date.length() >= 10) {

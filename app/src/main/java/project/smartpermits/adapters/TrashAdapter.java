@@ -1,5 +1,6 @@
 package project.smartpermits.adapters;
 
+import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.view.LayoutInflater;
@@ -13,6 +14,9 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
 import com.google.android.material.chip.Chip;
+
+import project.smartpermits.PermitTypeHelper;
+import project.smartpermits.R;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -98,17 +102,18 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.ViewHolder> 
         }
 
         void bind(Permit permit) {
-            tvPermitType.setText(permit.getPermitType() != null ? permit.getPermitType() : "Unknown");
+            Context context = itemView.getContext();
+            tvPermitType.setText(permit.getPermitType() != null ? PermitTypeHelper.localizeType(context, permit.getPermitType()) : context.getString(R.string.unknown));
 
             Integer daysLeft = permit.getDaysUntilPermanentDelete();
             if (daysLeft != null) {
-                tvDaysLeft.setText(daysLeft + " days until permanent deletion");
+                tvDaysLeft.setText(context.getString(R.string.expires_in_days, daysLeft));
             } else {
-                tvDaysLeft.setText("Scheduled for deletion");
+                tvDaysLeft.setText(context.getString(R.string.trash_confirm_msg));
             }
 
             String status = permit.getStatus() != null ? permit.getStatus() : "unknown";
-            chipStatus.setText(status.substring(0, 1).toUpperCase() + status.substring(1));
+            chipStatus.setText(PermitTypeHelper.localizeStatus(context, status));
             int chipColor;
             switch (status) {
                 case "submitted": chipColor = Color.parseColor("#E68A00"); break;

@@ -21,6 +21,11 @@ import retrofit2.Response;
 
 public class ProfileActivity extends AppCompatActivity {
 
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(project.smartpermits.LocaleHelper.applyLocale(newBase));
+    }
+
     private TextView tvProfileName, tvProfileRole, tvInfoName, tvInfoRole, tvInfoEmail;
     private ImageView ivProfileAvatar;
 
@@ -78,22 +83,22 @@ public class ProfileActivity extends AppCompatActivity {
                                     }
                                 });
                     })
-                    .setNegativeButton("Cancel", null)
+                    .setNegativeButton(getString(R.string.cancel), null)
                     .show();
         });
 
         btnSignOut.setOnClickListener(v -> {
             new AlertDialog.Builder(this)
-                    .setTitle("Sign Out")
+                    .setTitle(getString(R.string.sign_out_title))
                     .setMessage(getString(R.string.sign_out_confirm))
-                    .setPositiveButton("Sign Out", (d, w) -> {
+                    .setPositiveButton(getString(R.string.nav_sign_out), (d, w) -> {
                         client.clearSession();
                         Intent intent = new Intent(this, LoginActivity.class);
                         intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                         startActivity(intent);
                         finish();
                     })
-                    .setNegativeButton("Cancel", null)
+                    .setNegativeButton(getString(R.string.cancel), null)
                     .show();
         });
     }

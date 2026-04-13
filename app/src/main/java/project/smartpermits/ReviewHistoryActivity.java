@@ -27,6 +27,11 @@ import retrofit2.Response;
 
 public class ReviewHistoryActivity extends AppCompatActivity implements PermitAdapter.OnPermitClickListener {
 
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(project.smartpermits.LocaleHelper.applyLocale(newBase));
+    }
+
     private RecyclerView recyclerReviewed;
     private PermitAdapter adapter;
     private LinearLayout emptyView;

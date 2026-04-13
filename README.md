@@ -1,6 +1,6 @@
 # SmartPermits
 
-A modern Android + Flask full-stack platform that digitizes the municipal permit and licensing process. Citizens can apply for permits, upload documents, and make payments while inspectors review, approve, or reject applications from their mobile dashboard. Includes AI-powered document verification using Google Gemini and blockchain permit notarization on Ethereum Sepolia for tamper-proof audit trails.
+A modern Android + Flask full-stack platform that digitizes the municipal permit and licensing process. Citizens can apply for permits, upload documents, and make payments while inspectors review, approve, or reject applications from their mobile dashboard. Includes AI-powered document verification using Google Gemini, blockchain permit notarization on Ethereum Sepolia, predictive wait time estimation, real-time status timelines, multi-language support, and smart permit expiry tracking.
 
 ## Features
 
@@ -24,17 +24,19 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **Environment Variable Configuration** - The Gemini API key is stored in a `.env` file inside `smart_permits_api/`, never hardcoded
 
 ### Advanced Features
-- **Blockchain Permit Notarization** - When an inspector approves a permit, a SHA-256 hash of the permit data and all uploaded documents is computed and written to the Ethereum Sepolia testnet via web3.py. This creates a tamper-proof, publicly verifiable record that the permit was issued at a specific time with specific documents. The blockchain transaction hash and document hash are stored with the permit and displayed on the permit detail screen. Citizens and inspectors can tap "View on Etherscan" to see the on-chain record. The PDF certificate includes the blockchain transaction ID and a QR code linking to the Etherscan page. No real ETH is required (Sepolia testnet uses free test ETH)
-- **Blockchain Hash Verification** - Users can verify a permit's blockchain hash via a dedicated verify endpoint that confirms on-chain integrity
+- **Blockchain Permit Notarization** - When an inspector approves a permit, a SHA-256 hash of the permit data and all uploaded documents is computed and written to the Ethereum Sepolia testnet via web3.py. This creates a tamper-proof, publicly verifiable record that the permit was issued at a specific time with specific documents. The blockchain transaction hash and document hash are stored with the permit and displayed on the permit detail screen. Citizens and inspectors can tap "View on Etherscan" to see the on-chain record. The PDF certificate includes the blockchain transaction ID, a clickable Etherscan link, and a QR code linking to the Etherscan page. No real ETH is required (Sepolia testnet uses free test ETH)
+- **Real-Time Status Timeline / Audit Trail** - A visual timeline on the permit detail screen shows every state change with timestamps: "Submitted → Documents Analyzed by AI → Reviewed by Inspector → Approved → Payment Received → Appointment Scheduled → Inspection Completed → Certificate Issued". Each entry has a timestamp, the actor name, their role, and any notes. This blockchain-inspired transparency feature logs and displays every action for full accountability and auditability
+- **Predictive Wait Time with ML** - Instead of a simple average processing time, the system uses historical data to predict the specific wait time for each submission based on: permit type historical average, number of documents uploaded, current inspector workload (pending queue size), day of week submitted, and historical patterns. Displayed as a range (e.g., "2–4 days") with a confidence percentage indicator
+- **Smart Deadline Reminders & Expiry Tracking** - Permits have expiry dates set when completed based on permit type (e.g., 365 days for Construction, 30 days for Events). Citizens see a countdown on their dashboard cards. Expiring permits (≤30 days) are flagged in amber. Expired permits are flagged in red. Citizens can start a renewal directly from the permit detail screen. The permit detail screen shows a validity card with the expiry date
 - **Push Notifications** - When an inspector approves/rejects a permit, notifications are sent to the citizen via Firebase Cloud Messaging (FCM). Comments and appointment scheduling also trigger notifications
 - **Analytics Dashboard** - Inspector statistics screen showing total permits reviewed, approval vs rejection ratio (pie chart), average review time, and busiest permit types (bar chart) using MPAndroidChart
 - **Appointment Scheduling** - After approval, citizens schedule on-site inspection appointments using a date picker and time slot selector
 - **In-App Chat / Comments** - Comment thread on each permit where citizens ask questions and inspectors request additional documents
-- **PDF Permit Certificate** - When a permit is Completed, a downloadable PDF certificate with QR code is generated using ReportLab. The certificate auto-opens in the device's PDF viewer after download
+- **Professional PDF Certificate** - When a permit is Completed, a downloadable PDF certificate is generated using ReportLab with: teal-branded header with certificate number, permit information table with alternating row colors, blockchain verification section with clickable Etherscan link, QR code for scanning, gold footer seal, proper typography and formatting. The certificate auto-opens in the device's PDF viewer after download
 - **Search & Filter** - Search bar and filter chips on both citizen and inspector dashboards to filter by permit type, status, applicant name, and date
 - **Map Location Search** - Geocoder-based search field on the permit application map allowing users to type a city, address, or landmark and navigate the map directly to that location
-- **Estimated Processing Time** - Shows citizens average review time based on historical data for each permit type
-- **Dark Mode** - Toggle in Settings with manual dark mode switch, follow-system option, and proper dark theme colors
+- **Multi-Language Support** - 10 languages supported: English, Romanian, Spanish, French, Italian, German, Portuguese, Polish, Turkish, and Ukrainian. Language can be changed from Settings and affects all menu items, labels, buttons, and UI text throughout the entire app. The selected language persists across sessions and sign-outs
+- **Dark Mode** - Toggle in Settings with manual dark mode switch, follow-system option, and proper dark theme colors. Theme preference persists across sign-outs
 - **Permit Renewal / Reapply** - For completed permits, Renew button creates a new application pre-filled with previous data. For rejected permits, Reapply button does the same
 - **Change Password** - Change Password option in profile/settings with current password verification
 - **User Profile Management** - Edit profile name, email, and upload avatar photo
@@ -43,6 +45,7 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 ### Infrastructure
 - **User Authentication** - Secure JWT-based login and registration with bcrypt password hashing
 - **Session Persistence** - Auto-login on app restart using saved tokens in SharedPreferences
+- **Theme & Language Persistence on Sign-Out** - Dark mode, follow-system, and language preferences are preserved when signing out
 - **Pull-to-Refresh** - Swipe down to reload data on all dashboards
 - **Containerized Backend** - Dockerfile included for production-ready deployment
 - **FCM Integration** - Backend sends push notifications via Firebase Admin SDK when available
@@ -112,6 +115,7 @@ SmartPermits/
 |   +-- models/
 |   |   +-- User.java, Permit.java, Document.java
 |   |   +-- Comment.java, Appointment.java, PermitType.java
+|   |   +-- PermitEvent.java
 |   |   +-- AiAnalysisResponse.java
 |   |   +-- AnalyticsResponse.java, FcmTokenRequest.java
 |   |   +-- LoginRequest/Response, RegisterRequest
@@ -136,12 +140,22 @@ SmartPermits/
 |   +-- DocumentViewerActivity.java
 |   +-- TrashActivity.java
 |   +-- NotificationHelper.java
+|   +-- LocaleHelper.java
 |   +-- MainActivity.java
 +-- app/src/main/res/
 |   +-- layout/
 |   +-- drawable/
-|   +-- values/
-|   +-- values-night/
+|   +-- values/ (English - default)
+|   +-- values-night/ (dark theme colors)
+|   +-- values-ro/ (Romanian)
+|   +-- values-es/ (Spanish)
+|   +-- values-fr/ (French)
+|   +-- values-it/ (Italian)
+|   +-- values-de/ (German)
+|   +-- values-pt/ (Portuguese)
+|   +-- values-pl/ (Polish)
+|   +-- values-tr/ (Turkish)
+|   +-- values-uk/ (Ukrainian)
 |   +-- menu/
 |   +-- xml/
 +-- smart_permits_api/
@@ -264,10 +278,10 @@ docker run -p 5000:5000 -e GEMINI_API_KEY=your-key-here -e ETH_PRIVATE_KEY=your-
 | DELETE | `/api/auth/delete-account`       | Yes  | Permanently delete user account      |
 | GET    | `/api/permits`                   | Yes  | Get user's permits (with search/filter) |
 | POST   | `/api/permits`                   | Yes  | Create new permit application        |
-| GET    | `/api/permits/{id}`              | Yes  | Get permit details                   |
+| GET    | `/api/permits/{id}`              | Yes  | Get permit details (includes timeline)|
 | POST   | `/api/permits/{id}/upload`       | Yes  | Upload document to permit            |
-| POST   | `/api/permits/{id}/ai-analyze`   | Yes  | Trigger AI document analysis (once per permit) |
-| POST   | `/api/permits/{id}/pay`          | Yes  | Simulate payment                     |
+| POST   | `/api/permits/{id}/ai-analyze`   | Yes  | Trigger AI document analysis         |
+| POST   | `/api/permits/{id}/pay`          | Yes  | Simulate payment (sets expiry date)  |
 | POST   | `/api/permits/{id}/renew`        | Yes  | Renew/reapply for a permit           |
 | POST   | `/api/permits/{id}/trash`        | Yes  | Move permit to trash                 |
 | POST   | `/api/permits/{id}/restore`      | Yes  | Restore permit from trash            |
@@ -276,69 +290,35 @@ docker run -p 5000:5000 -e GEMINI_API_KEY=your-key-here -e ETH_PRIVATE_KEY=your-
 | DELETE | `/api/permits/trash/empty`       | Yes  | Empty trash                          |
 | GET    | `/api/permits/pending`           | Yes  | Get pending permits (inspector)      |
 | GET    | `/api/permits/reviewed`          | Yes  | Get reviewed permits (inspector)     |
-| POST   | `/api/permits/{id}/review`       | Yes  | Approve/reject permit (triggers blockchain notarization on approval) |
+| POST   | `/api/permits/{id}/review`       | Yes  | Approve/reject permit (triggers blockchain + timeline event) |
 | GET    | `/api/permits/{id}/comments`     | Yes  | Get permit comments                  |
 | POST   | `/api/permits/{id}/comments`     | Yes  | Add comment to permit                |
 | POST   | `/api/permits/{id}/appointment`  | Yes  | Schedule inspection appointment      |
+| GET    | `/api/permits/{id}/timeline`     | Yes  | Get permit audit trail timeline      |
 | GET    | `/api/appointments`              | Yes  | Get appointments                     |
 | PUT    | `/api/appointments/{id}`         | Yes  | Update appointment status            |
-| GET    | `/api/permits/{id}/certificate`  | Yes  | Download PDF certificate (includes blockchain TX if available) |
+| GET    | `/api/permits/{id}/certificate`  | Yes  | Download professional PDF certificate|
 | GET    | `/api/permits/stats/analytics`   | Yes  | Get analytics data (inspector)       |
 | GET    | `/api/permit-types`              | No   | List available permit types          |
 | GET    | `/api/uploads/{filename}`        | No   | Download uploaded file               |
 | GET    | `/api/permits/{id}/verify-blockchain` | No | Verify permit blockchain record    |
 
-## AI Document Analysis
+## Supported Languages
 
-When a citizen submits a permit application with uploaded documents, the system automatically triggers AI analysis using Google Gemini 2.5 Flash. The flow:
+| Language   | Code | Resource Folder |
+|------------|------|-----------------|
+| English    | en   | values/ (default) |
+| Romanian   | ro   | values-ro/      |
+| Spanish    | es   | values-es/      |
+| French     | fr   | values-fr/      |
+| Italian    | it   | values-it/      |
+| German     | de   | values-de/      |
+| Portuguese | pt   | values-pt/      |
+| Polish     | pl   | values-pl/      |
+| Turkish    | tr   | values-tr/      |
+| Ukrainian  | uk   | values-uk/      |
 
-1. Citizen fills out permit details and uploads required documents from the checklist on a single page
-2. On submission, all documents are uploaded, and the success screen appears immediately
-3. AI analysis runs in the background (fire-and-forget) — the citizen does not wait for it
-4. The backend collects all document images for the permit and sends them to Gemini in one request
-5. Gemini analyzes all documents together with a prompt that includes the permit type and required document list
-6. The analysis is stored in the permit record
-7. The inspector sees a collapsible AI analysis card on the review screen — showing a 4-line preview. Tapping the card opens a full-screen dialog with the complete formatted analysis
-8. The AI response text is rendered with formatting (bold headings, bullet points, italic sections) using a markdown-to-Spannable converter
-
-The AI analysis includes:
-- Document type identification for each uploaded file
-- Key information extraction (dates, names, addresses, stamps, signatures)
-- Completeness check against required documents for the permit type
-- Detection of irrelevant or incorrect documents
-- Warnings about issues (blurry images, expired dates, missing stamps)
-- Overall recommendation for the inspector
-
-If the API key was not configured at submission time, the inspector can manually trigger AI analysis from the review screen using the "Run AI Analysis" button.
-
-Cost: one Gemini API call per permit submission.
-
-## Blockchain Permit Notarization
-
-Every time an inspector approves a permit, the system creates an immutable audit trail on the Ethereum Sepolia blockchain:
-
-1. A SHA-256 hash is computed from the permit data (ID, type, description, status) and all uploaded document files
-2. The hash is written to the Ethereum Sepolia testnet as transaction data via web3.py
-3. The blockchain transaction hash and document hash are stored in the database
-4. The permit detail screen shows a "Blockchain Notarization" card with:
-   - Verification status (green "Verified on Blockchain" or amber "Hash Recorded Locally")
-   - Transaction hash (clickable monospace text)
-   - Document hash (SHA-256)
-   - "View on Etherscan" button that opens the transaction on the public block explorer
-5. The PDF certificate includes the blockchain transaction ID and a QR code linking to the Etherscan page
-
-This creates a tamper-proof, publicly verifiable record. Anyone can verify a permit's authenticity by checking the on-chain hash. No real ETH is required (Sepolia is a free testnet).
-
-If blockchain credentials are not configured (ETH_PRIVATE_KEY, ETH_RPC_URL, ETH_WALLET_ADDRESS in .env), the SHA-256 hash is still computed and stored locally, but no on-chain transaction is made.
-
-### Blockchain Setup (Free)
-1. Install MetaMask browser extension (https://metamask.io/) and create a wallet
-2. Switch to Sepolia Test Network
-3. Get free test ETH from https://sepoliafaucet.com/ or https://www.infura.io/faucet/sepolia
-4. Create a free account at https://infura.io/ or https://www.alchemy.com/ and create a project to get a Sepolia RPC URL
-5. Export your private key from MetaMask and add all three values to `.env`
-
-Cost: $0.00 (Sepolia testnet is free, Infura free tier provides 100,000 requests/day).
+Language can be changed from Settings > Language. The selection persists across app restarts and sign-outs.
 
 ## Permit Statuses
 
@@ -349,29 +329,33 @@ Cost: $0.00 (Sepolia testnet is free, Infura free tier provides 100,000 requests
 | rejected  | Red     | Rejected by inspector                |
 | completed | Teal    | Approved and paid                    |
 
-## Required Documents per Permit Type
+## Permit Validity / Expiry
 
-Each permit type requires specific documents. The app presents a checklist with individual upload buttons.
+| Permit Type           | Validity Period |
+|-----------------------|-----------------|
+| Construction Permit   | 365 days        |
+| Renovation Permit     | 180 days        |
+| Business License      | 365 days        |
+| Food Service Permit   | 365 days        |
+| Event Permit          | 30 days         |
+| Signage Permit        | 730 days        |
+| Demolition Permit     | 180 days        |
+| Occupancy Certificate | Non-expiring    |
 
-| Permit Type | Required Documents |
+## Status Timeline Events
+
+Every permit action is logged as an audit trail event with timestamp, actor name, and notes:
+
+| Event Type | Triggered When |
 |---|---|
-| Construction Permit | Urban Planning Certificate, Land Registry Extract, Topographic Survey Plan, Authorized Technical Project, Utility Approvals (Water, Gas, Electricity), Geotechnical Study, Fee Payment Proof |
-| Renovation Permit | Urban Planning Certificate, Existing Condition Survey, Renovation Technical Project, Homeowners Association Approval (if applicable), Affected Utility Approvals, Fee Payment Proof |
-| Business License | Business Registration Certificate, Articles of Incorporation, Office Space Lease Agreement, Fire Safety Approval, Tax Clearance Certificate, Business Registry Certificate |
-| Food Service Permit | Veterinary Sanitary Authorization, HACCP Plan, Pest Control Service Contract, Environmental Approval, Business Registration Certificate, Water Quality Analysis Report |
-| Event Permit | Event Organization Request, Security Plan, Police Approval, Fire Department Approval, Sanitation Service Contract, Liability Insurance Policy |
-| Signage Permit | Signage Placement Request, Site Sketch, Urban Planning / Architecture Approval, Property Owner Agreement, Photo Simulation / Mockup |
-| Demolition Permit | Urban Planning Certificate, Land Registry Extract, Demolition Technical Project, Demolition Plan, Environmental Approval, Waste Management Study, Fee Payment Proof |
-| Occupancy Certificate | Work Completion Inspection Report, Energy Performance Certificate, Cadastral Documentation, Project Verifier Reports, Installation Compliance Declaration, Fee Payment Proof |
-
-## Permit Location Map
-
-For **Construction Permit** and **Renovation Permit** types, the application includes an interactive OpenStreetMap (via osmdroid) where citizens can:
-1. **Search for a location** using the search bar above the map - type a city, address, or landmark and tap "Search" to navigate the map there (powered by Android Geocoder)
-2. **Drag the map** to position a crosshair at the desired work location
-3. **Press "Pin Here"** to place a marker at the crosshair position
-
-The map properly intercepts touch events so scrolling the map does not scroll the page. The coordinates (latitude/longitude) are stored with the permit and displayed on both the citizen's permit detail screen and the inspector's review screen. No Google Maps API key is required.
+| Submitted | Citizen submits a new permit application |
+| Documents Analyzed by AI | Gemini AI completes document analysis |
+| Reviewed by Inspector | Inspector approves or rejects the permit |
+| Blockchain Notarized | Permit hash is written to Ethereum Sepolia |
+| Payment Received | Citizen pays the permit fee |
+| Appointment Scheduled | Citizen schedules an inspection appointment |
+| Inspection Completed | Inspector marks the inspection as completed |
+| Certificate Issued | Permit is completed and certificate is available |
 
 ## Building
 

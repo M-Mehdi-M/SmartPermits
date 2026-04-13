@@ -51,6 +51,11 @@ import retrofit2.Response;
 
 public class PermitReviewActivity extends AppCompatActivity {
 
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(project.smartpermits.LocaleHelper.applyLocale(newBase));
+    }
+
     private TextView tvApplicant, tvPermitType, tvDate, tvFee, tvDescription, tvDocuments, tvAiAnalysis;
     private TextInputEditText etNotes;
     private MaterialButton btnApprove, btnReject, btnComments, btnRunAi;
@@ -63,9 +68,17 @@ public class PermitReviewActivity extends AppCompatActivity {
     private int permitId;
     private CharSequence fullAiText = null;
 
+    private String currentLang = "en";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        String lang = LocaleHelper.getLanguage(this);
+        if (lang == null || lang.isEmpty()) {
+            lang = Locale.getDefault().getLanguage();
+        }
+        currentLang = lang;
 
         Configuration.getInstance().load(this, getSharedPreferences("osmdroid_prefs", MODE_PRIVATE));
         Configuration.getInstance().setUserAgentValue(getPackageName());
@@ -142,21 +155,21 @@ public class PermitReviewActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Call<Permit> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(PermitReviewActivity.this, "Error loading permit", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(PermitReviewActivity.this, getString(R.string.error_loading), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
     private void displayPermit(Permit permit) {
-        tvApplicant.setText(permit.getApplicantName() != null ? permit.getApplicantName() : "Unknown");
-        tvPermitType.setText(permit.getPermitType());
+        tvApplicant.setText(permit.getApplicantName() != null ? permit.getApplicantName() : getString(R.string.unknown));
+        tvPermitType.setText(PermitTypeHelper.localizeType(this, permit.getPermitType()));
 
         String date = permit.getCreatedAt();
         if (date != null && date.length() >= 10) {
             date = date.substring(0, 10);
         }
         tvDate.setText(date);
-        tvFee.setText(String.format("$%.2f", permit.getFeeAmount()));
+        tvFee.setText(CurrencyHelper.format(this, permit.getFeeAmount()));
 
         if (permit.getDescription() != null && !permit.getDescription().isEmpty()) {
             cardDescription.setVisibility(View.VISIBLE);
@@ -170,8 +183,10 @@ public class PermitReviewActivity extends AppCompatActivity {
         }
 
         String aiAnalysis = permit.getAiAnalysis();
+        String aiLang = permit.getAiAnalysisLang();
         boolean isError = aiAnalysis != null && (aiAnalysis.startsWith("AI analysis unavailable") || aiAnalysis.startsWith("AI analysis failed"));
-        if (aiAnalysis != null && !aiAnalysis.isEmpty() && !isError) {
+        boolean langMismatch = aiLang != null && !aiLang.isEmpty() && !aiLang.equals(currentLang);
+        if (aiAnalysis != null && !aiAnalysis.isEmpty() && !isError && !langMismatch) {
             cardAiAnalysis.setVisibility(View.VISIBLE);
             fullAiText = formatMarkdown(aiAnalysis);
             tvAiAnalysis.setText(fullAiText);
@@ -181,7 +196,7 @@ public class PermitReviewActivity extends AppCompatActivity {
             if (btnRunAi != null) btnRunAi.setVisibility(View.GONE);
         } else {
             cardAiAnalysis.setVisibility(View.VISIBLE);
-            tvAiAnalysis.setText("Analyzing documents with AI...");
+            tvAiAnalysis.setText(getString(R.string.analyzing_ai));
             if (btnRunAi != null) btnRunAi.setVisibility(View.GONE);
             if (progressAi != null) progressAi.setVisibility(View.VISIBLE);
             triggerAiAnalysis();
@@ -193,7 +208,7 @@ public class PermitReviewActivity extends AppCompatActivity {
             for (Document doc : permit.getDocuments()) {
                 String label = doc.getDocumentLabel();
                 if (label != null && !label.isEmpty()) {
-                    docs.append("\u2022 ").append(label).append(" — ").append(doc.getFileName()).append("\n");
+                    docs.append("\u2022 ").append(PermitTypeHelper.localizeDoc(this, label)).append(" — ").append(doc.getFileName()).append("\n");
                 } else {
                     docs.append("\u2022 ").append(doc.getFileName()).append("\n");
                 }
@@ -229,7 +244,7 @@ public class PermitReviewActivity extends AppCompatActivity {
         Marker marker = new Marker(mapViewReview);
         marker.setPosition(point);
         marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-        marker.setTitle("Work Location");
+        marker.setTitle(getString(R.string.work_location));
         mapViewReview.getOverlays().add(marker);
         mapViewReview.invalidate();
     }
@@ -245,9 +260,9 @@ public class PermitReviewActivity extends AppCompatActivity {
         tv.setTextColor(getResources().getColor(R.color.text_primary, null));
         scrollView.addView(tv);
         new AlertDialog.Builder(this)
-                .setTitle("AI Document Analysis")
+                .setTitle(getString(R.string.ai_doc_analysis))
                 .setView(scrollView)
-                .setPositiveButton("Close", null)
+                .setPositiveButton(getString(R.string.close), null)
                 .show();
     }
 
@@ -264,13 +279,13 @@ public class PermitReviewActivity extends AppCompatActivity {
                     public void onResponse(Call<Permit> call, Response<Permit> response) {
                         progressBar.setVisibility(View.GONE);
                         if (response.isSuccessful()) {
-                            String msg = "approved".equals(action) ? "Permit Approved" : "Permit Rejected";
+                            String msg = "approved".equals(action) ? getString(R.string.permit_approved_msg) : getString(R.string.permit_rejected_msg);
                             Toast.makeText(PermitReviewActivity.this, msg, Toast.LENGTH_LONG).show();
                             finish();
                         } else {
                             btnApprove.setEnabled(true);
                             btnReject.setEnabled(true);
-                            Toast.makeText(PermitReviewActivity.this, "Review failed", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(PermitReviewActivity.this, getString(R.string.review_failed), Toast.LENGTH_SHORT).show();
                         }
                     }
 
@@ -287,33 +302,48 @@ public class PermitReviewActivity extends AppCompatActivity {
     private void triggerAiAnalysis() {
         if (btnRunAi != null) btnRunAi.setEnabled(false);
         cardAiAnalysis.setVisibility(View.VISIBLE);
-        tvAiAnalysis.setText("Analyzing documents with AI...");
+        tvAiAnalysis.setText(getString(R.string.analyzing_ai));
         if (progressAi != null) progressAi.setVisibility(View.VISIBLE);
 
         RetrofitClient.getInstance(this).getApi()
-                .triggerAiAnalysis(permitId)
+                .triggerAiAnalysis(permitId, currentLang)
                 .enqueue(new Callback<AiAnalysisResponse>() {
                     @Override
                     public void onResponse(Call<AiAnalysisResponse> call, Response<AiAnalysisResponse> response) {
                         if (progressAi != null) progressAi.setVisibility(View.GONE);
                         if (response.isSuccessful() && response.body() != null && response.body().getAiAnalysis() != null) {
-                            fullAiText = formatMarkdown(response.body().getAiAnalysis());
-                            tvAiAnalysis.setText(fullAiText);
-                            tvAiAnalysis.setMaxLines(4);
-                            tvAiAnalysis.setEllipsize(TextUtils.TruncateAt.END);
-                            cardAiAnalysis.setOnClickListener(v -> showAiAnalysisDialog());
-                            if (btnRunAi != null) btnRunAi.setVisibility(View.GONE);
+                            String result = response.body().getAiAnalysis();
+                            if (result.startsWith("AI analysis failed") || result.startsWith("AI analysis unavailable")) {
+                                tvAiAnalysis.setText(getString(R.string.ai_failed));
+                                if (btnRunAi != null) {
+                                    btnRunAi.setVisibility(View.VISIBLE);
+                                    btnRunAi.setEnabled(true);
+                                }
+                            } else {
+                                fullAiText = formatMarkdown(result);
+                                tvAiAnalysis.setText(fullAiText);
+                                tvAiAnalysis.setMaxLines(4);
+                                tvAiAnalysis.setEllipsize(TextUtils.TruncateAt.END);
+                                cardAiAnalysis.setOnClickListener(v -> showAiAnalysisDialog());
+                                if (btnRunAi != null) btnRunAi.setVisibility(View.GONE);
+                            }
                         } else {
-                            tvAiAnalysis.setText("AI analysis failed. Try again later.");
-                            if (btnRunAi != null) btnRunAi.setEnabled(true);
+                            tvAiAnalysis.setText(getString(R.string.ai_failed));
+                            if (btnRunAi != null) {
+                                btnRunAi.setVisibility(View.VISIBLE);
+                                btnRunAi.setEnabled(true);
+                            }
                         }
                     }
 
                     @Override
                     public void onFailure(Call<AiAnalysisResponse> call, Throwable t) {
                         if (progressAi != null) progressAi.setVisibility(View.GONE);
-                        tvAiAnalysis.setText("AI analysis error: " + t.getMessage());
-                        if (btnRunAi != null) btnRunAi.setEnabled(true);
+                        tvAiAnalysis.setText(getString(R.string.ai_failed));
+                        if (btnRunAi != null) {
+                            btnRunAi.setVisibility(View.VISIBLE);
+                            btnRunAi.setEnabled(true);
+                        }
                     }
                 });
     }

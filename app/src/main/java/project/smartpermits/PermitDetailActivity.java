@@ -45,10 +45,15 @@ import retrofit2.Response;
 
 public class PermitDetailActivity extends AppCompatActivity {
 
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(project.smartpermits.LocaleHelper.applyLocale(newBase));
+    }
+
     private TextView tvPermitType, tvIcon, tvDate, tvFee, tvPayment, tvDescription, tvNotes, tvEstTime;
     private Chip chipStatus;
     private MaterialButton btnPay, btnRenew, btnCertificate, btnComments, btnSchedule, btnTrash;
-    private MaterialCardView cardDescription, cardNotes, cardDocuments, cardEstTime, cardBlockchain;
+    private MaterialCardView cardDescription, cardNotes, cardDocuments, cardEstTime, cardBlockchain, cardTimeline, cardExpiry;
     private RecyclerView recyclerDocuments;
     private ProgressBar progressBar;
     private MaterialCardView cardMapDetail;
@@ -57,6 +62,9 @@ public class PermitDetailActivity extends AppCompatActivity {
     private TextView tvBlockchainStatus, tvTxHash, tvDocHash;
     private LinearLayout layoutTxHash, layoutDocHash;
     private MaterialButton btnViewOnChain;
+    private LinearLayout timelineContainer;
+    private TextView tvExpiryInfo;
+    private ProgressBar progressExpiry;
     private int permitId;
 
     @Override
@@ -99,6 +107,11 @@ public class PermitDetailActivity extends AppCompatActivity {
         layoutTxHash = findViewById(R.id.layoutTxHash);
         layoutDocHash = findViewById(R.id.layoutDocHash);
         btnViewOnChain = findViewById(R.id.btnViewOnChain);
+        cardTimeline = findViewById(R.id.cardTimeline);
+        timelineContainer = findViewById(R.id.timelineContainer);
+        cardExpiry = findViewById(R.id.cardExpiry);
+        tvExpiryInfo = findViewById(R.id.tvExpiryInfo);
+        progressExpiry = findViewById(R.id.progressExpiry);
         ImageButton btnBack = findViewById(R.id.btnBack);
 
         btnBack.setOnClickListener(v -> finish());
@@ -154,7 +167,7 @@ public class PermitDetailActivity extends AppCompatActivity {
     }
 
     private void displayPermit(Permit permit) {
-        tvPermitType.setText(permit.getPermitType() != null ? permit.getPermitType() : "Unknown");
+        tvPermitType.setText(permit.getPermitType() != null ? PermitTypeHelper.localizeType(this, permit.getPermitType()) : getString(R.string.unknown));
 
         String type = permit.getPermitType() != null ? permit.getPermitType() : "";
         String icon;
@@ -175,8 +188,8 @@ public class PermitDetailActivity extends AppCompatActivity {
         if (date != null && date.length() >= 10) date = date.substring(0, 10);
         tvDate.setText(date);
 
-        tvFee.setText(String.format("$%.2f", permit.getFeeAmount()));
-        tvPayment.setText(permit.isPaid() ? "Paid" : "Unpaid");
+        tvFee.setText(CurrencyHelper.format(this, permit.getFeeAmount()));
+        tvPayment.setText(permit.isPaid() ? getString(R.string.paid) : getString(R.string.unpaid));
 
         cardDescription.setVisibility(View.GONE);
         cardNotes.setVisibility(View.GONE);
@@ -184,6 +197,8 @@ public class PermitDetailActivity extends AppCompatActivity {
         cardMapDetail.setVisibility(View.GONE);
         cardDocuments.setVisibility(View.GONE);
         cardBlockchain.setVisibility(View.GONE);
+        cardTimeline.setVisibility(View.GONE);
+        cardExpiry.setVisibility(View.GONE);
 
         if (permit.getDescription() != null && !permit.getDescription().isEmpty()) {
             cardDescription.setVisibility(View.VISIBLE);
@@ -198,7 +213,41 @@ public class PermitDetailActivity extends AppCompatActivity {
         String estTime = permit.getEstimatedProcessingTime();
         if (estTime != null && !estTime.isEmpty() && "submitted".equals(permit.getStatus())) {
             cardEstTime.setVisibility(View.VISIBLE);
-            tvEstTime.setText(estTime);
+            String estDisplay = estTime;
+            if (permit.getPredictionConfidence() != null) {
+                estDisplay += "  (" + permit.getPredictionConfidence() + "% " + getString(R.string.confidence) + ")";
+            }
+            tvEstTime.setText(estDisplay);
+        }
+
+        if (permit.getExpiresAt() != null && !permit.getExpiresAt().isEmpty()) {
+            cardExpiry.setVisibility(View.VISIBLE);
+            Integer daysToExpiry = permit.getDaysToExpiry();
+            if (permit.isExpired()) {
+                tvExpiryInfo.setText(getString(R.string.expired));
+                tvExpiryInfo.setTextColor(Color.parseColor("#EF4444"));
+            } else if (daysToExpiry != null) {
+                if (daysToExpiry <= 30) {
+                    tvExpiryInfo.setText(String.format(getString(R.string.expires_in), daysToExpiry));
+                    tvExpiryInfo.setTextColor(Color.parseColor("#F59E0B"));
+                } else {
+                    String expiryDate = permit.getExpiresAt();
+                    if (expiryDate.length() >= 10) expiryDate = expiryDate.substring(0, 10);
+                    tvExpiryInfo.setText(String.format(getString(R.string.valid_until), expiryDate));
+                    tvExpiryInfo.setTextColor(Color.parseColor("#10B981"));
+                }
+            }
+        }
+
+        if (permit.getTimeline() != null && !permit.getTimeline().isEmpty()) {
+            cardTimeline.setVisibility(View.VISIBLE);
+            timelineContainer.removeAllViews();
+            java.util.List<project.smartpermits.models.PermitEvent> events = permit.getTimeline();
+            for (int i = 0; i < events.size(); i++) {
+                project.smartpermits.models.PermitEvent event = events.get(i);
+                boolean isLast = (i == events.size() - 1);
+                addTimelineEntry(event, isLast);
+            }
         }
 
         if (permit.getLatitude() != null && permit.getLongitude() != null) {
@@ -217,7 +266,7 @@ public class PermitDetailActivity extends AppCompatActivity {
             Marker marker = new Marker(mapViewDetail);
             marker.setPosition(point);
             marker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM);
-            marker.setTitle("Work Location");
+            marker.setTitle(getString(R.string.work_location));
             mapViewDetail.getOverlays().add(marker);
             mapViewDetail.invalidate();
             tvMapCoordsDetail.setText(String.format(Locale.US, "%.5f, %.5f", permit.getLatitude(), permit.getLongitude()));
@@ -233,7 +282,7 @@ public class PermitDetailActivity extends AppCompatActivity {
         if (bcHash != null && !bcHash.isEmpty()) {
             cardBlockchain.setVisibility(View.VISIBLE);
             if (bcTxHash != null && !bcTxHash.isEmpty()) {
-                tvBlockchainStatus.setText("Verified on Blockchain");
+                tvBlockchainStatus.setText(getString(R.string.verified_blockchain));
                 tvBlockchainStatus.setTextColor(Color.parseColor("#10B981"));
                 layoutTxHash.setVisibility(View.VISIBLE);
                 tvTxHash.setText(bcTxHash);
@@ -243,7 +292,7 @@ public class PermitDetailActivity extends AppCompatActivity {
                     startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
                 });
             } else {
-                tvBlockchainStatus.setText("Hash Recorded Locally");
+                tvBlockchainStatus.setText(getString(R.string.hash_local));
                 tvBlockchainStatus.setTextColor(Color.parseColor("#F59E0B"));
             }
             layoutDocHash.setVisibility(View.VISIBLE);
@@ -251,7 +300,7 @@ public class PermitDetailActivity extends AppCompatActivity {
         }
 
         String status = permit.getStatus() != null ? permit.getStatus() : "unknown";
-        chipStatus.setText(status.substring(0, 1).toUpperCase() + status.substring(1));
+        chipStatus.setText(PermitTypeHelper.localizeStatus(this, status));
 
         int chipColor;
         switch (status) {
@@ -278,7 +327,7 @@ public class PermitDetailActivity extends AppCompatActivity {
 
         if (("completed".equals(status) || "rejected".equals(status)) && "citizen".equals(role)) {
             btnRenew.setVisibility(View.VISIBLE);
-            btnRenew.setText("rejected".equals(status) ? "Reapply" : "Renew");
+            btnRenew.setText("rejected".equals(status) ? getString(R.string.reapply) : getString(R.string.renew));
             btnRenew.setOnClickListener(v -> renewPermit());
         }
 
@@ -306,10 +355,10 @@ public class PermitDetailActivity extends AppCompatActivity {
 
     private void confirmTrash() {
         new androidx.appcompat.app.AlertDialog.Builder(this)
-                .setTitle("Move to Trash")
-                .setMessage("This permit will be moved to trash. It will be permanently deleted after 30 days.")
-                .setPositiveButton("Move to Trash", (d, w) -> trashPermit())
-                .setNegativeButton("Cancel", null)
+                .setTitle(getString(R.string.move_to_trash))
+                .setMessage(getString(R.string.trash_confirm_msg))
+                .setPositiveButton(getString(R.string.move_to_trash), (d, w) -> trashPermit())
+                .setNegativeButton(getString(R.string.cancel), null)
                 .show();
     }
 
@@ -321,10 +370,10 @@ public class PermitDetailActivity extends AppCompatActivity {
                     public void onResponse(Call<project.smartpermits.models.MessageResponse> call, Response<project.smartpermits.models.MessageResponse> response) {
                         progressBar.setVisibility(View.GONE);
                         if (response.isSuccessful()) {
-                            Toast.makeText(PermitDetailActivity.this, "Moved to trash", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(PermitDetailActivity.this, getString(R.string.moved_to_trash), Toast.LENGTH_SHORT).show();
                             finish();
                         } else {
-                            Toast.makeText(PermitDetailActivity.this, "Failed to delete", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(PermitDetailActivity.this, getString(R.string.failed_to_delete), Toast.LENGTH_SHORT).show();
                         }
                     }
 
@@ -345,7 +394,7 @@ public class PermitDetailActivity extends AppCompatActivity {
                     public void onResponse(Call<Permit> call, Response<Permit> response) {
                         progressBar.setVisibility(View.GONE);
                         if (response.isSuccessful() && response.body() != null) {
-                            Toast.makeText(PermitDetailActivity.this, "Payment successful!", Toast.LENGTH_LONG).show();
+                            Toast.makeText(PermitDetailActivity.this, getString(R.string.payment_success), Toast.LENGTH_LONG).show();
                             displayPermit(response.body());
                         } else {
                             btnPay.setEnabled(true);
@@ -390,10 +439,11 @@ public class PermitDetailActivity extends AppCompatActivity {
     private void downloadCertificate() {
         progressBar.setVisibility(View.VISIBLE);
         btnCertificate.setEnabled(false);
+        String currentLang = LocaleHelper.getLanguage(this);
         new Thread(() -> {
             try {
                 retrofit2.Response<ResponseBody> response = RetrofitClient.getInstance(this)
-                        .getApi().downloadCertificate(permitId).execute();
+                        .getApi().downloadCertificate(permitId, currentLang).execute();
                 if (!response.isSuccessful() || response.body() == null) {
                     String errMsg = "Download failed (HTTP " + response.code() + ")";
                     try {
@@ -453,7 +503,7 @@ public class PermitDetailActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     progressBar.setVisibility(View.GONE);
                     btnCertificate.setEnabled(true);
-                    Toast.makeText(this, "Certificate saved to Downloads", Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, getString(R.string.cert_saved), Toast.LENGTH_LONG).show();
                     try {
                         android.net.Uri fileUri = androidx.core.content.FileProvider.getUriForFile(
                                 this, getPackageName() + ".fileprovider", cacheFile);
@@ -477,6 +527,83 @@ public class PermitDetailActivity extends AppCompatActivity {
     protected void onDestroy() {
         super.onDestroy();
         if (mapViewDetail != null) mapViewDetail.onDetach();
+    }
+
+    private void addTimelineEntry(project.smartpermits.models.PermitEvent event, boolean isLast) {
+        float density = getResources().getDisplayMetrics().density;
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setPadding(0, 0, 0, isLast ? 0 : (int)(4 * density));
+
+        LinearLayout dotColumn = new LinearLayout(this);
+        dotColumn.setOrientation(LinearLayout.VERTICAL);
+        dotColumn.setGravity(android.view.Gravity.CENTER_HORIZONTAL);
+        int dotColWidth = (int)(28 * density);
+        dotColumn.setLayoutParams(new LinearLayout.LayoutParams(dotColWidth, LinearLayout.LayoutParams.MATCH_PARENT));
+
+        View dot = new View(this);
+        int dotSize = (int)(12 * density);
+        LinearLayout.LayoutParams dotParams = new LinearLayout.LayoutParams(dotSize, dotSize);
+        dotParams.topMargin = (int)(6 * density);
+        dot.setLayoutParams(dotParams);
+        dot.setBackgroundResource(R.drawable.circle_green);
+        dotColumn.addView(dot);
+
+        if (!isLast) {
+            View line = new View(this);
+            LinearLayout.LayoutParams lineParams = new LinearLayout.LayoutParams((int)(2 * density), 0, 1f);
+            lineParams.topMargin = (int)(4 * density);
+            line.setLayoutParams(lineParams);
+            line.setBackgroundColor(Color.parseColor("#D1D5DB"));
+            dotColumn.addView(line);
+        }
+
+        row.addView(dotColumn);
+
+        LinearLayout textColumn = new LinearLayout(this);
+        textColumn.setOrientation(LinearLayout.VERTICAL);
+        LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
+        textParams.setMarginStart((int)(8 * density));
+        textColumn.setLayoutParams(textParams);
+        textColumn.setPadding(0, 0, 0, (int)(12 * density));
+
+        TextView tvEvent = new TextView(this);
+        tvEvent.setText(event.getEventType());
+        tvEvent.setTextSize(14);
+        tvEvent.setTypeface(tvEvent.getTypeface(), android.graphics.Typeface.BOLD);
+        tvEvent.setTextColor(getResources().getColor(R.color.text_primary, getTheme()));
+        textColumn.addView(tvEvent);
+
+        String actor = event.getActorName();
+        if (actor != null && !actor.isEmpty()) {
+            TextView tvActor = new TextView(this);
+            tvActor.setText(actor);
+            tvActor.setTextSize(12);
+            tvActor.setTextColor(getResources().getColor(R.color.text_secondary, getTheme()));
+            textColumn.addView(tvActor);
+        }
+
+        String notes = event.getNotes();
+        if (notes != null && !notes.isEmpty()) {
+            TextView tvNt = new TextView(this);
+            tvNt.setText(notes);
+            tvNt.setTextSize(11);
+            tvNt.setTextColor(getResources().getColor(R.color.text_secondary, getTheme()));
+            textColumn.addView(tvNt);
+        }
+
+        String time = event.getCreatedAt();
+        if (time != null && time.length() >= 16) {
+            time = time.substring(0, 10) + " " + time.substring(11, 16);
+        }
+        TextView tvTime = new TextView(this);
+        tvTime.setText(time);
+        tvTime.setTextSize(10);
+        tvTime.setTextColor(Color.parseColor("#9CA3AF"));
+        textColumn.addView(tvTime);
+
+        row.addView(textColumn);
+        timelineContainer.addView(row);
     }
 
     private class DocCarouselAdapter extends RecyclerView.Adapter<DocCarouselAdapter.VH> {

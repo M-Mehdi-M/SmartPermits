@@ -39,6 +39,11 @@ import retrofit2.Response;
 
 public class CitizenDashboardActivity extends AppCompatActivity implements PermitAdapter.OnPermitClickListener {
 
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase));
+    }
+
     private RecyclerView recyclerPermits;
     private PermitAdapter adapter;
     private SwipeRefreshLayout swipeRefresh;
@@ -79,7 +84,7 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
         TextView tvDrawerRole = headerView.findViewById(R.id.tvDrawerRole);
         ivDrawerAvatar = headerView.findViewById(R.id.ivDrawerAvatar);
         tvDrawerName.setText(userName);
-        tvDrawerRole.setText("Citizen");
+        tvDrawerRole.setText(getString(R.string.citizen));
         loadAvatar();
 
         adapter = new PermitAdapter(this);
@@ -233,24 +238,24 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
 
     private void showAboutDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("About SmartPermits")
+                .setTitle(getString(R.string.about_title))
                 .setMessage(getString(R.string.about_text) + "\n\n" + getString(R.string.app_version))
-                .setPositiveButton("OK", null)
+                .setPositiveButton(getString(R.string.ok), null)
                 .show();
     }
 
     private void showSignOutDialog() {
         new AlertDialog.Builder(this)
-                .setTitle("Sign Out")
+                .setTitle(getString(R.string.sign_out_title))
                 .setMessage(getString(R.string.sign_out_confirm))
-                .setPositiveButton("Sign Out", (d, w) -> {
+                .setPositiveButton(getString(R.string.nav_sign_out), (d, w) -> {
                     RetrofitClient.getInstance(this).clearSession();
                     Intent intent = new Intent(this, LoginActivity.class);
                     intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                     startActivity(intent);
                     finish();
                 })
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(getString(R.string.cancel), null)
                 .show();
     }
 }

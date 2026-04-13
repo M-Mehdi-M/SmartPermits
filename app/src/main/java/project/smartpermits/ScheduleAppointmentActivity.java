@@ -26,6 +26,11 @@ import retrofit2.Response;
 
 public class ScheduleAppointmentActivity extends AppCompatActivity {
 
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(project.smartpermits.LocaleHelper.applyLocale(newBase));
+    }
+
     private TextInputEditText etDate, etNotes;
     private Spinner spinnerTimeSlot;
     private ProgressBar progressBar;

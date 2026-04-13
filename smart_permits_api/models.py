@@ -1,5 +1,5 @@
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timedelta
 
 db = SQLAlchemy()
 
@@ -29,6 +29,18 @@ class User(db.Model):
         }
 
 
+PERMIT_VALIDITY_DAYS = {
+    'Construction Permit': 365,
+    'Renovation Permit': 180,
+    'Business License': 365,
+    'Food Service Permit': 365,
+    'Event Permit': 30,
+    'Signage Permit': 730,
+    'Demolition Permit': 180,
+    'Occupancy Certificate': 0,
+}
+
+
 class Permit(db.Model):
     __tablename__ = 'permits'
     id = db.Column(db.Integer, primary_key=True)
@@ -45,38 +57,95 @@ class Permit(db.Model):
     longitude = db.Column(db.Float, nullable=True)
     deleted_at = db.Column(db.DateTime, nullable=True, default=None)
     ai_analysis = db.Column(db.Text, nullable=True, default=None)
+    ai_analysis_lang = db.Column(db.String(10), nullable=True, default=None)
     blockchain_hash = db.Column(db.String(66), nullable=True, default=None)
     blockchain_tx_hash = db.Column(db.String(70), nullable=True, default=None)
     blockchain_error = db.Column(db.String(500), nullable=True, default=None)
+    expires_at = db.Column(db.DateTime, nullable=True, default=None)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     documents = db.relationship('Document', backref='permit', lazy=True)
     comments = db.relationship('Comment', backref='permit', lazy=True, order_by='Comment.created_at')
     appointments = db.relationship('Appointment', backref='permit', lazy=True)
+    events = db.relationship('PermitEvent', backref='permit', lazy=True, order_by='PermitEvent.created_at')
+
+    def compute_predicted_wait(self):
+        if self.status != 'submitted':
+            return None, None, None
+        try:
+            from sqlalchemy import func
+
+            base_result = db.session.query(
+                func.avg(
+                    (func.julianday(Permit.updated_at) - func.julianday(Permit.created_at)) * 24
+                ),
+                func.count(Permit.id)
+            ).filter(
+                Permit.permit_type == self.permit_type,
+                Permit.status.in_(['approved', 'rejected', 'completed']),
+                Permit.updated_at.isnot(None),
+                Permit.created_at.isnot(None)
+            ).first()
+
+            if not base_result or not base_result[0] or base_result[0] <= 0:
+                return None, None, None
+
+            avg_hours = float(base_result[0])
+            sample_count = int(base_result[1])
+
+            pending_count = Permit.query.filter_by(status='submitted').count()
+            queue_factor = 1.0 + (pending_count * 0.05)
+
+            doc_count = len(self.documents) if self.documents else 0
+            doc_factor = 1.0 + (max(0, doc_count - 3) * 0.03)
+
+            now = datetime.utcnow()
+            day_of_week = now.weekday()
+            day_factor = 1.15 if day_of_week >= 4 else 1.0
+
+            predicted = avg_hours * queue_factor * doc_factor * day_factor
+
+            variance = 0.3 if sample_count < 5 else 0.2 if sample_count < 15 else 0.12
+            low = predicted * (1.0 - variance)
+            high = predicted * (1.0 + variance)
+
+            confidence = min(95, 50 + sample_count * 3)
+
+            def format_time(h):
+                if h < 1:
+                    return "< 1 hour"
+                if h < 24:
+                    return f"{int(h)} hours"
+                days = h / 24
+                if days < 1.5:
+                    return "1 day"
+                return f"{round(days, 1)} days"
+
+            est_text = f"{format_time(low)} - {format_time(high)}"
+            return est_text, confidence, format_time(predicted)
+        except Exception:
+            return None, None, None
 
     def to_dict(self):
-        avg_time = None
-        if self.status == 'submitted':
-            try:
-                from sqlalchemy import func
-                result = db.session.query(
-                    func.avg(
-                        (func.julianday(Permit.updated_at) - func.julianday(Permit.created_at)) * 24
-                    )
-                ).filter(
-                    Permit.permit_type == self.permit_type,
-                    Permit.status.in_(['approved', 'rejected', 'completed']),
-                    Permit.updated_at.isnot(None),
-                    Permit.created_at.isnot(None)
-                ).scalar()
-                if result and result > 0:
-                    avg_hours = float(result)
-                    if avg_hours < 24:
-                        avg_time = f"{int(avg_hours)} hours"
-                    else:
-                        avg_time = f"{round(avg_hours / 24, 1)} days"
-            except Exception:
-                avg_time = None
+        est_text, confidence, point_est = self.compute_predicted_wait()
+
+        days_to_expiry = None
+        is_expired = False
+        if self.expires_at:
+            delta = (self.expires_at - datetime.utcnow()).days
+            days_to_expiry = max(0, delta)
+            is_expired = delta < 0
+
+        reviewer_name = None
+        if self.reviewed_by:
+            r = User.query.get(self.reviewed_by)
+            if r:
+                reviewer_name = r.full_name
+
+        timeline = []
+        if self.events:
+            for ev in self.events:
+                timeline.append(ev.to_dict())
 
         return {
             'id': self.id,
@@ -89,19 +158,49 @@ class Permit(db.Model):
             'is_paid': self.is_paid,
             'reviewer_notes': self.reviewer_notes,
             'reviewed_by': self.reviewed_by,
+            'reviewer_name': reviewer_name,
             'renewed_from': self.renewed_from,
             'latitude': self.latitude,
             'longitude': self.longitude,
-            'estimated_processing_time': avg_time,
+            'estimated_processing_time': est_text,
+            'prediction_confidence': confidence,
+            'point_estimate': point_est,
             'ai_analysis': self.ai_analysis,
+            'ai_analysis_lang': self.ai_analysis_lang,
             'blockchain_hash': self.blockchain_hash,
             'blockchain_tx_hash': self.blockchain_tx_hash,
             'blockchain_error': self.blockchain_error,
+            'expires_at': self.expires_at.isoformat() if self.expires_at else None,
+            'days_to_expiry': days_to_expiry,
+            'is_expired': is_expired,
             'created_at': self.created_at.isoformat() if self.created_at else None,
             'updated_at': self.updated_at.isoformat() if self.updated_at else None,
             'deleted_at': self.deleted_at.isoformat() if self.deleted_at else None,
             'days_until_permanent_delete': max(0, 30 - (datetime.utcnow() - self.deleted_at).days) if self.deleted_at else None,
-            'documents': [d.to_dict() for d in self.documents]
+            'documents': [d.to_dict() for d in self.documents],
+            'timeline': timeline
+        }
+
+
+class PermitEvent(db.Model):
+    __tablename__ = 'permit_events'
+    id = db.Column(db.Integer, primary_key=True)
+    permit_id = db.Column(db.Integer, db.ForeignKey('permits.id'), nullable=False)
+    event_type = db.Column(db.String(50), nullable=False)
+    actor_name = db.Column(db.String(150), nullable=True, default='')
+    actor_role = db.Column(db.String(20), nullable=True, default='')
+    notes = db.Column(db.Text, nullable=True, default='')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'permit_id': self.permit_id,
+            'event_type': self.event_type,
+            'actor_name': self.actor_name or '',
+            'actor_role': self.actor_role or '',
+            'notes': self.notes or '',
+            'created_at': self.created_at.isoformat()
         }
 
 

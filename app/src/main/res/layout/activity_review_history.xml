@@ -30,7 +30,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Review History"
+                android:text="@string/nav_reviewed"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold"
@@ -61,7 +61,7 @@
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="All" />
+            android:text="@string/filter_all" />
 
         <com.google.android.material.tabs.TabItem
             android:layout_width="wrap_content"

@@ -20,6 +20,11 @@ import retrofit2.Response;
 
 public class ChangePasswordActivity extends AppCompatActivity {
 
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(project.smartpermits.LocaleHelper.applyLocale(newBase));
+    }
+
     private TextInputEditText etCurrentPassword, etNewPassword, etConfirmPassword;
     private ProgressBar progressBar;
 

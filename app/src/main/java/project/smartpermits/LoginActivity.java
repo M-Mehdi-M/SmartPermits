@@ -35,6 +35,11 @@ public class LoginActivity extends AppCompatActivity {
     private boolean isRegisterMode = false;
 
     @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(LocaleHelper.applyLocale(newBase));
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 

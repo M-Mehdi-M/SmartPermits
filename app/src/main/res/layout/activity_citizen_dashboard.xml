@@ -49,7 +49,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Welcome,"
+                            android:text="@string/welcome_comma"
                             android:textColor="@color/header_subtitle"
                             android:textSize="14sp" />
 
@@ -57,7 +57,7 @@
                             android:id="@+id/tvUserName"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Citizen"
+                            android:text="@string/citizen"
                             android:textColor="@color/white"
                             android:textSize="22sp"
                             android:textStyle="bold" />
@@ -82,7 +82,7 @@
             android:layout_marginEnd="16dp"
             android:layout_marginTop="8dp"
             android:background="@drawable/bg_search"
-            android:hint="Search permits..."
+            android:hint="@string/search_permits_hint"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:textSize="14sp"
@@ -122,21 +122,21 @@
                 <com.google.android.material.chip.Chip
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Approved"
+                    android:text="@string/filter_approved"
                     android:tag="approved"
                     style="@style/Widget.Material3.Chip.Filter" />
 
                 <com.google.android.material.chip.Chip
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Rejected"
+                    android:text="@string/filter_rejected"
                     android:tag="rejected"
                     style="@style/Widget.Material3.Chip.Filter" />
 
                 <com.google.android.material.chip.Chip
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Completed"
+                    android:text="@string/filter_completed"
                     android:tag="completed"
                     style="@style/Widget.Material3.Chip.Filter" />
             </com.google.android.material.chip.ChipGroup>
@@ -184,7 +184,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Tap + to apply for your first permit"
+                        android:text="@string/empty_hint"
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp"
                         android:layout_marginTop="4dp" />

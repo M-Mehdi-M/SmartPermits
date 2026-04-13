@@ -27,6 +27,11 @@ import retrofit2.Response;
 
 public class ChatActivity extends AppCompatActivity {
 
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(project.smartpermits.LocaleHelper.applyLocale(newBase));
+    }
+
     private RecyclerView recyclerChat;
     private ChatAdapter adapter;
     private TextInputEditText etMessage;

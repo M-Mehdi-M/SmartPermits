@@ -27,7 +27,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Trash"
+                android:text="@string/trash"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold"
@@ -47,7 +47,7 @@
         android:id="@+id/tvTrashInfo"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Items are permanently deleted after 30 days"
+        android:text="@string/trash_confirm_msg"
         android:textSize="12sp"
         android:textColor="@color/text_secondary"
         android:gravity="center"
@@ -82,7 +82,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Trash is empty"
+                    android:text="@string/no_permits"
                     android:textSize="18sp"
                     android:textColor="@color/text_secondary" />
             </LinearLayout>

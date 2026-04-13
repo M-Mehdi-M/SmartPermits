@@ -26,6 +26,11 @@ import retrofit2.Response;
 
 public class TrashActivity extends AppCompatActivity implements TrashAdapter.OnTrashActionListener {
 
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(project.smartpermits.LocaleHelper.applyLocale(newBase));
+    }
+
     private RecyclerView recyclerTrash;
     private TrashAdapter adapter;
     private SwipeRefreshLayout swipeRefresh;
@@ -106,7 +111,7 @@ public class TrashActivity extends AppCompatActivity implements TrashAdapter.OnT
                 .setTitle("Delete Permanently")
                 .setMessage("This cannot be undone. Are you sure?")
                 .setPositiveButton("Delete", (d, w) -> permanentDelete(permit.getId()))
-                .setNegativeButton("Cancel", null)
+                .setNegativeButton(getString(R.string.cancel), null)
                 .show();
     }
 
@@ -120,24 +125,24 @@ public class TrashActivity extends AppCompatActivity implements TrashAdapter.OnT
                     @Override
                     public void onResponse(Call<MessageResponse> call, Response<MessageResponse> response) {
                         if (response.isSuccessful()) {
-                            Toast.makeText(TrashActivity.this, "Permanently deleted", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(TrashActivity.this, getString(R.string.failed_to_delete).replace(getString(R.string.failed_to_delete), getString(R.string.moved_to_trash)), Toast.LENGTH_SHORT).show();
                             loadTrash();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<MessageResponse> call, Throwable t) {
-                        Toast.makeText(TrashActivity.this, "Error deleting", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(TrashActivity.this, getString(R.string.failed_to_delete), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
 
     private void confirmEmptyTrash() {
         new AlertDialog.Builder(this)
-                .setTitle("Empty Trash")
-                .setMessage("All items in trash will be permanently deleted. This cannot be undone.")
-                .setPositiveButton("Empty Trash", (d, w) -> emptyTrash())
-                .setNegativeButton("Cancel", null)
+                .setTitle(getString(R.string.trash))
+                .setMessage(getString(R.string.trash_confirm_msg))
+                .setPositiveButton(getString(R.string.trash), (d, w) -> emptyTrash())
+                .setNegativeButton(getString(R.string.cancel), null)
                 .show();
     }
 

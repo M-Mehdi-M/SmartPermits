@@ -17,7 +17,7 @@ from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from werkzeug.utils import secure_filename
-from models import db, User, Permit, Document, Comment, Appointment
+from models import db, User, Permit, Document, Comment, Appointment, PermitEvent, PERMIT_VALIDITY_DAYS
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
@@ -64,6 +64,17 @@ def send_push_notification(user_id, title, body, data=None):
         pass
 
 
+def log_permit_event(permit_id, event_type, actor_name='', actor_role='', notes=''):
+    event = PermitEvent(
+        permit_id=permit_id,
+        event_type=event_type,
+        actor_name=actor_name,
+        actor_role=actor_role,
+        notes=notes
+    )
+    db.session.add(event)
+
+
 FEE_TABLE = {
     'Business License': 150.0,
     'Construction Permit': 500.0,
@@ -101,6 +112,7 @@ def seed_data():
 def run_migrations():
     from sqlalchemy import text, inspect as sa_inspect
     insp = sa_inspect(db.engine)
+    tables = insp.get_table_names()
     with db.engine.connect() as conn:
         user_cols = [c['name'] for c in insp.get_columns('users')]
         if 'avatar_url' not in user_cols:
@@ -122,12 +134,16 @@ def run_migrations():
         permit_cols2 = [c['name'] for c in insp.get_columns('permits')]
         if 'ai_analysis' not in permit_cols2:
             conn.execute(text("ALTER TABLE permits ADD COLUMN ai_analysis TEXT"))
+        if 'ai_analysis_lang' not in permit_cols2:
+            conn.execute(text("ALTER TABLE permits ADD COLUMN ai_analysis_lang VARCHAR(10)"))
         if 'blockchain_hash' not in permit_cols2:
             conn.execute(text("ALTER TABLE permits ADD COLUMN blockchain_hash VARCHAR(66)"))
         if 'blockchain_tx_hash' not in permit_cols2:
             conn.execute(text("ALTER TABLE permits ADD COLUMN blockchain_tx_hash VARCHAR(70)"))
         if 'blockchain_error' not in permit_cols2:
             conn.execute(text("ALTER TABLE permits ADD COLUMN blockchain_error VARCHAR(500)"))
+        if 'expires_at' not in permit_cols2:
+            conn.execute(text("ALTER TABLE permits ADD COLUMN expires_at DATETIME"))
         conn.commit()
 
 
@@ -236,6 +252,7 @@ def get_my_permits():
 @jwt_required()
 def create_permit():
     user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
     data = request.get_json(silent=True) or {}
     permit_type = data.get('permit_type', '')
     description = data.get('description', '')
@@ -254,6 +271,8 @@ def create_permit():
         longitude=longitude
     )
     db.session.add(permit)
+    db.session.flush()
+    log_permit_event(permit.id, 'Submitted', actor_name=user.full_name if user else '', actor_role='citizen', notes=f'{permit_type} application submitted')
     db.session.commit()
     db.session.refresh(permit)
     return jsonify(permit.to_dict()), 201
@@ -366,26 +385,46 @@ REQUIRED_DOCUMENTS = {
 }
 
 
+LANG_NAMES = {
+    'en': 'English', 'ro': 'Romanian', 'es': 'Spanish', 'fr': 'French',
+    'it': 'Italian', 'de': 'German', 'pt': 'Portuguese', 'pl': 'Polish',
+    'tr': 'Turkish', 'uk': 'Ukrainian',
+}
+
+
 @app.route('/api/permits/<int:permit_id>/ai-analyze', methods=['POST'])
 @jwt_required()
 def ai_analyze(permit_id):
     permit = Permit.query.get_or_404(permit_id)
-    if permit.ai_analysis and not permit.ai_analysis.startswith('AI analysis unavailable') and not permit.ai_analysis.startswith('AI analysis failed'):
-        return jsonify({'ai_analysis': permit.ai_analysis}), 200
+    force = request.args.get('force', '').lower() in ('1', 'true', 'yes')
+    requested_lang = request.args.get('lang', 'en').strip().lower() or 'en'
+
+    is_error = permit.ai_analysis and (
+        permit.ai_analysis.startswith('AI analysis unavailable')
+        or permit.ai_analysis.startswith('AI analysis failed')
+        or permit.ai_analysis.startswith('No documents')
+    )
+    lang_changed = permit.ai_analysis_lang and permit.ai_analysis_lang != requested_lang
+
+    if not force and not is_error and not lang_changed and permit.ai_analysis:
+        return jsonify({'ai_analysis': permit.ai_analysis, 'ai_analysis_lang': permit.ai_analysis_lang}), 200
 
     api_key = os.environ.get('GEMINI_API_KEY', '')
     if not api_key:
         permit.ai_analysis = 'AI analysis unavailable: GEMINI_API_KEY not configured.'
+        permit.ai_analysis_lang = requested_lang
         db.session.commit()
-        return jsonify({'ai_analysis': permit.ai_analysis}), 200
+        return jsonify({'ai_analysis': permit.ai_analysis, 'ai_analysis_lang': requested_lang}), 200
 
     docs = Document.query.filter_by(permit_id=permit_id).all()
     if not docs:
         permit.ai_analysis = 'No documents uploaded for analysis.'
+        permit.ai_analysis_lang = requested_lang
         db.session.commit()
-        return jsonify({'ai_analysis': permit.ai_analysis}), 200
+        return jsonify({'ai_analysis': permit.ai_analysis, 'ai_analysis_lang': requested_lang}), 200
 
     try:
+        import time as _time
         from google import genai
         from PIL import Image
 
@@ -400,6 +439,9 @@ def ai_analyze(permit_id):
             doc_labels.append(f'  Document {i+1}: "{label}" (file: {d.file_name})')
         doc_list = '\n'.join(doc_labels)
 
+        lang_name = LANG_NAMES.get(requested_lang, 'English')
+        lang_instruction = f"\n\nIMPORTANT: Write your ENTIRE response in {lang_name}." if requested_lang != 'en' else ""
+
         prompt = (
             f"You are an expert municipal permit document reviewer.\n"
             f"This is a \"{permit.permit_type}\" application.\n"
@@ -413,7 +455,7 @@ def ai_analyze(permit_id):
             f"- Overall completeness assessment (which required documents appear present/missing)\n"
             f"- Any warnings or concerns\n"
             f"- Brief recommendation for the inspector\n\n"
-            f"Respond in a clear, structured format. Be concise but thorough."
+            f"Respond in a clear, structured format. Be concise but thorough.{lang_instruction}"
         )
 
         contents = [prompt]
@@ -424,25 +466,53 @@ def ai_analyze(permit_id):
             except Exception:
                 contents.append(f"[Could not load image: {d.file_name}]")
 
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=contents
-        )
-        analysis_text = response.text
+        models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite']
+        analysis_text = None
+        last_error = None
+        for model_name in models_to_try:
+            for attempt in range(3):
+                try:
+                    response = client.models.generate_content(
+                        model=model_name,
+                        contents=contents
+                    )
+                    analysis_text = response.text
+                    break
+                except Exception as retry_err:
+                    last_error = retry_err
+                    err_str = str(retry_err)
+                    if '503' in err_str or 'UNAVAILABLE' in err_str:
+                        _time.sleep(2 * (attempt + 1))
+                        continue
+                    elif '429' in err_str or 'RESOURCE_EXHAUSTED' in err_str:
+                        _time.sleep(3 * (attempt + 1))
+                        continue
+                    else:
+                        break
+            if analysis_text:
+                break
+
+        if not analysis_text:
+            raise last_error or Exception('All models failed')
+
         permit.ai_analysis = analysis_text
+        permit.ai_analysis_lang = requested_lang
+        log_permit_event(permit.id, 'Documents Analyzed by AI', actor_name='Gemini AI', actor_role='system', notes='Automated document analysis completed')
         db.session.commit()
-        return jsonify({'ai_analysis': permit.ai_analysis}), 200
+        return jsonify({'ai_analysis': permit.ai_analysis, 'ai_analysis_lang': requested_lang}), 200
     except Exception as e:
         error_msg = f'AI analysis failed: {str(e)}'
         permit.ai_analysis = error_msg
+        permit.ai_analysis_lang = requested_lang
         db.session.commit()
-        return jsonify({'ai_analysis': error_msg}), 200
+        return jsonify({'ai_analysis': error_msg, 'ai_analysis_lang': requested_lang}), 200
 
 
 @app.route('/api/permits/<int:permit_id>/pay', methods=['POST'])
 @jwt_required()
 def pay_permit(permit_id):
     user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
     permit = Permit.query.get_or_404(permit_id)
     if permit.user_id != user_id:
         return jsonify({'error': 'Unauthorized'}), 403
@@ -452,6 +522,11 @@ def pay_permit(permit_id):
         return jsonify({'error': 'Already paid'}), 400
     permit.is_paid = True
     permit.status = 'completed'
+    validity = PERMIT_VALIDITY_DAYS.get(permit.permit_type, 365)
+    if validity > 0:
+        permit.expires_at = datetime.utcnow() + timedelta(days=validity)
+    log_permit_event(permit.id, 'Payment Received', actor_name=user.full_name if user else '', actor_role='citizen', notes=f'${permit.fee_amount:.2f} paid')
+    log_permit_event(permit.id, 'Certificate Issued', actor_name='System', actor_role='system', notes='Permit completed and certificate available for download')
     db.session.commit()
     return jsonify(permit.to_dict()), 200
 
@@ -460,6 +535,7 @@ def pay_permit(permit_id):
 @jwt_required()
 def renew_permit(permit_id):
     user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
     old_permit = Permit.query.get_or_404(permit_id)
     if old_permit.user_id != user_id:
         return jsonify({'error': 'Unauthorized'}), 403
@@ -475,6 +551,8 @@ def renew_permit(permit_id):
         renewed_from=old_permit.id
     )
     db.session.add(new_permit)
+    db.session.flush()
+    log_permit_event(new_permit.id, 'Submitted', actor_name=user.full_name if user else '', actor_role='citizen', notes=f'Renewed from permit #{old_permit.id}')
     db.session.commit()
     return jsonify(new_permit.to_dict()), 201
 
@@ -529,6 +607,8 @@ def review_permit(permit_id):
     permit.status = action
     permit.reviewer_notes = notes
     permit.reviewed_by = user_id
+    status_label = 'Approved' if action == 'approved' else 'Rejected'
+    log_permit_event(permit.id, f'Reviewed by Inspector', actor_name=user.full_name, actor_role='inspector', notes=f'{status_label}' + (f': {notes}' if notes else ''))
     if action == 'approved':
         try:
             from blockchain import notarize_permit
@@ -537,14 +617,15 @@ def review_permit(permit_id):
             permit.blockchain_hash = permit_hash
             permit.blockchain_tx_hash = tx_hash
             permit.blockchain_error = bc_error
+            if tx_hash:
+                log_permit_event(permit.id, 'Blockchain Notarized', actor_name='Ethereum Sepolia', actor_role='system', notes=f'TX: {tx_hash[:20]}...')
         except Exception as e:
             permit.blockchain_error = f'Notarization failed: {str(e)}'
     db.session.commit()
-    status_text = 'Approved' if action == 'approved' else 'Rejected'
     send_push_notification(
         permit.user_id,
-        f'Permit {status_text}',
-        f'Your {permit.permit_type} has been {status_text.lower()}.',
+        f'Permit {status_label}',
+        f'Your {permit.permit_type} has been {status_label.lower()}.',
         {'permit_id': str(permit.id)}
     )
     return jsonify(permit.to_dict()), 200
@@ -589,6 +670,7 @@ def add_comment(permit_id):
 @jwt_required()
 def schedule_appointment(permit_id):
     user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
     permit = Permit.query.get_or_404(permit_id)
     if permit.user_id != user_id:
         return jsonify({'error': 'Unauthorized'}), 403
@@ -611,6 +693,7 @@ def schedule_appointment(permit_id):
         return jsonify({'error': 'Appointment already scheduled'}), 400
     appt = Appointment(permit_id=permit_id, user_id=user_id, date=date, time_slot=time_slot, notes=notes)
     db.session.add(appt)
+    log_permit_event(permit.id, 'Appointment Scheduled', actor_name=user.full_name if user else '', actor_role='citizen', notes=f'{date} at {time_slot}')
     db.session.commit()
     inspectors = User.query.filter_by(role='inspector').all()
     for insp in inspectors:
@@ -648,7 +731,11 @@ def update_appointment(appt_id):
     data = request.get_json(silent=True) or {}
     new_status = data.get('status', '')
     if new_status in ('confirmed', 'cancelled', 'completed'):
+        old_status = appt.status
         appt.status = new_status
+        if new_status == 'completed':
+            user = User.query.get(int(get_jwt_identity()))
+            log_permit_event(appt.permit_id, 'Inspection Completed', actor_name=user.full_name if user else '', actor_role=user.role if user else '', notes='On-site inspection completed')
     if 'notes' in data:
         appt.notes = data['notes']
     db.session.commit()
@@ -673,24 +760,395 @@ def verify_blockchain(permit_id):
     return jsonify(result), 200
 
 
+@app.route('/api/permits/<int:permit_id>/timeline', methods=['GET'])
+@jwt_required()
+def get_timeline(permit_id):
+    permit = Permit.query.get_or_404(permit_id)
+    events = PermitEvent.query.filter_by(permit_id=permit_id).order_by(PermitEvent.created_at.asc()).all()
+    return jsonify([e.to_dict() for e in events]), 200
+
+
+PDF_TRANSLATIONS = {
+    'en': {
+        'subtitle': 'Official Municipal Permit Certificate',
+        'cert_no': 'Certificate No.',
+        'permit_info': 'Permit Information',
+        'permit_type': 'Permit Type',
+        'applicant': 'Applicant',
+        'description': 'Description',
+        'fee_amount': 'Fee Amount',
+        'status': 'Status',
+        'completed': 'COMPLETED',
+        'application_date': 'Application Date',
+        'issued_date': 'Issued Date',
+        'valid_until': 'Valid Until',
+        'non_expiring': 'Non-expiring',
+        'na': 'N/A',
+        'blockchain_verification': 'Blockchain Verification',
+        'tx_hash': 'Transaction Hash',
+        'network': 'Network',
+        'etherscan_link': 'Etherscan Link',
+        'doc_hash': 'Document Hash (SHA-256)',
+        'verification_status': 'Verification Status',
+        'verified_blockchain': 'Verified on Blockchain',
+        'hash_local': 'Hash Recorded Locally',
+        'scan_verify': 'Scan to Verify',
+        'view_etherscan': 'View on Etherscan',
+        'footer_digital': 'This document is digitally generated and verified by SmartPermits Platform.',
+        'footer_generated': 'Generated on',
+        'footer_tamper': 'Tampering with this certificate is a criminal offense under municipal regulations.',
+    },
+    'ro': {
+        'subtitle': 'Certificat Oficial de Autorizație Municipală',
+        'cert_no': 'Certificat Nr.',
+        'permit_info': 'Informații Autorizație',
+        'permit_type': 'Tip Autorizație',
+        'applicant': 'Solicitant',
+        'description': 'Descriere',
+        'fee_amount': 'Taxă',
+        'status': 'Stare',
+        'completed': 'FINALIZAT',
+        'application_date': 'Data Depunerii',
+        'issued_date': 'Data Emiterii',
+        'valid_until': 'Valabil Până La',
+        'non_expiring': 'Fără expirare',
+        'na': 'N/A',
+        'blockchain_verification': 'Verificare Blockchain',
+        'tx_hash': 'Hash Tranzacție',
+        'network': 'Rețea',
+        'etherscan_link': 'Link Etherscan',
+        'doc_hash': 'Hash Document (SHA-256)',
+        'verification_status': 'Stare Verificare',
+        'verified_blockchain': 'Verificat pe Blockchain',
+        'hash_local': 'Hash Înregistrat Local',
+        'scan_verify': 'Scanează pentru Verificare',
+        'view_etherscan': 'Vezi pe Etherscan',
+        'footer_digital': 'Acest document este generat digital și verificat de Platforma SmartPermits.',
+        'footer_generated': 'Generat la',
+        'footer_tamper': 'Falsificarea acestui certificat constituie infracțiune conform reglementărilor municipale.',
+    },
+    'es': {
+        'subtitle': 'Certificado Oficial de Permiso Municipal',
+        'cert_no': 'Certificado Nro.',
+        'permit_info': 'Información del Permiso',
+        'permit_type': 'Tipo de Permiso',
+        'applicant': 'Solicitante',
+        'description': 'Descripción',
+        'fee_amount': 'Tarifa',
+        'status': 'Estado',
+        'completed': 'COMPLETADO',
+        'application_date': 'Fecha de Solicitud',
+        'issued_date': 'Fecha de Emisión',
+        'valid_until': 'Válido Hasta',
+        'non_expiring': 'Sin vencimiento',
+        'na': 'N/A',
+        'blockchain_verification': 'Verificación Blockchain',
+        'tx_hash': 'Hash de Transacción',
+        'network': 'Red',
+        'etherscan_link': 'Enlace Etherscan',
+        'doc_hash': 'Hash del Documento (SHA-256)',
+        'verification_status': 'Estado de Verificación',
+        'verified_blockchain': 'Verificado en Blockchain',
+        'hash_local': 'Hash Registrado Localmente',
+        'scan_verify': 'Escanear para Verificar',
+        'view_etherscan': 'Ver en Etherscan',
+        'footer_digital': 'Este documento es generado digitalmente y verificado por la Plataforma SmartPermits.',
+        'footer_generated': 'Generado el',
+        'footer_tamper': 'La falsificación de este certificado es un delito penal según las regulaciones municipales.',
+    },
+    'fr': {
+        'subtitle': 'Certificat Officiel de Permis Municipal',
+        'cert_no': 'Certificat N°',
+        'permit_info': 'Informations du Permis',
+        'permit_type': 'Type de Permis',
+        'applicant': 'Demandeur',
+        'description': 'Description',
+        'fee_amount': 'Montant des Frais',
+        'status': 'Statut',
+        'completed': 'TERMINÉ',
+        'application_date': 'Date de Demande',
+        'issued_date': "Date d'Émission",
+        'valid_until': 'Valide Jusqu\'au',
+        'non_expiring': 'Sans expiration',
+        'na': 'N/A',
+        'blockchain_verification': 'Vérification Blockchain',
+        'tx_hash': 'Hash de Transaction',
+        'network': 'Réseau',
+        'etherscan_link': 'Lien Etherscan',
+        'doc_hash': 'Hash du Document (SHA-256)',
+        'verification_status': 'Statut de Vérification',
+        'verified_blockchain': 'Vérifié sur Blockchain',
+        'hash_local': 'Hash Enregistré Localement',
+        'scan_verify': 'Scanner pour Vérifier',
+        'view_etherscan': 'Voir sur Etherscan',
+        'footer_digital': 'Ce document est généré numériquement et vérifié par la Plateforme SmartPermits.',
+        'footer_generated': 'Généré le',
+        'footer_tamper': 'La falsification de ce certificat est une infraction pénale selon les réglementations municipales.',
+    },
+    'it': {
+        'subtitle': 'Certificato Ufficiale di Permesso Comunale',
+        'cert_no': 'Certificato N.',
+        'permit_info': 'Informazioni Permesso',
+        'permit_type': 'Tipo di Permesso',
+        'applicant': 'Richiedente',
+        'description': 'Descrizione',
+        'fee_amount': 'Importo Tassa',
+        'status': 'Stato',
+        'completed': 'COMPLETATO',
+        'application_date': 'Data di Richiesta',
+        'issued_date': 'Data di Emissione',
+        'valid_until': 'Valido Fino Al',
+        'non_expiring': 'Senza scadenza',
+        'na': 'N/A',
+        'blockchain_verification': 'Verifica Blockchain',
+        'tx_hash': 'Hash Transazione',
+        'network': 'Rete',
+        'etherscan_link': 'Link Etherscan',
+        'doc_hash': 'Hash Documento (SHA-256)',
+        'verification_status': 'Stato Verifica',
+        'verified_blockchain': 'Verificato su Blockchain',
+        'hash_local': 'Hash Registrato Localmente',
+        'scan_verify': 'Scansiona per Verificare',
+        'view_etherscan': 'Vedi su Etherscan',
+        'footer_digital': 'Questo documento è generato digitalmente e verificato dalla Piattaforma SmartPermits.',
+        'footer_generated': 'Generato il',
+        'footer_tamper': 'La manomissione di questo certificato è un reato penale ai sensi dei regolamenti comunali.',
+    },
+    'de': {
+        'subtitle': 'Offizielle Kommunale Genehmigungsurkunde',
+        'cert_no': 'Zertifikat Nr.',
+        'permit_info': 'Genehmigungsinformationen',
+        'permit_type': 'Genehmigungstyp',
+        'applicant': 'Antragsteller',
+        'description': 'Beschreibung',
+        'fee_amount': 'Gebührenbetrag',
+        'status': 'Status',
+        'completed': 'ABGESCHLOSSEN',
+        'application_date': 'Antragsdatum',
+        'issued_date': 'Ausstellungsdatum',
+        'valid_until': 'Gültig Bis',
+        'non_expiring': 'Unbefristet',
+        'na': 'N/A',
+        'blockchain_verification': 'Blockchain-Verifizierung',
+        'tx_hash': 'Transaktions-Hash',
+        'network': 'Netzwerk',
+        'etherscan_link': 'Etherscan-Link',
+        'doc_hash': 'Dokument-Hash (SHA-256)',
+        'verification_status': 'Verifizierungsstatus',
+        'verified_blockchain': 'Auf Blockchain verifiziert',
+        'hash_local': 'Hash Lokal Gespeichert',
+        'scan_verify': 'Zum Verifizieren Scannen',
+        'view_etherscan': 'Auf Etherscan Ansehen',
+        'footer_digital': 'Dieses Dokument wurde digital erstellt und von der SmartPermits-Plattform verifiziert.',
+        'footer_generated': 'Erstellt am',
+        'footer_tamper': 'Die Fälschung dieser Urkunde ist eine Straftat gemäß den kommunalen Vorschriften.',
+    },
+    'pt': {
+        'subtitle': 'Certificado Oficial de Licença Municipal',
+        'cert_no': 'Certificado Nº',
+        'permit_info': 'Informações da Licença',
+        'permit_type': 'Tipo de Licença',
+        'applicant': 'Requerente',
+        'description': 'Descrição',
+        'fee_amount': 'Valor da Taxa',
+        'status': 'Estado',
+        'completed': 'CONCLUÍDO',
+        'application_date': 'Data de Pedido',
+        'issued_date': 'Data de Emissão',
+        'valid_until': 'Válido Até',
+        'non_expiring': 'Sem validade',
+        'na': 'N/A',
+        'blockchain_verification': 'Verificação Blockchain',
+        'tx_hash': 'Hash da Transação',
+        'network': 'Rede',
+        'etherscan_link': 'Link Etherscan',
+        'doc_hash': 'Hash do Documento (SHA-256)',
+        'verification_status': 'Estado da Verificação',
+        'verified_blockchain': 'Verificado na Blockchain',
+        'hash_local': 'Hash Registado Localmente',
+        'scan_verify': 'Digitalizar para Verificar',
+        'view_etherscan': 'Ver no Etherscan',
+        'footer_digital': 'Este documento é gerado digitalmente e verificado pela Plataforma SmartPermits.',
+        'footer_generated': 'Gerado em',
+        'footer_tamper': 'A falsificação deste certificado é crime segundo os regulamentos municipais.',
+    },
+    'pl': {
+        'subtitle': 'Oficjalny Certyfikat Pozwolenia Miejskiego',
+        'cert_no': 'Certyfikat Nr',
+        'permit_info': 'Informacje o Pozwoleniu',
+        'permit_type': 'Typ Pozwolenia',
+        'applicant': 'Wnioskodawca',
+        'description': 'Opis',
+        'fee_amount': 'Kwota Opłaty',
+        'status': 'Status',
+        'completed': 'ZAKOŃCZONE',
+        'application_date': 'Data Złożenia',
+        'issued_date': 'Data Wydania',
+        'valid_until': 'Ważne Do',
+        'non_expiring': 'Bezterminowe',
+        'na': 'N/A',
+        'blockchain_verification': 'Weryfikacja Blockchain',
+        'tx_hash': 'Hash Transakcji',
+        'network': 'Sieć',
+        'etherscan_link': 'Link Etherscan',
+        'doc_hash': 'Hash Dokumentu (SHA-256)',
+        'verification_status': 'Status Weryfikacji',
+        'verified_blockchain': 'Zweryfikowano na Blockchain',
+        'hash_local': 'Hash Zapisany Lokalnie',
+        'scan_verify': 'Zeskanuj aby Zweryfikować',
+        'view_etherscan': 'Zobacz na Etherscan',
+        'footer_digital': 'Ten dokument jest wygenerowany cyfrowo i zweryfikowany przez Platformę SmartPermits.',
+        'footer_generated': 'Wygenerowano',
+        'footer_tamper': 'Fałszowanie tego certyfikatu jest przestępstwem zgodnie z przepisami miejskimi.',
+    },
+    'tr': {
+        'subtitle': 'Resmi Belediye İzin Belgesi',
+        'cert_no': 'Belge No.',
+        'permit_info': 'İzin Bilgileri',
+        'permit_type': 'İzin Türü',
+        'applicant': 'Başvuru Sahibi',
+        'description': 'Açıklama',
+        'fee_amount': 'Ücret Tutarı',
+        'status': 'Durum',
+        'completed': 'TAMAMLANDI',
+        'application_date': 'Başvuru Tarihi',
+        'issued_date': 'Düzenleme Tarihi',
+        'valid_until': 'Geçerlilik Tarihi',
+        'non_expiring': 'Süresiz',
+        'na': 'N/A',
+        'blockchain_verification': 'Blockchain Doğrulama',
+        'tx_hash': 'İşlem Hash\'i',
+        'network': 'Ağ',
+        'etherscan_link': 'Etherscan Bağlantısı',
+        'doc_hash': 'Belge Hash\'i (SHA-256)',
+        'verification_status': 'Doğrulama Durumu',
+        'verified_blockchain': 'Blockchain\'de Doğrulandı',
+        'hash_local': 'Hash Yerel Olarak Kaydedildi',
+        'scan_verify': 'Doğrulamak İçin Tarayın',
+        'view_etherscan': 'Etherscan\'de Görüntüle',
+        'footer_digital': 'Bu belge SmartPermits Platformu tarafından dijital olarak oluşturulmuş ve doğrulanmıştır.',
+        'footer_generated': 'Oluşturulma tarihi',
+        'footer_tamper': 'Bu belgenin tahrif edilmesi belediye yönetmeliklerine göre suçtur.',
+    },
+    'uk': {
+        'subtitle': 'Офіційний Муніципальний Дозвільний Сертифікат',
+        'cert_no': 'Сертифікат №',
+        'permit_info': 'Інформація про Дозвіл',
+        'permit_type': 'Тип Дозволу',
+        'applicant': 'Заявник',
+        'description': 'Опис',
+        'fee_amount': 'Сума Збору',
+        'status': 'Статус',
+        'completed': 'ЗАВЕРШЕНО',
+        'application_date': 'Дата Подання',
+        'issued_date': 'Дата Видачі',
+        'valid_until': 'Дійсний До',
+        'non_expiring': 'Безстроковий',
+        'na': 'Н/Д',
+        'blockchain_verification': 'Верифікація Blockchain',
+        'tx_hash': 'Хеш Транзакції',
+        'network': 'Мережа',
+        'etherscan_link': 'Посилання Etherscan',
+        'doc_hash': 'Хеш Документа (SHA-256)',
+        'verification_status': 'Статус Верифікації',
+        'verified_blockchain': 'Перевірено на Blockchain',
+        'hash_local': 'Хеш Збережено Локально',
+        'scan_verify': 'Скануйте для Перевірки',
+        'view_etherscan': 'Переглянути на Etherscan',
+        'footer_digital': 'Цей документ створено цифрово та підтверджено Платформою SmartPermits.',
+        'footer_generated': 'Створено',
+        'footer_tamper': 'Підробка цього сертифіката є кримінальним правопорушенням згідно з муніципальними правилами.',
+    },
+}
+
+PERMIT_TYPE_TRANSLATIONS = {
+    'en': {
+        'Construction Permit': 'Construction Permit', 'Renovation Permit': 'Renovation Permit',
+        'Business License': 'Business License', 'Food Service Permit': 'Food Service Permit',
+        'Event Permit': 'Event Permit', 'Signage Permit': 'Signage Permit',
+        'Demolition Permit': 'Demolition Permit', 'Occupancy Certificate': 'Occupancy Certificate',
+    },
+    'ro': {
+        'Construction Permit': 'Autorizație de Construcție', 'Renovation Permit': 'Autorizație de Renovare',
+        'Business License': 'Licență de Afaceri', 'Food Service Permit': 'Autorizație Alimentară',
+        'Event Permit': 'Autorizație Eveniment', 'Signage Permit': 'Autorizație Semnalistică',
+        'Demolition Permit': 'Autorizație de Demolare', 'Occupancy Certificate': 'Certificat de Ocupare',
+    },
+    'es': {
+        'Construction Permit': 'Permiso de Construcción', 'Renovation Permit': 'Permiso de Renovación',
+        'Business License': 'Licencia Comercial', 'Food Service Permit': 'Permiso de Servicio de Alimentos',
+        'Event Permit': 'Permiso de Evento', 'Signage Permit': 'Permiso de Señalización',
+        'Demolition Permit': 'Permiso de Demolición', 'Occupancy Certificate': 'Certificado de Ocupación',
+    },
+    'fr': {
+        'Construction Permit': 'Permis de Construction', 'Renovation Permit': 'Permis de Rénovation',
+        'Business License': 'Licence Commerciale', 'Food Service Permit': 'Permis de Restauration',
+        'Event Permit': "Permis d'Événement", 'Signage Permit': 'Permis de Signalisation',
+        'Demolition Permit': 'Permis de Démolition', 'Occupancy Certificate': "Certificat d'Occupation",
+    },
+    'it': {
+        'Construction Permit': 'Permesso di Costruzione', 'Renovation Permit': 'Permesso di Ristrutturazione',
+        'Business License': 'Licenza Commerciale', 'Food Service Permit': 'Permesso Alimentare',
+        'Event Permit': 'Permesso per Eventi', 'Signage Permit': 'Permesso di Segnaletica',
+        'Demolition Permit': 'Permesso di Demolizione', 'Occupancy Certificate': 'Certificato di Agibilità',
+    },
+    'de': {
+        'Construction Permit': 'Baugenehmigung', 'Renovation Permit': 'Renovierungsgenehmigung',
+        'Business License': 'Gewerbelizenz', 'Food Service Permit': 'Gastronomiegenehmigung',
+        'Event Permit': 'Veranstaltungsgenehmigung', 'Signage Permit': 'Beschilderungsgenehmigung',
+        'Demolition Permit': 'Abrissgenehmigung', 'Occupancy Certificate': 'Nutzungsbescheinigung',
+    },
+    'pt': {
+        'Construction Permit': 'Licença de Construção', 'Renovation Permit': 'Licença de Renovação',
+        'Business License': 'Licença Comercial', 'Food Service Permit': 'Licença de Alimentação',
+        'Event Permit': 'Licença de Evento', 'Signage Permit': 'Licença de Sinalização',
+        'Demolition Permit': 'Licença de Demolição', 'Occupancy Certificate': 'Certificado de Ocupação',
+    },
+    'pl': {
+        'Construction Permit': 'Pozwolenie na Budowę', 'Renovation Permit': 'Pozwolenie na Remont',
+        'Business License': 'Licencja Biznesowa', 'Food Service Permit': 'Pozwolenie Gastronomiczne',
+        'Event Permit': 'Pozwolenie na Wydarzenie', 'Signage Permit': 'Pozwolenie na Reklamę',
+        'Demolition Permit': 'Pozwolenie na Rozbiórkę', 'Occupancy Certificate': 'Certyfikat Zamieszkania',
+    },
+    'tr': {
+        'Construction Permit': 'İnşaat İzni', 'Renovation Permit': 'Tadilat İzni',
+        'Business License': 'İşletme Ruhsatı', 'Food Service Permit': 'Gıda Hizmet İzni',
+        'Event Permit': 'Etkinlik İzni', 'Signage Permit': 'Tabela İzni',
+        'Demolition Permit': 'Yıkım İzni', 'Occupancy Certificate': 'İskan Belgesi',
+    },
+    'uk': {
+        'Construction Permit': 'Дозвіл на Будівництво', 'Renovation Permit': 'Дозвіл на Ремонт',
+        'Business License': 'Ліцензія на Бізнес', 'Food Service Permit': 'Дозвіл на Харчування',
+        'Event Permit': 'Дозвіл на Захід', 'Signage Permit': 'Дозвіл на Вивіску',
+        'Demolition Permit': 'Дозвіл на Знесення', 'Occupancy Certificate': 'Сертифікат Зайнятості',
+    },
+}
+
+
 @app.route('/api/permits/<int:permit_id>/certificate', methods=['GET'])
 @jwt_required()
 def get_certificate(permit_id):
     permit = Permit.query.get_or_404(permit_id)
     if permit.status != 'completed':
         return jsonify({'error': 'Certificate only available for completed permits'}), 400
+    requested_lang = request.args.get('lang', 'en').strip().lower() or 'en'
+    t = PDF_TRANSLATIONS.get(requested_lang, PDF_TRANSLATIONS['en'])
+    pt_trans = PERMIT_TYPE_TRANSLATIONS.get(requested_lang, PERMIT_TYPE_TRANSLATIONS['en'])
     try:
         from reportlab.lib.pagesizes import A4
         from reportlab.lib import colors as rl_colors
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage, HRFlowable
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import cm
+        from reportlab.lib.units import cm, mm
+        from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
         from xml.sax.saxutils import escape as xml_escape
         import qrcode
 
         qr_data = f"SmartPermits-Verify-{permit.id}-{permit.permit_type}"
+        etherscan_url = None
         if permit.blockchain_tx_hash:
-            qr_data = f"https://sepolia.etherscan.io/tx/{permit.blockchain_tx_hash}"
+            etherscan_url = f"https://sepolia.etherscan.io/tx/{permit.blockchain_tx_hash}"
+            qr_data = etherscan_url
         qr = qrcode.make(qr_data)
         qr_buffer = io.BytesIO()
         qr.save(qr_buffer, format='PNG')
@@ -700,59 +1158,105 @@ def get_certificate(permit_id):
             f.write(qr_buffer.read())
 
         pdf_buffer = io.BytesIO()
-        doc = SimpleDocTemplate(pdf_buffer, pagesize=A4)
+        doc = SimpleDocTemplate(pdf_buffer, pagesize=A4, topMargin=1.5*cm, bottomMargin=1.5*cm, leftMargin=2*cm, rightMargin=2*cm)
         styles = getSampleStyleSheet()
-        title_style = ParagraphStyle('Title2', parent=styles['Title'], fontSize=24, textColor=rl_colors.HexColor('#1E3A5F'))
-        subtitle_style = ParagraphStyle('Sub', parent=styles['Normal'], fontSize=14, textColor=rl_colors.grey)
+
+        primary_color = rl_colors.HexColor('#0D9488')
+        dark_color = rl_colors.HexColor('#0F766E')
+        light_bg = rl_colors.HexColor('#F0FDFA')
+        gold_color = rl_colors.HexColor('#D4A843')
+
+        title_style = ParagraphStyle('CertTitle', parent=styles['Title'], fontSize=28, textColor=primary_color, spaceAfter=4, fontName='Helvetica-Bold', alignment=TA_CENTER)
+        subtitle_style = ParagraphStyle('CertSub', parent=styles['Normal'], fontSize=13, textColor=rl_colors.HexColor('#6B7280'), alignment=TA_CENTER, spaceAfter=6)
+        cert_id_style = ParagraphStyle('CertId', parent=styles['Normal'], fontSize=11, textColor=dark_color, alignment=TA_CENTER, fontName='Helvetica-Bold', spaceAfter=16)
+        section_header = ParagraphStyle('SecHead', parent=styles['Normal'], fontSize=13, textColor=primary_color, fontName='Helvetica-Bold', spaceAfter=8, spaceBefore=12)
         cell_style = ParagraphStyle('Cell', parent=styles['Normal'], fontSize=10, leading=14)
-        header_style = ParagraphStyle('HdrCell', parent=styles['Normal'], fontSize=11, leading=14, textColor=rl_colors.white, fontName='Helvetica-Bold')
+        cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontSize=10, leading=14, fontName='Helvetica-Bold')
+        footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=rl_colors.HexColor('#9CA3AF'), alignment=TA_CENTER, spaceBefore=16)
+        link_style = ParagraphStyle('Link', parent=styles['Normal'], fontSize=9, textColor=rl_colors.HexColor('#0D9488'), fontName='Helvetica', alignment=TA_CENTER)
 
         def _cell(text):
             return Paragraph(xml_escape(str(text or '')), cell_style)
 
-        def _hdr(text):
-            return Paragraph(xml_escape(str(text or '')), header_style)
+        def _bold(text):
+            return Paragraph(xml_escape(str(text or '')), cell_bold)
 
         elements = []
-        elements.append(Paragraph("SmartPermits", title_style))
-        elements.append(Paragraph("Official Permit Certificate", subtitle_style))
-        elements.append(Spacer(1, 1 * cm))
+
+        elements.append(HRFlowable(width="100%", thickness=3, color=primary_color, spaceAfter=12))
+        elements.append(Paragraph("\u2756 SmartPermits", title_style))
+        elements.append(Paragraph(t['subtitle'], subtitle_style))
+        elements.append(Paragraph(f"{t['cert_no']} SP-{permit.id:05d}", cert_id_style))
+        elements.append(HRFlowable(width="100%", thickness=1, color=rl_colors.HexColor('#E5E7EB'), spaceAfter=16))
 
         applicant_name = permit.applicant.full_name if permit.applicant else ''
-        issued = permit.updated_at.strftime('%Y-%m-%d') if permit.updated_at else ''
-        applied = permit.created_at.strftime('%Y-%m-%d') if permit.created_at else ''
+        issued = permit.updated_at.strftime('%B %d, %Y') if permit.updated_at else ''
+        applied = permit.created_at.strftime('%B %d, %Y') if permit.created_at else ''
+        expires = permit.expires_at.strftime('%B %d, %Y') if permit.expires_at else t['non_expiring']
 
-        data = [
-            [_hdr('Field'), _hdr('Details')],
-            [_cell('Certificate ID'), _cell(f'SP-{permit.id:05d}')],
-            [_cell('Permit Type'), _cell(permit.permit_type)],
-            [_cell('Applicant'), _cell(applicant_name)],
-            [_cell('Description'), _cell(permit.description or 'N/A')],
-            [_cell('Fee Amount'), _cell(f'${permit.fee_amount:.2f}')],
-            [_cell('Status'), _cell('COMPLETED')],
-            [_cell('Issued Date'), _cell(issued)],
-            [_cell('Application Date'), _cell(applied)],
+        localized_permit_type = pt_trans.get(permit.permit_type, permit.permit_type)
+
+        elements.append(Paragraph(t['permit_info'], section_header))
+        info_data = [
+            [_bold(t['permit_type']), _cell(localized_permit_type)],
+            [_bold(t['applicant']), _cell(applicant_name)],
+            [_bold(t['description']), _cell(permit.description or t['na'])],
+            [_bold(t['fee_amount']), _cell(f'${permit.fee_amount:.2f}')],
+            [_bold(t['status']), _cell(f'{t["completed"]} \u2714')],
+            [_bold(t['application_date']), _cell(applied)],
+            [_bold(t['issued_date']), _cell(issued)],
+            [_bold(t['valid_until']), _cell(expires)],
         ]
-        if permit.blockchain_tx_hash:
-            data.append([_cell('Blockchain TX'), _cell(permit.blockchain_tx_hash)])
-        if permit.blockchain_hash:
-            data.append([_cell('Document Hash'), _cell(permit.blockchain_hash)])
 
-        table = Table(data, colWidths=[5 * cm, 10 * cm])
-        table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), rl_colors.HexColor('#1E3A5F')),
-            ('GRID', (0, 0), (-1, -1), 0.5, rl_colors.grey),
-            ('ROWBACKGROUNDS', (0, 1), (-1, -1), [rl_colors.white, rl_colors.HexColor('#F4F6F9')]),
-            ('PADDING', (0, 0), (-1, -1), 8),
+        info_table = Table(info_data, colWidths=[5*cm, 11*cm])
+        info_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), light_bg),
+            ('GRID', (0, 0), (-1, -1), 0.5, rl_colors.HexColor('#D1D5DB')),
+            ('ROWBACKGROUNDS', (0, 0), (-1, -1), [rl_colors.white, rl_colors.HexColor('#FAFAFA')]),
+            ('PADDING', (0, 0), (-1, -1), 10),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('TOPPADDING', (0, 0), (-1, -1), 8),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
         ]))
-        elements.append(table)
-        elements.append(Spacer(1, 1 * cm))
-        elements.append(Paragraph("Verification QR Code:", styles['Normal']))
-        elements.append(Spacer(1, 0.3 * cm))
-        elements.append(RLImage(qr_path, width=4 * cm, height=4 * cm))
-        elements.append(Spacer(1, 1 * cm))
-        elements.append(Paragraph("This document is digitally generated by SmartPermits Platform.", ParagraphStyle('Footer', parent=styles['Normal'], fontSize=9, textColor=rl_colors.grey)))
+        elements.append(info_table)
+        elements.append(Spacer(1, 0.6*cm))
+
+        if permit.blockchain_tx_hash or permit.blockchain_hash:
+            elements.append(Paragraph(t['blockchain_verification'], section_header))
+            bc_data = []
+            if permit.blockchain_tx_hash:
+                bc_data.append([_bold(t['tx_hash']), _cell(permit.blockchain_tx_hash)])
+                bc_data.append([_bold(t['network']), _cell('Ethereum Sepolia Testnet')])
+                bc_data.append([_bold(t['etherscan_link']), Paragraph(f'<a href="{etherscan_url}" color="#0D9488">{etherscan_url}</a>', cell_style)])
+            if permit.blockchain_hash:
+                bc_data.append([_bold(t['doc_hash']), _cell(permit.blockchain_hash)])
+            bc_data.append([_bold(t['verification_status']), _cell(f'{t["verified_blockchain"]} \u2705' if permit.blockchain_tx_hash else t['hash_local'])])
+
+            bc_table = Table(bc_data, colWidths=[5*cm, 11*cm])
+            bc_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (0, -1), rl_colors.HexColor('#ECFDF5')),
+                ('GRID', (0, 0), (-1, -1), 0.5, rl_colors.HexColor('#D1D5DB')),
+                ('PADDING', (0, 0), (-1, -1), 8),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            elements.append(bc_table)
+            elements.append(Spacer(1, 0.6*cm))
+
+        elements.append(HRFlowable(width="100%", thickness=0.5, color=rl_colors.HexColor('#E5E7EB'), spaceAfter=12))
+
+        qr_label = ParagraphStyle('QRLabel', parent=styles['Normal'], fontSize=10, textColor=rl_colors.HexColor('#6B7280'), alignment=TA_CENTER, spaceAfter=6)
+        elements.append(Paragraph(t['scan_verify'], qr_label))
+        elements.append(RLImage(qr_path, width=3.5*cm, height=3.5*cm, hAlign='CENTER'))
+
+        if etherscan_url:
+            elements.append(Spacer(1, 0.3*cm))
+            elements.append(Paragraph(f'<a href="{etherscan_url}" color="#0D9488">{t["view_etherscan"]} \u2197</a>', link_style))
+
+        elements.append(Spacer(1, 0.8*cm))
+        elements.append(HRFlowable(width="100%", thickness=2, color=gold_color, spaceAfter=8))
+        elements.append(Paragraph(t['footer_digital'], footer_style))
+        elements.append(Paragraph(f"{t['footer_generated']} {datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC')}", footer_style))
+        elements.append(Paragraph(t['footer_tamper'], footer_style))
 
         doc.build(elements)
         pdf_bytes = pdf_buffer.getvalue()
@@ -804,6 +1308,7 @@ def permanent_delete_permit(permit_id):
         return jsonify({'error': 'Permit must be in trash first'}), 400
     Comment.query.filter_by(permit_id=permit_id).delete()
     Appointment.query.filter_by(permit_id=permit_id).delete()
+    PermitEvent.query.filter_by(permit_id=permit_id).delete()
     for doc in permit.documents:
         try:
             os.remove(doc.file_path)
@@ -837,6 +1342,7 @@ def empty_trash():
     for permit in trashed:
         Comment.query.filter_by(permit_id=permit.id).delete()
         Appointment.query.filter_by(permit_id=permit.id).delete()
+        PermitEvent.query.filter_by(permit_id=permit.id).delete()
         for doc in permit.documents:
             try:
                 os.remove(doc.file_path)
@@ -858,6 +1364,7 @@ def cleanup_old_trash():
     for permit in old_permits:
         Comment.query.filter_by(permit_id=permit.id).delete()
         Appointment.query.filter_by(permit_id=permit.id).delete()
+        PermitEvent.query.filter_by(permit_id=permit.id).delete()
         for doc in permit.documents:
             try:
                 os.remove(doc.file_path)
@@ -974,6 +1481,7 @@ def delete_account():
     for permit in permits:
         Comment.query.filter_by(permit_id=permit.id).delete()
         Appointment.query.filter_by(permit_id=permit.id).delete()
+        PermitEvent.query.filter_by(permit_id=permit.id).delete()
         for doc in permit.documents:
             try:
                 os.remove(doc.file_path)

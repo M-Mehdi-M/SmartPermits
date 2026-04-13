@@ -20,6 +20,11 @@ import project.smartpermits.api.RetrofitClient;
 
 public class DocumentViewerActivity extends AppCompatActivity {
 
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(project.smartpermits.LocaleHelper.applyLocale(newBase));
+    }
+
     private ImageView ivDocument;
     private ProgressBar progressBar;
     private LinearLayout errorView;

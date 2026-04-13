@@ -89,7 +89,7 @@
                                 android:id="@+id/tvPermitType"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Construction Permit"
+                                android:text="@string/permit_construction"
                                 android:textSize="20sp"
                                 android:textStyle="bold"
                                 android:textColor="@color/text_primary" />
@@ -98,7 +98,7 @@
                                 android:id="@+id/chipStatus"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="Submitted"
+                                android:text="@string/filter_submitted"
                                 app:chipMinHeight="28dp"
                                 app:chipCornerRadius="14dp"
                                 android:layout_marginTop="4dp" />
@@ -121,7 +121,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Date"
+                            android:text="@string/date_label"
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp" />
 
@@ -146,7 +146,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Fee Amount"
+                            android:text="@string/fee_amount_label"
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp" />
 
@@ -172,7 +172,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Payment"
+                            android:text="@string/payment_label"
                             android:textColor="@color/text_secondary"
                             android:textSize="14sp" />
 
@@ -207,7 +207,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Description"
+                        android:text="@string/description"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
@@ -240,7 +240,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Reviewer Notes"
+                        android:text="@string/reviewer_notes"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
@@ -271,7 +271,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Estimated Processing Time"
+                        android:text="@string/estimated_processing"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
@@ -302,7 +302,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="📍 Work Location"
+                        android:text="@string/work_location"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
@@ -338,7 +338,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Documents"
+                        android:text="@string/documents_title"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
@@ -367,7 +367,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Blockchain Notarization"
+                        android:text="@string/blockchain_title"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/text_primary"
@@ -382,7 +382,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="Status"
+                            android:text="@string/status"
                             android:textColor="@color/text_secondary"
                             android:textSize="13sp" />
                         <TextView
@@ -405,7 +405,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Transaction Hash"
+                            android:text="@string/tx_hash_label"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp"
                             android:layout_marginBottom="2dp" />
@@ -429,7 +429,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="Document Hash (SHA-256)"
+                            android:text="@string/doc_hash_label"
                             android:textColor="@color/text_secondary"
                             android:textSize="12sp"
                             android:layout_marginBottom="2dp" />
@@ -447,7 +447,7 @@
                         android:id="@+id/btnViewOnChain"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
-                        android:text="View on Etherscan"
+                        android:text="@string/view_on_etherscan"
                         android:textSize="13sp"
                         app:cornerRadius="12dp"
                         style="@style/Widget.Material3.Button.OutlinedButton"
@@ -457,11 +457,78 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardExpiry"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/permit_validity"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/text_primary"
+                        android:layout_marginBottom="8dp" />
+                    <TextView
+                        android:id="@+id/tvExpiryInfo"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+                    <ProgressBar
+                        android:id="@+id/progressExpiry"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="8dp"
+                        android:layout_marginTop="8dp"
+                        android:max="100"
+                        android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardTimeline"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardCornerRadius="16dp"
+                app:cardElevation="2dp"
+                android:layout_marginBottom="16dp"
+                android:visibility="gone">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="20dp">
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/status_timeline"
+                        android:textSize="16sp"
+                        android:textStyle="bold"
+                        android:textColor="@color/primary"
+                        android:layout_marginBottom="12dp" />
+                    <LinearLayout
+                        android:id="@+id/timelineContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPay"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Pay Now"
+                android:text="@string/pay_now"
                 android:textSize="16sp"
                 app:cornerRadius="16dp"
                 android:backgroundTint="@color/accent"
@@ -472,7 +539,7 @@
                 android:id="@+id/btnSchedule"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Schedule Inspection"
+                android:text="@string/schedule_inspection"
                 android:textSize="16sp"
                 app:cornerRadius="16dp"
                 android:backgroundTint="@color/primary"
@@ -483,7 +550,7 @@
                 android:id="@+id/btnCertificate"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Download Certificate"
+                android:text="@string/download_certificate"
                 android:textSize="16sp"
                 app:cornerRadius="16dp"
                 android:backgroundTint="@color/btn_approve"
@@ -494,7 +561,7 @@
                 android:id="@+id/btnRenew"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Renew"
+                android:text="@string/renew"
                 android:textSize="16sp"
                 app:cornerRadius="16dp"
                 style="@style/Widget.Material3.Button.OutlinedButton"
@@ -507,7 +574,7 @@
                 android:id="@+id/btnComments"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Comments"
+                android:text="@string/comments"
                 android:textSize="16sp"
                 app:cornerRadius="16dp"
                 style="@style/Widget.Material3.Button.OutlinedButton"
@@ -520,7 +587,7 @@
                 android:id="@+id/btnTrash"
                 android:layout_width="match_parent"
                 android:layout_height="48dp"
-                android:text="Move to Trash"
+                android:text="@string/move_to_trash"
                 android:textSize="14sp"
                 app:cornerRadius="16dp"
                 style="@style/Widget.Material3.Button.TextButton"

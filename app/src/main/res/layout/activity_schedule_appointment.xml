@@ -27,7 +27,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Schedule Inspection"
+                android:text="@string/schedule_inspection"
                 android:textColor="@color/white"
                 android:textSize="20sp"
                 android:textStyle="bold"
@@ -60,7 +60,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Select Date"
+                        android:text="@string/select_date"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/primary"
@@ -82,7 +82,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Select Time Slot"
+                        android:text="@string/select_time_slot"
                         android:textSize="16sp"
                         android:textStyle="bold"
                         android:textColor="@color/primary"
@@ -114,7 +114,7 @@
                 android:id="@+id/btnSchedule"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Schedule Appointment"
+                android:text="@string/schedule_appointment"
                 android:textSize="16sp"
                 app:cornerRadius="16dp"
                 android:backgroundTint="@color/primary" />

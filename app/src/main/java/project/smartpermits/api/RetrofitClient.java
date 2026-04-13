@@ -56,7 +56,7 @@ public class RetrofitClient {
                 .addInterceptor(loggingInterceptor)
                 .addInterceptor(responseInterceptor)
                 .connectTimeout(30, TimeUnit.SECONDS)
-                .readTimeout(60, TimeUnit.SECONDS)
+                .readTimeout(120, TimeUnit.SECONDS)
                 .writeTimeout(60, TimeUnit.SECONDS)
                 .build();
 
@@ -133,7 +133,17 @@ public class RetrofitClient {
     }
 
     public void clearSession() {
+        boolean darkMode = prefs.getBoolean("dark_mode", false);
+        boolean followSystem = prefs.getBoolean("follow_system_theme", false);
+        boolean notif = prefs.getBoolean("notifications_enabled", true);
+        String lang = prefs.getString("app_language", "");
         prefs.edit().clear().apply();
+        prefs.edit()
+                .putBoolean("dark_mode", darkMode)
+                .putBoolean("follow_system_theme", followSystem)
+                .putBoolean("notifications_enabled", notif)
+                .putString("app_language", lang)
+                .apply();
         instance = null;
     }
 

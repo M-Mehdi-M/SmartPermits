@@ -1,5 +1,6 @@
 package project.smartpermits.adapters;
 
+import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.view.LayoutInflater;
@@ -13,6 +14,10 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.google.android.material.chip.Chip;
 
 import java.util.ArrayList;
+
+import project.smartpermits.CurrencyHelper;
+import project.smartpermits.PermitTypeHelper;
+import project.smartpermits.R;
 import java.util.List;
 
 import project.smartpermits.R;
@@ -77,13 +82,24 @@ public class PermitAdapter extends RecyclerView.Adapter<PermitAdapter.ViewHolder
         }
 
         void bind(Permit permit) {
-            tvPermitType.setText(permit.getPermitType() != null ? permit.getPermitType() : "Unknown");
+            Context context = itemView.getContext();
+            tvPermitType.setText(permit.getPermitType() != null ? PermitTypeHelper.localizeType(context, permit.getPermitType()) : context.getString(R.string.unknown));
             String date = permit.getCreatedAt();
             if (date != null && date.length() >= 10) {
                 date = date.substring(0, 10);
             }
             tvPermitDate.setText(date);
-            tvPermitFee.setText(String.format("Fee: $%.2f", permit.getFeeAmount()));
+
+            if (permit.isExpired()) {
+                tvPermitFee.setText(context.getString(R.string.expired).toUpperCase());
+                tvPermitFee.setTextColor(Color.parseColor("#EF4444"));
+            } else if (permit.getDaysToExpiry() != null && permit.getDaysToExpiry() <= 30 && "completed".equals(permit.getStatus())) {
+                tvPermitFee.setText(context.getString(R.string.expires_in_days, permit.getDaysToExpiry()));
+                tvPermitFee.setTextColor(Color.parseColor("#F59E0B"));
+            } else {
+                tvPermitFee.setText(context.getString(R.string.fee_display, CurrencyHelper.format(context, permit.getFeeAmount())));
+                tvPermitFee.setTextColor(Color.parseColor("#6B7280"));
+            }
 
             String type = permit.getPermitType() != null ? permit.getPermitType() : "";
             String icon;
@@ -101,7 +117,7 @@ public class PermitAdapter extends RecyclerView.Adapter<PermitAdapter.ViewHolder
             tvPermitIcon.setText(icon);
 
             String status = permit.getStatus() != null ? permit.getStatus() : "unknown";
-            chipStatus.setText(status.substring(0, 1).toUpperCase() + status.substring(1));
+            chipStatus.setText(PermitTypeHelper.localizeStatus(context, status));
 
             int chipColor;
             int textColor = Color.WHITE;

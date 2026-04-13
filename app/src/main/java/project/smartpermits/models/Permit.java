@@ -34,6 +34,9 @@ public class Permit {
     @SerializedName("reviewed_by")
     private Integer reviewedBy;
 
+    @SerializedName("reviewer_name")
+    private String reviewerName;
+
     @SerializedName("created_at")
     private String createdAt;
 
@@ -55,8 +58,17 @@ public class Permit {
     @SerializedName("estimated_processing_time")
     private String estimatedProcessingTime;
 
+    @SerializedName("prediction_confidence")
+    private Integer predictionConfidence;
+
+    @SerializedName("point_estimate")
+    private String pointEstimate;
+
     @SerializedName("ai_analysis")
     private String aiAnalysis;
+
+    @SerializedName("ai_analysis_lang")
+    private String aiAnalysisLang;
 
     @SerializedName("blockchain_hash")
     private String blockchainHash;
@@ -67,11 +79,23 @@ public class Permit {
     @SerializedName("blockchain_error")
     private String blockchainError;
 
+    @SerializedName("expires_at")
+    private String expiresAt;
+
+    @SerializedName("days_to_expiry")
+    private Integer daysToExpiry;
+
+    @SerializedName("is_expired")
+    private boolean isExpired;
+
     @SerializedName("deleted_at")
     private String deletedAt;
 
     @SerializedName("days_until_permanent_delete")
     private Integer daysUntilPermanentDelete;
+
+    @SerializedName("timeline")
+    private List<PermitEvent> timeline;
 
     public int getId() { return id; }
     public int getUserId() { return userId; }
@@ -83,6 +107,7 @@ public class Permit {
     public boolean isPaid() { return isPaid; }
     public String getReviewerNotes() { return reviewerNotes; }
     public Integer getReviewedBy() { return reviewedBy; }
+    public String getReviewerName() { return reviewerName; }
     public String getCreatedAt() { return createdAt; }
     public String getUpdatedAt() { return updatedAt; }
     public List<Document> getDocuments() { return documents; }
@@ -90,11 +115,18 @@ public class Permit {
     public Double getLatitude() { return latitude; }
     public Double getLongitude() { return longitude; }
     public String getEstimatedProcessingTime() { return estimatedProcessingTime; }
+    public Integer getPredictionConfidence() { return predictionConfidence; }
+    public String getPointEstimate() { return pointEstimate; }
     public String getAiAnalysis() { return aiAnalysis; }
+    public String getAiAnalysisLang() { return aiAnalysisLang; }
     public String getBlockchainHash() { return blockchainHash; }
     public String getBlockchainTxHash() { return blockchainTxHash; }
     public String getBlockchainError() { return blockchainError; }
+    public String getExpiresAt() { return expiresAt; }
+    public Integer getDaysToExpiry() { return daysToExpiry; }
+    public boolean isExpired() { return isExpired; }
     public String getDeletedAt() { return deletedAt; }
     public Integer getDaysUntilPermanentDelete() { return daysUntilPermanentDelete; }
+    public List<PermitEvent> getTimeline() { return timeline; }
 }
 

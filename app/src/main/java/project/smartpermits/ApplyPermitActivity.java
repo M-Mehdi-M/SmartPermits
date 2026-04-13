@@ -58,6 +58,11 @@ import retrofit2.Response;
 
 public class ApplyPermitActivity extends AppCompatActivity {
 
+    @Override
+    protected void attachBaseContext(android.content.Context newBase) {
+        super.attachBaseContext(project.smartpermits.LocaleHelper.applyLocale(newBase));
+    }
+
     private ViewFlipper viewFlipper;
     private Spinner spinnerPermitType;
     private TextInputEditText etDescription;
@@ -85,74 +90,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
     private final Map<String, CheckBox> requiredDocumentChecks = new LinkedHashMap<>();
     private String pendingDocLabel = null;
 
-    private static final Map<String, String[]> REQUIRED_DOCUMENTS = new LinkedHashMap<>();
-    static {
-        REQUIRED_DOCUMENTS.put("Construction Permit", new String[]{
-                "Urban Planning Certificate",
-                "Land Registry Extract",
-                "Topographic Survey Plan",
-                "Authorized Technical Project",
-                "Utility Approvals (Water, Gas, Electricity)",
-                "Geotechnical Study",
-                "Fee Payment Proof"
-        });
-        REQUIRED_DOCUMENTS.put("Renovation Permit", new String[]{
-                "Urban Planning Certificate",
-                "Existing Condition Survey",
-                "Renovation Technical Project",
-                "Homeowners Association Approval (if applicable)",
-                "Affected Utility Approvals",
-                "Fee Payment Proof"
-        });
-        REQUIRED_DOCUMENTS.put("Business License", new String[]{
-                "Business Registration Certificate",
-                "Articles of Incorporation",
-                "Office Space Lease Agreement",
-                "Fire Safety Approval",
-                "Tax Clearance Certificate",
-                "Business Registry Certificate"
-        });
-        REQUIRED_DOCUMENTS.put("Food Service Permit", new String[]{
-                "Veterinary Sanitary Authorization",
-                "HACCP Plan",
-                "Pest Control Service Contract",
-                "Environmental Approval",
-                "Business Registration Certificate",
-                "Water Quality Analysis Report"
-        });
-        REQUIRED_DOCUMENTS.put("Event Permit", new String[]{
-                "Event Organization Request",
-                "Security Plan",
-                "Police Approval",
-                "Fire Department Approval",
-                "Sanitation Service Contract",
-                "Liability Insurance Policy"
-        });
-        REQUIRED_DOCUMENTS.put("Signage Permit", new String[]{
-                "Signage Placement Request",
-                "Site Sketch",
-                "Urban Planning / Architecture Approval",
-                "Property Owner Agreement",
-                "Photo Simulation / Mockup"
-        });
-        REQUIRED_DOCUMENTS.put("Demolition Permit", new String[]{
-                "Urban Planning Certificate",
-                "Land Registry Extract",
-                "Demolition Technical Project",
-                "Demolition Plan",
-                "Environmental Approval",
-                "Waste Management Study",
-                "Fee Payment Proof"
-        });
-        REQUIRED_DOCUMENTS.put("Occupancy Certificate", new String[]{
-                "Work Completion Inspection Report",
-                "Energy Performance Certificate",
-                "Cadastral Documentation",
-                "Project Verifier Reports",
-                "Installation Compliance Declaration",
-                "Fee Payment Proof"
-        });
-    }
+    // Required documents are now managed by PermitTypeHelper for localization
 
 
     private final ActivityResultLauncher<String> requiredDocLauncher =
@@ -166,9 +104,9 @@ public class ApplyPermitActivity extends AppCompatActivity {
                             cb.setChecked(true);
                             cb.setText(pendingDocLabel + "  \u2705");
                         }
-                        Toast.makeText(this, pendingDocLabel + " uploaded", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, getString(R.string.doc_uploaded, pendingDocLabel), Toast.LENGTH_SHORT).show();
                     } catch (IOException e) {
-                        Toast.makeText(this, "Failed to read file", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, getString(R.string.failed_read_file), Toast.LENGTH_SHORT).show();
                     }
                     pendingDocLabel = null;
                 }
@@ -240,7 +178,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
             btnMapSearch.setOnClickListener(v -> {
                 String query = etMapSearch.getText() != null ? etMapSearch.getText().toString().trim() : "";
                 if (query.isEmpty()) {
-                    Toast.makeText(this, "Enter a location to search", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this, getString(R.string.enter_location), Toast.LENGTH_SHORT).show();
                     return;
                 }
                 btnMapSearch.setEnabled(false);
@@ -256,15 +194,15 @@ public class ApplyPermitActivity extends AppCompatActivity {
                                 GeoPoint point = new GeoPoint(addr.getLatitude(), addr.getLongitude());
                                 mapView.getController().animateTo(point);
                                 mapView.getController().setZoom(14.0);
-                                Toast.makeText(this, "Found: " + addr.getAddressLine(0), Toast.LENGTH_SHORT).show();
+                                Toast.makeText(this, getString(R.string.found_location, addr.getAddressLine(0)), Toast.LENGTH_SHORT).show();
                             } else {
-                                Toast.makeText(this, "Location not found", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(this, getString(R.string.location_not_found), Toast.LENGTH_SHORT).show();
                             }
                         });
                     } catch (Exception e) {
                         runOnUiThread(() -> {
                             btnMapSearch.setEnabled(true);
-                            Toast.makeText(this, "Search failed", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(this, getString(R.string.search_failed), Toast.LENGTH_SHORT).show();
                         });
                     }
                 }).start();
@@ -281,11 +219,11 @@ public class ApplyPermitActivity extends AppCompatActivity {
             currentMarker = new Marker(mapView);
             currentMarker.setPosition(center);
             currentMarker.setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER);
-            currentMarker.setTitle("Work Location");
+            currentMarker.setTitle(getString(R.string.work_location));
             mapView.getOverlays().add(currentMarker);
             mapView.invalidate();
             tvLocationInfo.setText(String.format(Locale.US, "\uD83D\uDCCD %.5f, %.5f", selectedLatitude, selectedLongitude));
-            Toast.makeText(this, "Location pinned!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.location_pinned), Toast.LENGTH_SHORT).show();
         });
     }
 
@@ -298,7 +236,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
                             permitTypes = response.body();
                             String[] names = new String[permitTypes.size()];
                             for (int i = 0; i < permitTypes.size(); i++) {
-                                names[i] = permitTypes.get(i).getName() + " - $" + String.format("%.0f", permitTypes.get(i).getFee());
+                                names[i] = PermitTypeHelper.localizeType(ApplyPermitActivity.this, permitTypes.get(i).getName()) + " - " + CurrencyHelper.format(ApplyPermitActivity.this, permitTypes.get(i).getFee());
                             }
                             ArrayAdapter<String> adapter = new ArrayAdapter<>(
                                     ApplyPermitActivity.this,
@@ -311,7 +249,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
                                 public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                                     selectedType = permitTypes.get(position).getName();
                                     selectedFee = permitTypes.get(position).getFee();
-                                    tvFeePreview.setText(String.format("Estimated fee: $%.2f", selectedFee));
+                                    tvFeePreview.setText(getString(R.string.estimated_fee, CurrencyHelper.format(ApplyPermitActivity.this, selectedFee)));
                                     onPermitTypeChanged(selectedType);
                                 }
                                 @Override
@@ -322,17 +260,21 @@ public class ApplyPermitActivity extends AppCompatActivity {
 
                     @Override
                     public void onFailure(Call<List<PermitType>> call, Throwable t) {
-                        String[] defaultTypes = {"Business License", "Construction Permit", "Food Service Permit",
+                        String[] defaultTypeKeys = {"Business License", "Construction Permit", "Food Service Permit",
                                 "Signage Permit", "Event Permit", "Renovation Permit"};
+                        String[] displayNames = new String[defaultTypeKeys.length];
+                        for (int i = 0; i < defaultTypeKeys.length; i++) {
+                            displayNames[i] = PermitTypeHelper.localizeType(ApplyPermitActivity.this, defaultTypeKeys[i]);
+                        }
                         spinnerPermitType.setAdapter(new ArrayAdapter<>(
                                 ApplyPermitActivity.this,
                                 android.R.layout.simple_spinner_dropdown_item,
-                                defaultTypes
+                                displayNames
                         ));
                         spinnerPermitType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                             @Override
                             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                                selectedType = defaultTypes[position];
+                                selectedType = defaultTypeKeys[position];
                                 onPermitTypeChanged(selectedType);
                             }
                             @Override
@@ -353,38 +295,43 @@ public class ApplyPermitActivity extends AppCompatActivity {
                 currentMarker = null;
                 mapView.invalidate();
             }
-            tvLocationInfo.setText("Move the map, then press Pin Here");
+            tvLocationInfo.setText(getString(R.string.map_instruction));
         }
 
         requiredDocumentFiles.clear();
         requiredDocumentChecks.clear();
         checklistItems.removeAllViews();
 
-        String[] docs = REQUIRED_DOCUMENTS.get(type);
+        String[][] docKeys = PermitTypeHelper.getRequiredDocKeys(type);
+        String[] docs = docKeys != null ? PermitTypeHelper.getLocalizedRequiredDocs(this, type) : null;
         if (docs != null && docs.length > 0) {
             documentChecklistContainer.setVisibility(View.VISIBLE);
-            for (String docName : docs) {
+            for (int i = 0; i < docs.length; i++) {
+                String localizedName = docs[i];
+                String englishKey = docKeys[i][0];
                 LinearLayout row = new LinearLayout(this);
                 row.setOrientation(LinearLayout.HORIZONTAL);
                 row.setGravity(Gravity.CENTER_VERTICAL);
                 row.setPadding(0, 8, 0, 8);
 
                 CheckBox cb = new CheckBox(this);
-                cb.setText(docName);
+                cb.setText(localizedName);
                 cb.setEnabled(false);
                 cb.setTextSize(13);
                 LinearLayout.LayoutParams cbParams = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f);
                 cb.setLayoutParams(cbParams);
-                requiredDocumentChecks.put(docName, cb);
+                requiredDocumentChecks.put(englishKey, cb);
 
                 MaterialButton uploadBtn = new MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle);
-                uploadBtn.setText("Upload");
+                uploadBtn.setText(getString(R.string.upload));
                 uploadBtn.setTextSize(11);
                 uploadBtn.setCornerRadius(24);
                 LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
                 uploadBtn.setLayoutParams(btnParams);
+                final String docKey = englishKey;
+                final String docLocal = localizedName;
                 uploadBtn.setOnClickListener(v -> {
-                    pendingDocLabel = docName;
+                    pendingDocLabel = docKey;
                     requiredDocLauncher.launch("image/*");
                 });
 
@@ -414,7 +361,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
 
     private void submitApplication() {
         if (selectedType.isEmpty()) {
-            Toast.makeText(this, "Please select a permit type", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.select_type_msg), Toast.LENGTH_SHORT).show();
             return;
         }
         String description = etDescription.getText() != null ? etDescription.getText().toString().trim() : "";
@@ -439,13 +386,13 @@ public class ApplyPermitActivity extends AppCompatActivity {
                         } else {
                             progressBar.setVisibility(View.GONE);
                             if (response.code() == 401 || response.code() == 422) {
-                                Toast.makeText(ApplyPermitActivity.this, "Session expired. Please login again.", Toast.LENGTH_LONG).show();
+                                Toast.makeText(ApplyPermitActivity.this, getString(R.string.session_expired), Toast.LENGTH_LONG).show();
                                 RetrofitClient.getInstance(ApplyPermitActivity.this).clearSession();
                                 Intent loginIntent = new Intent(ApplyPermitActivity.this, LoginActivity.class);
                                 loginIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                                 startActivity(loginIntent);
                             } else {
-                                String errorMsg = "Failed to create permit";
+                                String errorMsg = getString(R.string.failed_create_permit);
                                 try {
                                     if (response.errorBody() != null) {
                                         errorMsg += ": " + response.errorBody().string();
@@ -469,7 +416,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
     private void uploadAllRequiredDocuments(int permitId, List<String> labels, int index) {
         if (index >= labels.size()) {
             if (uploadFailCount > 0) {
-                Toast.makeText(this, uploadFailCount + " document(s) failed to upload", Toast.LENGTH_LONG).show();
+                Toast.makeText(this, getString(R.string.docs_failed_upload, uploadFailCount), Toast.LENGTH_LONG).show();
             }
             onSubmitSuccess();
             return;
@@ -506,7 +453,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
 
         if (createdPermitId > 0) {
             RetrofitClient.getInstance(this).getApi()
-                    .triggerAiAnalysis(createdPermitId)
+                    .triggerAiAnalysis(createdPermitId, LocaleHelper.getLanguage(this))
                     .enqueue(new Callback<AiAnalysisResponse>() {
                         @Override
                         public void onResponse(Call<AiAnalysisResponse> call, Response<AiAnalysisResponse> response) {}
