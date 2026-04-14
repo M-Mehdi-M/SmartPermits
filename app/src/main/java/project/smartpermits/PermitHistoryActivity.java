@@ -89,7 +89,7 @@ public class PermitHistoryActivity extends AppCompatActivity implements PermitAd
                     @Override
                     public void onFailure(Call<List<Permit>> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(PermitHistoryActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(PermitHistoryActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -116,10 +116,10 @@ public class PermitHistoryActivity extends AppCompatActivity implements PermitAd
 
         if (filtered.isEmpty()) {
             switch (currentFilter) {
-                case 1: tvEmptyMessage.setText("No approved permits"); break;
-                case 2: tvEmptyMessage.setText("No completed permits"); break;
-                case 3: tvEmptyMessage.setText("No rejected permits"); break;
-                default: tvEmptyMessage.setText("No permits found"); break;
+                case 1: tvEmptyMessage.setText(getString(R.string.no_approved_permits)); break;
+                case 2: tvEmptyMessage.setText(getString(R.string.no_completed_permits)); break;
+                case 3: tvEmptyMessage.setText(getString(R.string.no_rejected_permits)); break;
+                default: tvEmptyMessage.setText(getString(R.string.no_permits_found)); break;
             }
         }
     }

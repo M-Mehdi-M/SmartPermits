@@ -78,7 +78,7 @@ public class AnalyticsActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Call<AnalyticsResponse> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(AnalyticsActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(AnalyticsActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
                     }
                 });
     }

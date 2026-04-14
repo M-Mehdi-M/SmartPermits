@@ -91,15 +91,15 @@ public class LoginActivity extends AppCompatActivity {
         if (isRegisterMode) {
             registerFields.setVisibility(View.VISIBLE);
             btnLogin.setText(R.string.register);
-            tvFormTitle.setText("Create Account");
+            tvFormTitle.setText(R.string.create_account);
             tvSwitchLabel.setText(R.string.have_account);
-            tvSwitchAction.setText(" Login");
+            tvSwitchAction.setText(getString(R.string.login));
         } else {
             registerFields.setVisibility(View.GONE);
             btnLogin.setText(R.string.login);
             tvFormTitle.setText(R.string.welcome_back);
             tvSwitchLabel.setText(R.string.no_account);
-            tvSwitchAction.setText(" Register");
+            tvSwitchAction.setText(getString(R.string.register));
         }
     }
 
@@ -108,7 +108,7 @@ public class LoginActivity extends AppCompatActivity {
         String password = etPassword.getText().toString().trim();
 
         if (username.isEmpty() || password.isEmpty()) {
-            Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.please_fill_all_fields), Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -122,14 +122,14 @@ public class LoginActivity extends AppCompatActivity {
                         if (response.isSuccessful() && response.body() != null) {
                             handleAuthSuccess(response.body());
                         } else {
-                            Toast.makeText(LoginActivity.this, "Invalid credentials", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(LoginActivity.this, getString(R.string.invalid_credentials), Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<LoginResponse> call, Throwable t) {
                         setLoading(false);
-                        Toast.makeText(LoginActivity.this, "Connection error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(LoginActivity.this, getString(R.string.connection_error) + ": " + t.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -141,19 +141,19 @@ public class LoginActivity extends AppCompatActivity {
         String fullName = etFullName.getText().toString().trim();
 
         if (username.isEmpty() || password.isEmpty() || email.isEmpty() || fullName.isEmpty()) {
-            Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.please_fill_all_fields), Toast.LENGTH_SHORT).show();
             return;
         }
         if (username.length() < 3) {
-            Toast.makeText(this, "Username must be at least 3 characters", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.username_min_chars), Toast.LENGTH_SHORT).show();
             return;
         }
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            Toast.makeText(this, "Please enter a valid email", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.valid_email_required), Toast.LENGTH_SHORT).show();
             return;
         }
         if (password.length() < 6) {
-            Toast.makeText(this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.password_min_chars), Toast.LENGTH_SHORT).show();
             return;
         }
 
@@ -169,21 +169,21 @@ public class LoginActivity extends AppCompatActivity {
                         if (response.isSuccessful() && response.body() != null) {
                             handleAuthSuccess(response.body());
                         } else {
-                            Toast.makeText(LoginActivity.this, "Registration failed", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(LoginActivity.this, getString(R.string.registration_failed), Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<LoginResponse> call, Throwable t) {
                         setLoading(false);
-                        Toast.makeText(LoginActivity.this, "Connection error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(LoginActivity.this, getString(R.string.connection_error) + ": " + t.getMessage(), Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
     private void handleAuthSuccess(LoginResponse response) {
         if (response == null || response.getToken() == null) {
-            Toast.makeText(this, "Login failed: invalid response", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getString(R.string.login_failed_invalid), Toast.LENGTH_SHORT).show();
             return;
         }
         RetrofitClient client = RetrofitClient.getInstance(this);

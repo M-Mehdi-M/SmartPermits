@@ -274,4 +274,8 @@
     <string name="nav_change_password">Schimba parola</string>
     <string name="nav_analytics">Analize</string>
     <string name="nav_trash">Cos de gunoi</string>
+    <string name="error_generic">Eroare: %s</string>
+    <string name="server_error">Eroare server: %s</string>
+    <string name="download_failed">Descărcare eșuată (HTTP %d)</string>
+    <string name="download_error">Eroare descărcare: %s</string>
 </resources>

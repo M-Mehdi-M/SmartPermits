@@ -20,15 +20,12 @@ public class CurrencyHelper {
             amountStr = String.format("%.2f", converted);
         }
 
-        // symbol ending with space means "symbol before amount" (e.g. "lei " → "lei 2250")
         if (symbol.endsWith(" ")) {
             return symbol + amountStr;
         }
-        // Symbols that go before the amount
         if ("$".equals(symbol) || "€".equals(symbol) || "£".equals(symbol) || symbol.startsWith("R$")) {
             return symbol + amountStr;
         }
-        // Symbols that go after the amount (zł, ₺, ₴)
         return amountStr + " " + symbol;
     }
 }

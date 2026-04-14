@@ -274,4 +274,8 @@
     <string name="nav_change_password">Alterar senha</string>
     <string name="nav_analytics">Analises</string>
     <string name="nav_trash">Lixeira</string>
+    <string name="error_generic">Erro: %s</string>
+    <string name="server_error">Erro do servidor: %s</string>
+    <string name="download_failed">Download falhou (HTTP %d)</string>
+    <string name="download_error">Erro de download: %s</string>
 </resources>

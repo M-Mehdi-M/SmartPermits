@@ -215,6 +215,8 @@
    - QR code that links to Etherscan (or verification URL)
    - Gold footer seal with tamper warning
 5. If blockchain was configured, the PDF includes a clickable "View on Etherscan" link
+6. Change language to Romanian in Settings, then download the certificate again - verify Romanian characters (ăîâșț) render correctly without black squares
+7. Try other languages (Polish, Turkish, Ukrainian) to confirm all special characters display properly
 
 ### 14. In-App Chat / Comments
 
@@ -376,6 +378,7 @@
 - Ensure `reportlab` and `qrcode` are installed
 - Permit must be in "Completed" status
 - Check server logs for certificate generation errors
+- For proper Unicode rendering (Romanian ăîâșț, Polish łźż, etc.), the `fonts/` directory with DejaVuSans TTF files must exist in `smart_permits_api/`. The Dockerfile also installs `fonts-dejavu-core` as a fallback
 
 ### AI Analysis Not Working
 - Ensure `GEMINI_API_KEY` is set in the `.env` file
@@ -421,3 +424,4 @@
 - **Blockchain Module**: `smart_permits_api/blockchain.py`
 - **Language Resources**: `app/src/main/res/values-{lang}/strings.xml`
 - **Locale Helper**: `app/src/main/java/project/smartpermits/LocaleHelper.java`
+- **PDF Unicode Fonts**: `smart_permits_api/fonts/DejaVuSans.ttf`, `DejaVuSans-Bold.ttf`

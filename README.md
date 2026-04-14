@@ -32,7 +32,7 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **Analytics Dashboard** - Inspector statistics screen showing total permits reviewed, approval vs rejection ratio (pie chart), average review time, and busiest permit types (bar chart) using MPAndroidChart
 - **Appointment Scheduling** - After approval, citizens schedule on-site inspection appointments using a date picker and time slot selector
 - **In-App Chat / Comments** - Comment thread on each permit where citizens ask questions and inspectors request additional documents
-- **Professional PDF Certificate** - When a permit is Completed, a downloadable PDF certificate is generated using ReportLab with: teal-branded header with certificate number, permit information table with alternating row colors, blockchain verification section with clickable Etherscan link, QR code for scanning, gold footer seal, proper typography and formatting. The certificate auto-opens in the device's PDF viewer after download
+- **Professional PDF Certificate** - When a permit is Completed, a downloadable PDF certificate is generated using ReportLab with: teal-branded header with certificate number, permit information table with alternating row colors, blockchain verification section with clickable Etherscan link, QR code for scanning, gold footer seal, proper typography and formatting. Full Unicode support for all 10 languages (Romanian ăîâșț, German äöü, Polish łźż, Turkish çğışö, Ukrainian Cyrillic, etc.) via bundled DejaVuSans fonts. The certificate auto-opens in the device's PDF viewer after download
 - **Search & Filter** - Search bar and filter chips on both citizen and inspector dashboards to filter by permit type, status, applicant name, and date
 - **Map Location Search** - Geocoder-based search field on the permit application map allowing users to type a city, address, or landmark and navigate the map directly to that location
 - **Multi-Language Support** - 10 languages supported: English, Romanian, Spanish, French, Italian, German, Portuguese, Polish, Turkish, and Ukrainian. Language can be changed from Settings and affects all menu items, labels, buttons, and UI text throughout the entire app. The selected language persists across sessions and sign-outs
@@ -141,6 +141,8 @@ SmartPermits/
 |   +-- TrashActivity.java
 |   +-- NotificationHelper.java
 |   +-- LocaleHelper.java
+|   +-- CurrencyHelper.java
+|   +-- PermitTypeHelper.java
 |   +-- MainActivity.java
 +-- app/src/main/res/
 |   +-- layout/
@@ -165,6 +167,9 @@ SmartPermits/
 |   +-- requirements.txt
 |   +-- Dockerfile
 |   +-- .env
+|   +-- fonts/
+|   |   +-- DejaVuSans.ttf
+|   |   +-- DejaVuSans-Bold.ttf
 |   +-- uploads/
 |   +-- instance/
 +-- TESTING_GUIDE.md

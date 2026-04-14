@@ -185,7 +185,7 @@ public class InspectorDashboardActivity extends AppCompatActivity implements Pen
                     public void onFailure(Call<List<Permit>> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
                         swipeRefresh.setRefreshing(false);
-                        Toast.makeText(InspectorDashboardActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(InspectorDashboardActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
                     }
                 });
     }

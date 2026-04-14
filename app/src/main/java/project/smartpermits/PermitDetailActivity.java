@@ -161,7 +161,7 @@ public class PermitDetailActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Call<Permit> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(PermitDetailActivity.this, "Error loading permit", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(PermitDetailActivity.this, getString(R.string.error_loading), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -380,7 +380,7 @@ public class PermitDetailActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Call<project.smartpermits.models.MessageResponse> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(PermitDetailActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(PermitDetailActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -418,7 +418,7 @@ public class PermitDetailActivity extends AppCompatActivity {
                     public void onResponse(Call<Permit> call, Response<Permit> response) {
                         progressBar.setVisibility(View.GONE);
                         if (response.isSuccessful() && response.body() != null) {
-                            Toast.makeText(PermitDetailActivity.this, "New application created!", Toast.LENGTH_LONG).show();
+                            Toast.makeText(PermitDetailActivity.this, getString(R.string.new_app_created), Toast.LENGTH_LONG).show();
                             Intent intent = new Intent(PermitDetailActivity.this, PermitDetailActivity.class);
                             intent.putExtra("permit_id", response.body().getId());
                             startActivity(intent);
@@ -445,7 +445,7 @@ public class PermitDetailActivity extends AppCompatActivity {
                 retrofit2.Response<ResponseBody> response = RetrofitClient.getInstance(this)
                         .getApi().downloadCertificate(permitId, currentLang).execute();
                 if (!response.isSuccessful() || response.body() == null) {
-                    String errMsg = "Download failed (HTTP " + response.code() + ")";
+                    String errMsg = getString(R.string.download_failed, response.code());
                     try {
                         if (response.errorBody() != null) {
                             errMsg = response.errorBody().string();
@@ -464,7 +464,7 @@ public class PermitDetailActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         progressBar.setVisibility(View.GONE);
                         btnCertificate.setEnabled(true);
-                        Toast.makeText(this, "Empty response from server", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, getString(R.string.empty_response), Toast.LENGTH_SHORT).show();
                     });
                     return;
                 }
@@ -474,7 +474,7 @@ public class PermitDetailActivity extends AppCompatActivity {
                     runOnUiThread(() -> {
                         progressBar.setVisibility(View.GONE);
                         btnCertificate.setEnabled(true);
-                        Toast.makeText(this, "Server error: " + preview, Toast.LENGTH_LONG).show();
+                        Toast.makeText(this, getString(R.string.server_error, preview), Toast.LENGTH_LONG).show();
                     });
                     return;
                 }
@@ -517,7 +517,7 @@ public class PermitDetailActivity extends AppCompatActivity {
                 runOnUiThread(() -> {
                     progressBar.setVisibility(View.GONE);
                     btnCertificate.setEnabled(true);
-                    Toast.makeText(this, "Download error: " + e.toString(), Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, getString(R.string.download_error, e.toString()), Toast.LENGTH_LONG).show();
                 });
             }
         }).start();

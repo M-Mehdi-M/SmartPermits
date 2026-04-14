@@ -206,7 +206,7 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
                     public void onFailure(Call<List<Permit>> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
                         swipeRefresh.setRefreshing(false);
-                        Toast.makeText(CitizenDashboardActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(CitizenDashboardActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
                     }
                 });
     }

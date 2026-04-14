@@ -90,7 +90,6 @@ public class ApplyPermitActivity extends AppCompatActivity {
     private final Map<String, CheckBox> requiredDocumentChecks = new LinkedHashMap<>();
     private String pendingDocLabel = null;
 
-    // Required documents are now managed by PermitTypeHelper for localization
 
 
     private final ActivityResultLauncher<String> requiredDocLauncher =
@@ -329,7 +328,6 @@ public class ApplyPermitActivity extends AppCompatActivity {
                 LinearLayout.LayoutParams btnParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
                 uploadBtn.setLayoutParams(btnParams);
                 final String docKey = englishKey;
-                final String docLocal = localizedName;
                 uploadBtn.setOnClickListener(v -> {
                     pendingDocLabel = docKey;
                     requiredDocLauncher.launch("image/*");
@@ -406,7 +404,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
                     @Override
                     public void onFailure(Call<Permit> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(ApplyPermitActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(ApplyPermitActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
                     }
                 });
     }

@@ -50,15 +50,15 @@ public class ChangePasswordActivity extends AppCompatActivity {
         String confirm = etConfirmPassword.getText() != null ? etConfirmPassword.getText().toString().trim() : "";
 
         if (current.isEmpty()) {
-            etCurrentPassword.setError("Required");
+            etCurrentPassword.setError(getString(R.string.field_required));
             return;
         }
         if (newPass.length() < 6) {
-            etNewPassword.setError("At least 6 characters");
+            etNewPassword.setError(getString(R.string.at_least_6_chars));
             return;
         }
         if (!newPass.equals(confirm)) {
-            etConfirmPassword.setError("Passwords don't match");
+            etConfirmPassword.setError(getString(R.string.passwords_dont_match));
             return;
         }
 
@@ -70,17 +70,17 @@ public class ChangePasswordActivity extends AppCompatActivity {
                     public void onResponse(Call<MessageResponse> call, Response<MessageResponse> response) {
                         progressBar.setVisibility(View.GONE);
                         if (response.isSuccessful()) {
-                            Toast.makeText(ChangePasswordActivity.this, "Password changed successfully", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ChangePasswordActivity.this, getString(R.string.password_changed), Toast.LENGTH_SHORT).show();
                             finish();
                         } else {
-                            Toast.makeText(ChangePasswordActivity.this, "Current password is incorrect", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ChangePasswordActivity.this, getString(R.string.current_password_incorrect), Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<MessageResponse> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(ChangePasswordActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(ChangePasswordActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
                     }
                 });
     }

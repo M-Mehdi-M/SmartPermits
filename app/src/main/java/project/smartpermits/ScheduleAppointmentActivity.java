@@ -81,7 +81,7 @@ public class ScheduleAppointmentActivity extends AppCompatActivity {
         String notes = etNotes.getText() != null ? etNotes.getText().toString().trim() : "";
 
         if (date.isEmpty()) {
-            etDate.setError("Required");
+            etDate.setError(getString(R.string.field_required));
             return;
         }
 
@@ -93,17 +93,17 @@ public class ScheduleAppointmentActivity extends AppCompatActivity {
                     public void onResponse(Call<Appointment> call, Response<Appointment> response) {
                         progressBar.setVisibility(View.GONE);
                         if (response.isSuccessful()) {
-                            Toast.makeText(ScheduleAppointmentActivity.this, "Appointment scheduled!", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ScheduleAppointmentActivity.this, getString(R.string.appointment_scheduled), Toast.LENGTH_SHORT).show();
                             finish();
                         } else {
-                            Toast.makeText(ScheduleAppointmentActivity.this, "Appointment already exists or permit not approved", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(ScheduleAppointmentActivity.this, getString(R.string.appointment_exists), Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<Appointment> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(ScheduleAppointmentActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(ScheduleAppointmentActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
                     }
                 });
     }

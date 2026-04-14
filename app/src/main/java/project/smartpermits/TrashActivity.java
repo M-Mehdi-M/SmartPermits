@@ -14,7 +14,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
 import java.util.List;
-import java.util.Set;
 
 import project.smartpermits.adapters.TrashAdapter;
 import project.smartpermits.api.RetrofitClient;
@@ -81,7 +80,7 @@ public class TrashActivity extends AppCompatActivity implements TrashAdapter.OnT
                     public void onFailure(Call<List<Permit>> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
                         swipeRefresh.setRefreshing(false);
-                        Toast.makeText(TrashActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(TrashActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -93,14 +92,14 @@ public class TrashActivity extends AppCompatActivity implements TrashAdapter.OnT
                     @Override
                     public void onResponse(Call<Permit> call, Response<Permit> response) {
                         if (response.isSuccessful()) {
-                            Toast.makeText(TrashActivity.this, "Permit restored", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(TrashActivity.this, getString(R.string.permit_restored), Toast.LENGTH_SHORT).show();
                             loadTrash();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<Permit> call, Throwable t) {
-                        Toast.makeText(TrashActivity.this, "Error restoring", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(TrashActivity.this, getString(R.string.error_restoring), Toast.LENGTH_SHORT).show();
                     }
                 });
     }
@@ -108,9 +107,9 @@ public class TrashActivity extends AppCompatActivity implements TrashAdapter.OnT
     @Override
     public void onDelete(Permit permit) {
         new AlertDialog.Builder(this)
-                .setTitle("Delete Permanently")
-                .setMessage("This cannot be undone. Are you sure?")
-                .setPositiveButton("Delete", (d, w) -> permanentDelete(permit.getId()))
+                .setTitle(getString(R.string.delete_permanently))
+                .setMessage(getString(R.string.cannot_undo_confirm))
+                .setPositiveButton(getString(R.string.delete_word), (d, w) -> permanentDelete(permit.getId()))
                 .setNegativeButton(getString(R.string.cancel), null)
                 .show();
     }
@@ -125,7 +124,7 @@ public class TrashActivity extends AppCompatActivity implements TrashAdapter.OnT
                     @Override
                     public void onResponse(Call<MessageResponse> call, Response<MessageResponse> response) {
                         if (response.isSuccessful()) {
-                            Toast.makeText(TrashActivity.this, getString(R.string.failed_to_delete).replace(getString(R.string.failed_to_delete), getString(R.string.moved_to_trash)), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(TrashActivity.this, getString(R.string.permanently_deleted), Toast.LENGTH_SHORT).show();
                             loadTrash();
                         }
                     }
@@ -154,7 +153,7 @@ public class TrashActivity extends AppCompatActivity implements TrashAdapter.OnT
                     public void onResponse(Call<MessageResponse> call, Response<MessageResponse> response) {
                         progressBar.setVisibility(View.GONE);
                         if (response.isSuccessful()) {
-                            Toast.makeText(TrashActivity.this, "Trash emptied", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(TrashActivity.this, getString(R.string.trash_emptied), Toast.LENGTH_SHORT).show();
                             loadTrash();
                         }
                     }
@@ -162,7 +161,7 @@ public class TrashActivity extends AppCompatActivity implements TrashAdapter.OnT
                     @Override
                     public void onFailure(Call<MessageResponse> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(TrashActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(TrashActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_SHORT).show();
                     }
                 });
     }

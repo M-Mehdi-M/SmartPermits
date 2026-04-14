@@ -58,28 +58,28 @@ public class ProfileActivity extends AppCompatActivity {
 
         btnDeleteAccount.setOnClickListener(v -> {
             new AlertDialog.Builder(this)
-                    .setTitle("Delete Account")
-                    .setMessage("This will permanently delete your account, all your permits, documents, and data. This action cannot be undone.")
-                    .setPositiveButton("Delete", (d, w) -> {
+                    .setTitle(getString(R.string.delete_account_title))
+                    .setMessage(getString(R.string.delete_account_msg))
+                    .setPositiveButton(getString(R.string.delete_word), (d, w) -> {
                         RetrofitClient.getInstance(this).getApi().deleteAccount()
                                 .enqueue(new Callback<MessageResponse>() {
                                     @Override
                                     public void onResponse(Call<MessageResponse> call, Response<MessageResponse> response) {
                                         if (response.isSuccessful()) {
-                                            Toast.makeText(ProfileActivity.this, "Account deleted", Toast.LENGTH_LONG).show();
+                                            Toast.makeText(ProfileActivity.this, getString(R.string.account_deleted), Toast.LENGTH_LONG).show();
                                             client.clearSession();
                                             Intent intent = new Intent(ProfileActivity.this, LoginActivity.class);
                                             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                                             startActivity(intent);
                                             finish();
                                         } else {
-                                            Toast.makeText(ProfileActivity.this, "Failed to delete account", Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(ProfileActivity.this, getString(R.string.failed_delete_account), Toast.LENGTH_SHORT).show();
                                         }
                                     }
 
                                     @Override
                                     public void onFailure(Call<MessageResponse> call, Throwable t) {
-                                        Toast.makeText(ProfileActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_SHORT).show();
+                                        Toast.makeText(ProfileActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_SHORT).show();
                                     }
                                 });
                     })
@@ -125,7 +125,7 @@ public class ProfileActivity extends AppCompatActivity {
         tvProfileRole.setText(roleDisplay);
         tvInfoName.setText(userName);
         tvInfoRole.setText(roleDisplay);
-        tvInfoEmail.setText(userEmail.isEmpty() ? "Not set" : userEmail);
+        tvInfoEmail.setText(userEmail.isEmpty() ? getString(R.string.not_set) : userEmail);
 
         if (avatarUrl != null && !avatarUrl.isEmpty()) {
             String url = client.getBaseUrl() + "uploads/" + avatarUrl;

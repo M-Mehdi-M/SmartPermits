@@ -53,7 +53,7 @@ public class EditProfileActivity extends AppCompatActivity {
                         avatarFile = copyUriToFile(uri);
                         uploadAvatar();
                     } catch (IOException e) {
-                        Toast.makeText(this, "Failed to process image", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(this, getString(R.string.failed_process_image), Toast.LENGTH_SHORT).show();
                     }
                 }
             });
@@ -118,15 +118,15 @@ public class EditProfileActivity extends AppCompatActivity {
         String email = etEmail.getText() != null ? etEmail.getText().toString().trim() : "";
 
         if (name.isEmpty()) {
-            etFullName.setError("Name is required");
+            etFullName.setError(getString(R.string.name_required));
             return;
         }
         if (email.isEmpty()) {
-            etEmail.setError("Email is required");
+            etEmail.setError(getString(R.string.email_required));
             return;
         }
         if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            etEmail.setError("Invalid email format");
+            etEmail.setError(getString(R.string.invalid_email_format));
             return;
         }
 
@@ -146,16 +146,16 @@ public class EditProfileActivity extends AppCompatActivity {
                             Toast.makeText(EditProfileActivity.this, getString(R.string.profile_updated), Toast.LENGTH_SHORT).show();
                             finish();
                         } else if (response.code() == 409) {
-                            etEmail.setError("Email already in use");
+                            etEmail.setError(getString(R.string.email_in_use));
                         } else {
-                            Toast.makeText(EditProfileActivity.this, "Update failed", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(EditProfileActivity.this, getString(R.string.update_failed), Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<User> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(EditProfileActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(EditProfileActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -178,14 +178,14 @@ public class EditProfileActivity extends AppCompatActivity {
                             client.saveAvatarUrl(response.body().getAvatarUrl());
                             Toast.makeText(EditProfileActivity.this, getString(R.string.avatar_updated), Toast.LENGTH_SHORT).show();
                         } else {
-                            Toast.makeText(EditProfileActivity.this, "Avatar upload failed", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(EditProfileActivity.this, getString(R.string.avatar_upload_failed), Toast.LENGTH_SHORT).show();
                         }
                     }
 
                     @Override
                     public void onFailure(Call<User> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(EditProfileActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(EditProfileActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
                     }
                 });
     }

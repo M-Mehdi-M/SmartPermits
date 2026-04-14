@@ -20,7 +20,6 @@ import project.smartpermits.PermitTypeHelper;
 import project.smartpermits.R;
 import java.util.List;
 
-import project.smartpermits.R;
 import project.smartpermits.models.Permit;
 
 public class PermitAdapter extends RecyclerView.Adapter<PermitAdapter.ViewHolder> {

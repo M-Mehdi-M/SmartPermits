@@ -274,5 +274,9 @@
     <string name="nav_change_password">Zmien haslo</string>
     <string name="nav_analytics">Analizy</string>
     <string name="nav_trash">Kosz</string>
+    <string name="error_generic">Błąd: %s</string>
+    <string name="server_error">Błąd serwera: %s</string>
+    <string name="download_failed">Pobieranie nie powiodło się (HTTP %d)</string>
+    <string name="download_error">Błąd pobierania: %s</string>
 </resources>
 

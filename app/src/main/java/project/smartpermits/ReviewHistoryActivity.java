@@ -83,7 +83,7 @@ public class ReviewHistoryActivity extends AppCompatActivity implements PermitAd
                         progressBar.setVisibility(View.GONE);
                         if (response.isSuccessful() && response.body() != null) {
                             allPermits = response.body();
-                            tvReviewCount.setText(allPermits.size() + " reviewed");
+                            tvReviewCount.setText(getString(R.string.reviewed_count, allPermits.size()));
                             filterPermits();
                         }
                     }
@@ -91,7 +91,7 @@ public class ReviewHistoryActivity extends AppCompatActivity implements PermitAd
                     @Override
                     public void onFailure(Call<List<Permit>> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
-                        Toast.makeText(ReviewHistoryActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(ReviewHistoryActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -117,9 +117,9 @@ public class ReviewHistoryActivity extends AppCompatActivity implements PermitAd
 
         if (filtered.isEmpty()) {
             switch (currentFilter) {
-                case 1: tvEmptyMessage.setText("No approved permits"); break;
-                case 2: tvEmptyMessage.setText("No rejected permits"); break;
-                default: tvEmptyMessage.setText("No reviewed permits yet"); break;
+                case 1: tvEmptyMessage.setText(getString(R.string.no_approved_permits)); break;
+                case 2: tvEmptyMessage.setText(getString(R.string.no_rejected_permits)); break;
+                default: tvEmptyMessage.setText(getString(R.string.no_reviewed_permits)); break;
             }
         }
     }

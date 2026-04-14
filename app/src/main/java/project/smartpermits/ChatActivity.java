@@ -123,7 +123,7 @@ public class ChatActivity extends AppCompatActivity {
 
                     @Override
                     public void onFailure(Call<Comment> call, Throwable t) {
-                        Toast.makeText(ChatActivity.this, "Failed to send", Toast.LENGTH_SHORT).show();
+                        Toast.makeText(ChatActivity.this, getString(R.string.failed_to_send), Toast.LENGTH_SHORT).show();
                     }
                 });
     }

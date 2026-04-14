@@ -1125,6 +1125,45 @@ PERMIT_TYPE_TRANSLATIONS = {
 }
 
 
+def _register_unicode_fonts():
+    import sys
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    local_dir = os.path.join(os.path.dirname(__file__), 'fonts')
+    candidates = [
+        (os.path.join(local_dir, 'DejaVuSans.ttf'), os.path.join(local_dir, 'DejaVuSans-Bold.ttf')),
+    ]
+    if sys.platform == 'win32':
+        fonts_dir = os.path.join(os.environ.get('WINDIR', r'C:\Windows'), 'Fonts')
+        candidates += [
+            (os.path.join(fonts_dir, 'arial.ttf'), os.path.join(fonts_dir, 'arialbd.ttf')),
+            (os.path.join(fonts_dir, 'segoeui.ttf'), os.path.join(fonts_dir, 'segoeuib.ttf')),
+            (os.path.join(fonts_dir, 'tahoma.ttf'), os.path.join(fonts_dir, 'tahomabd.ttf')),
+        ]
+    else:
+        candidates += [
+            ('/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf', '/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf'),
+            ('/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf', '/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf'),
+            ('/usr/share/fonts/truetype/freefont/FreeSans.ttf', '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf'),
+        ]
+
+    for regular, bold in candidates:
+        if os.path.exists(regular):
+            try:
+                pdfmetrics.registerFont(TTFont('UnicodeFont', regular))
+                bold_path = bold if os.path.exists(bold) else regular
+                pdfmetrics.registerFont(TTFont('UnicodeFont-Bold', bold_path))
+                return 'UnicodeFont', 'UnicodeFont-Bold'
+            except Exception:
+                continue
+
+    return 'Helvetica', 'Helvetica-Bold'
+
+
+_PDF_FONT, _PDF_FONT_BOLD = _register_unicode_fonts()
+
+
 @app.route('/api/permits/<int:permit_id>/certificate', methods=['GET'])
 @jwt_required()
 def get_certificate(permit_id):
@@ -1166,14 +1205,14 @@ def get_certificate(permit_id):
         light_bg = rl_colors.HexColor('#F0FDFA')
         gold_color = rl_colors.HexColor('#D4A843')
 
-        title_style = ParagraphStyle('CertTitle', parent=styles['Title'], fontSize=28, textColor=primary_color, spaceAfter=4, fontName='Helvetica-Bold', alignment=TA_CENTER)
-        subtitle_style = ParagraphStyle('CertSub', parent=styles['Normal'], fontSize=13, textColor=rl_colors.HexColor('#6B7280'), alignment=TA_CENTER, spaceAfter=6)
-        cert_id_style = ParagraphStyle('CertId', parent=styles['Normal'], fontSize=11, textColor=dark_color, alignment=TA_CENTER, fontName='Helvetica-Bold', spaceAfter=16)
-        section_header = ParagraphStyle('SecHead', parent=styles['Normal'], fontSize=13, textColor=primary_color, fontName='Helvetica-Bold', spaceAfter=8, spaceBefore=12)
-        cell_style = ParagraphStyle('Cell', parent=styles['Normal'], fontSize=10, leading=14)
-        cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontSize=10, leading=14, fontName='Helvetica-Bold')
-        footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=rl_colors.HexColor('#9CA3AF'), alignment=TA_CENTER, spaceBefore=16)
-        link_style = ParagraphStyle('Link', parent=styles['Normal'], fontSize=9, textColor=rl_colors.HexColor('#0D9488'), fontName='Helvetica', alignment=TA_CENTER)
+        title_style = ParagraphStyle('CertTitle', parent=styles['Title'], fontSize=28, textColor=primary_color, spaceAfter=4, fontName=_PDF_FONT_BOLD, alignment=TA_CENTER)
+        subtitle_style = ParagraphStyle('CertSub', parent=styles['Normal'], fontSize=13, textColor=rl_colors.HexColor('#6B7280'), alignment=TA_CENTER, spaceAfter=6, fontName=_PDF_FONT)
+        cert_id_style = ParagraphStyle('CertId', parent=styles['Normal'], fontSize=11, textColor=dark_color, alignment=TA_CENTER, fontName=_PDF_FONT_BOLD, spaceAfter=16)
+        section_header = ParagraphStyle('SecHead', parent=styles['Normal'], fontSize=13, textColor=primary_color, fontName=_PDF_FONT_BOLD, spaceAfter=8, spaceBefore=12)
+        cell_style = ParagraphStyle('Cell', parent=styles['Normal'], fontSize=10, leading=14, fontName=_PDF_FONT)
+        cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontSize=10, leading=14, fontName=_PDF_FONT_BOLD)
+        footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=rl_colors.HexColor('#9CA3AF'), alignment=TA_CENTER, spaceBefore=16, fontName=_PDF_FONT)
+        link_style = ParagraphStyle('Link', parent=styles['Normal'], fontSize=9, textColor=rl_colors.HexColor('#0D9488'), fontName=_PDF_FONT, alignment=TA_CENTER)
 
         def _cell(text):
             return Paragraph(xml_escape(str(text or '')), cell_style)
@@ -1244,7 +1283,7 @@ def get_certificate(permit_id):
 
         elements.append(HRFlowable(width="100%", thickness=0.5, color=rl_colors.HexColor('#E5E7EB'), spaceAfter=12))
 
-        qr_label = ParagraphStyle('QRLabel', parent=styles['Normal'], fontSize=10, textColor=rl_colors.HexColor('#6B7280'), alignment=TA_CENTER, spaceAfter=6)
+        qr_label = ParagraphStyle('QRLabel', parent=styles['Normal'], fontSize=10, textColor=rl_colors.HexColor('#6B7280'), alignment=TA_CENTER, spaceAfter=6, fontName=_PDF_FONT)
         elements.append(Paragraph(t['scan_verify'], qr_label))
         elements.append(RLImage(qr_path, width=3.5*cm, height=3.5*cm, hAlign='CENTER'))
 

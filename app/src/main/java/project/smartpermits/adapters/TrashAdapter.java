@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import project.smartpermits.R;
 import project.smartpermits.models.Permit;
 
 public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.ViewHolder> {

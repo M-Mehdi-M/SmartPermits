@@ -294,7 +294,7 @@ public class PermitReviewActivity extends AppCompatActivity {
                         progressBar.setVisibility(View.GONE);
                         btnApprove.setEnabled(true);
                         btnReject.setEnabled(true);
-                        Toast.makeText(PermitReviewActivity.this, "Error: " + t.getMessage(), Toast.LENGTH_LONG).show();
+                        Toast.makeText(PermitReviewActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
                     }
                 });
     }
