@@ -1,4 +1,4 @@
-# SmartPermits - Complete Testing Guide
+# SmartPermits — Complete Testing Guide
 
 ## Quick Start
 
@@ -19,7 +19,10 @@
    pip install -r requirements.txt
    ```
 
-4. Configure the Gemini API key for AI document analysis. Edit `.env` and set your actual Gemini API key from https://aistudio.google.com/apikey
+4. Configure the Gemini API key for AI document analysis. Edit `.env` and set your actual Gemini API key from https://aistudio.google.com/apikey:
+   ```
+   GEMINI_API_KEY=your-actual-api-key-here
+   ```
 
 5. Configure blockchain notarization (optional). Add to `.env`:
    ```
@@ -33,7 +36,7 @@
    python app.py
    ```
 
-7. Server runs on `http://0.0.0.0:5000`. Verify by visiting `http://localhost:5000/api/permit-types` in a browser.
+7. Server runs on `http://0.0.0.0:5000`. Verify by visiting `http://localhost:5000/api/permit-types` in a browser — you should see a JSON list of permit types with fees.
 
 8. Leave this terminal open.
 
@@ -88,9 +91,9 @@
 3. A dialog appears with 10 language options: System Default, English, Romanian, Spanish, French, Italian, German, Portuguese, Polish, Turkish, Ukrainian
 4. Select "Romanian" (or any language)
 5. The Settings screen immediately refreshes with all text in the selected language
-6. Navigate back to dashboard - all menu items, labels, and buttons are translated
-7. Open drawer menu - all navigation items are in the selected language
-8. Sign out and sign back in - the language is preserved
+6. Navigate back to dashboard — all menu items, labels, and buttons are translated
+7. Open drawer menu — all navigation items are in the selected language
+8. Sign out and sign back in — the language is preserved
 9. Change back to "English" or "System Default" to restore
 
 ### 4. Dark Mode Persistence on Sign-Out
@@ -100,7 +103,7 @@
 3. Sign out from the drawer menu
 4. Sign back in with the same or different account
 5. The app should still be in dark mode (theme is preserved across sign-outs)
-6. Toggle dark mode OFF and sign out again - it stays light
+6. Toggle dark mode OFF and sign out again — it stays light
 
 ### 5. Search and Filter (Citizen Dashboard)
 
@@ -144,16 +147,17 @@
    - "Payment Received" after paying
    - "Certificate Issued" after completion
 4. Each entry shows: event type (bold), actor name, notes, and timestamp
-5. Submit a new permit, have it approved, pay it - watch the timeline grow
+5. Submit a new permit, have it approved, pay it — watch the timeline grow
 
-### 8. Predictive Wait Time with ML
+### 8. Predictive Wait Time
 
 1. Submit a few permits and have the inspector approve/reject them to build historical data
 2. Submit a new permit
 3. Open the permit detail
-4. See the "Estimated Processing Time" card showing a predicted range like "2-4 days"
+4. See the "Estimated Processing Time" card showing a predicted range like "2–4 days"
 5. A confidence percentage is shown (e.g., "65% Confidence")
 6. The prediction accounts for: permit type history, document count, pending queue size, and day of week
+7. Note: the prediction only appears for "submitted" status permits and requires at least one previously reviewed permit of the same type
 
 ### 9. Permit Expiry Tracking
 
@@ -163,9 +167,9 @@
 4. On the dashboard, completed permits show the fee amount normally
 5. When a permit is within 30 days of expiry, the dashboard card shows "Expires in Xd" in amber
 6. Expired permits show "EXPIRED" in red on the dashboard card
-7. The expiry period varies by permit type (365 days for Construction, 30 days for Events, etc.)
+7. The expiry period varies by permit type (365 days for Construction, 30 days for Events, non-expiring for Occupancy Certificate)
 
-### 10. Permit Details, Map, and Enhanced Processing Time
+### 10. Permit Details, Map, and Processing Time
 
 1. Tap any permit in the list
 2. See permit type, date, fee, payment status
@@ -180,8 +184,8 @@
 1. Login as inspector
 2. Tap a pending permit
 3. See the AI Document Analysis card showing a compact 4-line preview
-4. Tap the AI card to open full analysis dialog with formatted text
-5. If no AI analysis exists, a "Run AI Analysis" button appears
+4. Tap the AI card to open full analysis dialog with formatted text (bold headings, bullet points)
+5. If no AI analysis exists, a "Run AI Analysis" button appears — tap it to manually trigger analysis
 6. See applicant info, description, and attached documents
 7. For Construction/Renovation permits: map card shows pinned work location
 8. Add optional review notes
@@ -190,16 +194,30 @@
 
 ### 12. Blockchain Permit Notarization
 
-1. Configure blockchain in `.env` (optional)
+**What it does:** When a permit is approved, the backend:
+1. Reads each uploaded document file from disk and computes a SHA-256 hash of its bytes
+2. Builds a JSON payload with permit metadata + document hashes, and computes a SHA-256 hash of that payload → this is the `blockchain_hash`
+3. Sends the `blockchain_hash` as the `data` field of an Ethereum transaction on Sepolia testnet → this is the `blockchain_tx_hash`
+4. No files are uploaded to the blockchain — only the 32-byte hash fingerprint
+
+**To test:**
+1. Configure blockchain in `.env` (optional — see setup)
 2. Login as inspector and approve a pending permit
 3. Login as citizen and open the approved permit
 4. See the "Blockchain Notarization" card showing:
    - "Verified on Blockchain" (green) if on-chain transaction succeeded
-   - "Hash Recorded Locally" (amber) if blockchain was not configured
+   - "Hash Recorded Locally" (amber) if blockchain was not configured — the `blockchain_hash` still exists but there is no on-chain TX
    - Transaction hash in monospace font
    - Document hash (SHA-256)
    - "View on Etherscan" button
 5. Tap "View on Etherscan" to open the transaction on https://sepolia.etherscan.io/
+6. On Etherscan, look at the "Input Data" field of the transaction — it should show the `blockchain_hash` value, proving the permit was notarized at that exact block time
+
+**Public verification endpoint (no login needed):**
+```
+GET http://localhost:5000/api/permits/{id}/verify-blockchain
+```
+Returns: `blockchain_hash`, `blockchain_tx_hash`, `etherscan_url`, and `verified` (true/false)
 
 ### 13. PDF Certificate (Professional Design)
 
@@ -211,12 +229,12 @@
    - Certificate number (e.g., "SP-00001")
    - Permit information table with alternating row colors
    - Application date, issued date, and valid-until date
-   - Blockchain verification section with clickable Etherscan link
-   - QR code that links to Etherscan (or verification URL)
+   - Blockchain verification section with clickable Etherscan link (if blockchain was configured)
+   - QR code that links to Etherscan transaction (or verification URL)
    - Gold footer seal with tamper warning
-5. If blockchain was configured, the PDF includes a clickable "View on Etherscan" link
-6. Change language to Romanian in Settings, then download the certificate again - verify Romanian characters (ăîâșț) render correctly without black squares
-7. Try other languages (Polish, Turkish, Ukrainian) to confirm all special characters display properly
+5. Change language to Romanian in Settings, then download the certificate again — verify Romanian characters (ăîâșț) render correctly without black squares
+6. Try other languages (Polish, Turkish, Ukrainian) to confirm all special characters display properly
+7. The PDF language is determined by the `?lang=` parameter passed when downloading, which the app reads from the current language setting
 
 ### 14. In-App Chat / Comments
 
@@ -225,6 +243,7 @@
 3. Type a message and tap send
 4. Messages appear in a chat-style interface
 5. Your messages appear on the right, others on the left
+6. Comments are restricted to participants — citizens can only see their own permit's comments, inspectors can see all comments
 
 ### 15. Payment and Expiry
 
@@ -232,30 +251,33 @@
 2. Login as citizen and open the approved permit
 3. Tap "Pay Now"
 4. Status changes to "Completed"
-5. An expiry date is set based on permit type
+5. An expiry date is set based on permit type (e.g., 365 days for Business License)
 6. Timeline shows "Payment Received" and "Certificate Issued" entries
 
 ### 16. Permit Renewal / Reapply
 
 1. Open a "Completed" permit
 2. Tap "Renew" button
-3. A new permit is created with the same type and description
+3. A new permit is created with the same type and description, status "Submitted"
 4. Timeline shows "Submitted" with note "Renewed from permit #X"
+5. For rejected permits, tap "Reapply" — works the same way
 
 ### 17. Appointment Scheduling
 
 1. Open an "Approved" permit (as citizen)
 2. Tap "Schedule Inspection"
-3. Select a future date and time slot
-4. Tap "Schedule"
-5. Timeline shows "Appointment Scheduled" entry
+3. Select a future date using the date picker
+4. Select a time slot
+5. Tap "Schedule"
+6. Timeline shows "Appointment Scheduled" entry
+7. Inspector can see all scheduled appointments from their dashboard
 
 ### 18. Analytics Dashboard (Inspector)
 
 1. Login as inspector
 2. Open drawer menu and tap "Analytics"
 3. See statistics cards: Total Reviewed, Approved, Rejected, Pending
-4. Average processing time displayed
+4. Average processing time displayed (computed from historical data)
 5. Pie chart shows approval vs rejection ratio
 6. Bar chart shows busiest permit types
 
@@ -266,14 +288,14 @@
 3. App switches to dark theme
 4. Toggle "Follow System" to auto-detect system dark mode
 5. Close and reopen app to verify dark mode persists
-6. Sign out and sign back in - dark mode is still active
+6. Sign out and sign back in — dark mode is still active
 
 ### 20. Profile Management
 
 1. Open drawer and tap "My Profile"
 2. See profile info: name, role, email
 3. Tap "Edit Profile" to change name and email
-4. Tap avatar change button to upload a new profile photo
+4. Tap avatar change button to upload a new profile photo (image files only: jpg, jpeg, png, gif, webp, bmp)
 
 ### 21. Navigation Drawer (Citizen)
 
@@ -295,9 +317,26 @@
 2. Scroll down and tap "Move to Trash"
 3. Confirm in the dialog
 4. Open drawer menu and tap "Trash"
-5. See the trashed permit with "X days until permanent deletion" label
-6. Tap "Restore" to move it back
-7. Tap "Delete" to permanently delete
+5. See the trashed permit with "X days until permanent deletion" label (30-day countdown)
+6. Tap "Restore" to move it back to active permits
+7. Tap "Delete" to permanently delete it immediately
+8. Permits left in trash for 30 days are automatically purged when the server starts
+
+### 23. Change Password
+
+1. Open drawer and tap "Change Password"
+2. Enter current password incorrectly — verify error message
+3. Enter correct current password and a new password
+4. Tap Save
+5. Sign out and sign back in with the new password to confirm it worked
+
+### 24. Delete Account
+
+1. Open "My Profile" from the drawer
+2. Scroll to the bottom and tap "Delete Account"
+3. Confirm in the dialog
+4. All permits, documents, comments, and appointments are permanently deleted
+5. You are redirected to the login screen
 
 ---
 
@@ -310,35 +349,55 @@
 5. Toggle dark mode ON
 6. Register a new citizen account
 7. Apply for a "Construction Permit" with description
-8. Upload required documents from the checklist
-9. Use the map search to navigate to a city, then pin a location
-10. Tap "Submit Application" - success screen appears immediately
-11. Verify permit appears with "Submitted" status
+8. Upload required documents from the checklist (at least 2–3 files)
+9. Use the map search to navigate to a city, then drag map and pin a location
+10. Tap "Submit Application" — success screen appears immediately
+11. Verify permit appears with "Submitted" status on dashboard
 12. Open permit detail and see the Status Timeline with "Submitted" entry
-13. See estimated processing time with confidence percentage
+13. See estimated processing time with confidence percentage (may need historical data first)
 14. Logout
 15. Login as inspector (`inspector1` / `1q2w3e4r`)
-16. Open the pending permit and see the AI analysis card
-17. Approve the permit with notes
-18. Verify the Flask terminal shows blockchain notarization logs
-19. Logout
-20. Login as citizen
-21. Open the approved permit
-22. See the Status Timeline with: Submitted → AI Analysis → Reviewed by Inspector → Blockchain Notarized
-23. See the Blockchain Notarization card with transaction hash
-24. Schedule an inspection appointment
-25. See "Appointment Scheduled" added to timeline
-26. Pay the permit fee
-27. See "Payment Received" and "Certificate Issued" in timeline
-28. See the Permit Validity card showing expiry date
-29. Download the PDF certificate
-30. Verify certificate has: branded header, info table, blockchain section with clickable link, QR code, gold seal
-31. Renew the permit - see timeline shows "Renewed from permit #X"
-32. Sign out
-33. Verify dark mode is still active on login screen
-34. Login with new password
-35. Change language to Spanish - verify all text changes
-36. Change back to English
+16. Open the pending permit
+17. See the AI analysis card (if Gemini key configured, analysis will be present; otherwise click "Run AI Analysis")
+18. See the map showing the pinned work location
+19. See all uploaded documents in the numbered list with labels
+20. Add review notes and tap "Approve"
+21. If blockchain is configured, verify Flask terminal shows blockchain notarization logs
+22. Logout
+23. Login as citizen
+24. Open the approved permit
+25. See the Status Timeline with: Submitted → AI Analysis → Reviewed by Inspector → (Blockchain Notarized if configured)
+26. See the Blockchain Notarization card:
+    - If configured: "Verified on Blockchain" in green with TX hash and Etherscan link
+    - If not configured: "Hash Recorded Locally" in amber with document hash
+27. Schedule an inspection appointment (select future date + time slot)
+28. See "Appointment Scheduled" added to timeline
+29. Pay the permit fee — status changes to Completed
+30. See "Payment Received" and "Certificate Issued" in timeline
+31. See the Permit Validity card showing expiry date in green
+32. Open Comments, send a message as citizen
+33. Download the PDF certificate
+34. Verify certificate has: branded header, info table, blockchain section, QR code, gold seal
+35. Renew the permit — see new permit created with "Renewed from permit #X" in timeline
+36. Move the original permit to Trash, verify countdown shows
+37. Sign out
+38. Verify dark mode is still active on login screen
+39. Sign back in and change language to Spanish — verify all text changes
+40. Change back to English
+
+---
+
+## Blockchain Verification Manual Test
+
+To manually verify a permit's blockchain notarization without the app:
+
+1. Get the permit ID (visible in the app or from the server database)
+2. Open in browser: `http://localhost:5000/api/permits/{id}/verify-blockchain` (no auth needed)
+3. Note the `blockchain_hash` and `blockchain_tx_hash` values
+4. Open `https://sepolia.etherscan.io/tx/{blockchain_tx_hash}`
+5. On Etherscan, click "Click to see More" under Input Data
+6. Decode as UTF-8 — you should see the `blockchain_hash` value embedded in the transaction
+7. This proves the permit was notarized at the block's timestamp on the public blockchain
 
 ---
 
@@ -347,11 +406,11 @@
 ### App Shows "Connection error"
 - Ensure Flask server is running
 - For emulator: use `10.0.2.2:5000`
-- For physical device: use LAN IP
+- For physical device: use your PC's LAN IP, ensure both devices are on the same Wi-Fi
 
 ### Login Fails
 - Restart Flask server to re-seed test accounts
-- Delete `instance/smartpermits.db` and restart to reset database
+- Delete `instance/smartpermits.db` and restart to reset the database
 
 ### Language Not Changing
 - Ensure you selected a language from Settings > Language
@@ -359,69 +418,83 @@
 - Language persists across sign-outs
 
 ### Dark Mode Resets on Sign-Out
-- This has been fixed. Theme preferences are now preserved when signing out
+- This is fixed. Theme preferences are preserved across sign-outs via SharedPreferences clear with selective restore
 
 ### Timeline Not Showing
 - Timeline appears after at least one event (e.g., submission)
-- Ensure the backend is updated with the PermitEvent model
-- Delete old database and restart if migrating from an older version
+- Ensure the backend has the `permit_events` table — delete old database and restart if migrating
 
 ### Estimated Wait Time Not Showing
-- Historical data is needed - submit and review a few permits first
-- Only shows for "submitted" status permits
+- Historical data is needed — submit and review a few permits first
+- Prediction only appears for "submitted" status permits
 
 ### Permit Expiry Not Showing
 - Expiry is set when a permit is paid (completed)
 - Only completed permits have expiry dates
+- Occupancy Certificate has no expiry (non-expiring)
 
 ### PDF Certificate Issues
-- Ensure `reportlab` and `qrcode` are installed
+- Ensure `reportlab` and `qrcode` are installed: `pip install -r requirements.txt`
 - Permit must be in "Completed" status
 - Check server logs for certificate generation errors
-- For proper Unicode rendering (Romanian ăîâșț, Polish łźż, etc.), the `fonts/` directory with DejaVuSans TTF files must exist in `smart_permits_api/`. The Dockerfile also installs `fonts-dejavu-core` as a fallback
+- For proper Unicode rendering (Romanian ăîâșț, Polish łźż, etc.), the `fonts/` directory with DejaVuSans TTF files must exist in `smart_permits_api/`
 
 ### AI Analysis Not Working
 - Ensure `GEMINI_API_KEY` is set in the `.env` file
 - Check the Flask server terminal for error messages
+- The AI tries 3 models (gemini-2.5-flash → gemini-2.0-flash → gemini-2.5-flash-lite) with retries — check logs for which model responded
 
 ### Blockchain Notarization Not Working
 - Ensure `ETH_PRIVATE_KEY`, `ETH_RPC_URL`, and `ETH_WALLET_ADDRESS` are set in `.env`
-- Ensure your wallet has Sepolia test ETH
+- Ensure your wallet has Sepolia test ETH (get from https://sepoliafaucet.com/)
+- Ensure the RPC URL is active (Infura, Alchemy, or other provider)
+- Without blockchain config: the permit still gets a `blockchain_hash` locally; only the on-chain TX is skipped
+- Check the `blockchain_error` field in the permit response for the exact error
+
+### Comments or Timeline Return 403
+- Citizens can only access comments and timeline for their own permits
+- Inspectors can access all permits' comments and timeline
+- This is an authorization check — ensure you are logged in as the correct role
+
+### Avatar Upload Fails
+- Only image files are accepted: jpg, jpeg, png, gif, webp, bmp
+- PDFs and documents are rejected for avatars (use the document upload for permit files instead)
 
 ---
 
 ## Database Tables
 
-| Table         | Columns                                                                         |
-|---------------|---------------------------------------------------------------------------------|
-| users         | id, username, email, password_hash, role, full_name, avatar_url, fcm_token      |
-| permits       | id, user_id, permit_type, description, status, fee_amount, is_paid, reviewer_notes, reviewed_by, renewed_from, latitude, longitude, ai_analysis, blockchain_hash, blockchain_tx_hash, blockchain_error, expires_at, created_at, updated_at, deleted_at |
-| permit_events | id, permit_id, event_type, actor_name, actor_role, notes, created_at            |
-| documents     | id, permit_id, file_path, file_name, document_label, uploaded_at                |
-| comments      | id, permit_id, user_id, message, created_at                                     |
-| appointments  | id, permit_id, user_id, date, time_slot, status, notes, created_at              |
+| Table | Columns |
+|-------|---------|
+| users | id, username, email, password_hash, role, full_name, avatar_url, fcm_token, created_at |
+| permits | id, user_id, permit_type, description, status, fee_amount, is_paid, reviewer_notes, reviewed_by, renewed_from, latitude, longitude, ai_analysis, ai_analysis_lang, blockchain_hash, blockchain_tx_hash, blockchain_error, expires_at, created_at, updated_at, deleted_at |
+| permit_events | id, permit_id, event_type, actor_name, actor_role, notes, created_at |
+| documents | id, permit_id, file_path, file_name, document_label, uploaded_at |
+| comments | id, permit_id, user_id, message, created_at |
+| appointments | id, permit_id, user_id, date, time_slot, status, notes, created_at |
 
 ## Permit Types and Fees
 
-| Permit Type           | Fee     | Validity    |
-|-----------------------|---------|-------------|
-| Business License      | $150.00 | 365 days    |
-| Construction Permit   | $500.00 | 365 days    |
-| Food Service Permit   | $200.00 | 365 days    |
-| Signage Permit        | $75.00  | 730 days    |
-| Event Permit          | $100.00 | 30 days     |
-| Renovation Permit     | $350.00 | 180 days    |
-| Demolition Permit     | $450.00 | 180 days    |
-| Occupancy Certificate | $120.00 | Non-expiring|
+| Permit Type | Fee | Validity |
+|-------------|-----|---------|
+| Construction Permit | $500.00 | 365 days |
+| Renovation Permit | $350.00 | 180 days |
+| Business License | $150.00 | 365 days |
+| Food Service Permit | $200.00 | 365 days |
+| Event Permit | $100.00 | 30 days |
+| Signage Permit | $75.00 | 730 days |
+| Demolition Permit | $450.00 | 180 days |
+| Occupancy Certificate | $120.00 | Non-expiring |
 
 ## File Locations
+
 - **APK Output**: `app/build/outputs/apk/debug/app-debug.apk`
 - **Backend Database**: `smart_permits_api/instance/smartpermits.db`
 - **Uploaded Documents**: `smart_permits_api/uploads/`
 - **Backend Server**: `smart_permits_api/app.py`
-- **AI Config**: `smart_permits_api/.env`
-- **Blockchain Config**: `smart_permits_api/.env` (ETH_PRIVATE_KEY, ETH_RPC_URL, ETH_WALLET_ADDRESS)
 - **Blockchain Module**: `smart_permits_api/blockchain.py`
+- **AI + Blockchain Config**: `smart_permits_api/.env`
 - **Language Resources**: `app/src/main/res/values-{lang}/strings.xml`
 - **Locale Helper**: `app/src/main/java/project/smartpermits/LocaleHelper.java`
 - **PDF Unicode Fonts**: `smart_permits_api/fonts/DejaVuSans.ttf`, `DejaVuSans-Bold.ttf`
+- **Retrofit Config**: `app/src/main/java/project/smartpermits/api/RetrofitClient.java` (change `BASE_URL` here)

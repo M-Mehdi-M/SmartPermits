@@ -4,13 +4,13 @@ import json
 from datetime import datetime
 
 
-def compute_permit_hash(permit_id, permit_type, description, status, documents_data):
+def compute_permit_hash(permit_id, permit_type, description, status, documents_data, created_at_iso=None):
     payload = {
         'permit_id': permit_id,
         'permit_type': permit_type,
         'description': description or '',
         'status': status,
-        'timestamp': datetime.utcnow().isoformat(),
+        'timestamp': created_at_iso or '',
         'documents': documents_data
     }
     raw = json.dumps(payload, sort_keys=True).encode('utf-8')
@@ -46,7 +46,7 @@ def write_hash_to_blockchain(permit_hash):
             'value': 0,
             'gas': 50000,
             'gasPrice': gas_price,
-            'data': w3.to_bytes(hexstr=permit_hash),
+            'data': w3.to_bytes(hexstr='0x' + permit_hash),
             'chainId': chain_id
         }
 
@@ -83,7 +83,8 @@ def notarize_permit(permit, documents, upload_folder):
         permit.permit_type,
         permit.description,
         permit.status,
-        docs_data
+        docs_data,
+        permit.created_at.isoformat() if permit.created_at else datetime.utcnow().isoformat()
     )
 
     tx_hash, error = write_hash_to_blockchain(permit_hash)

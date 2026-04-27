@@ -634,7 +634,11 @@ def review_permit(permit_id):
 @app.route('/api/permits/<int:permit_id>/comments', methods=['GET'])
 @jwt_required()
 def get_comments(permit_id):
-    Permit.query.get_or_404(permit_id)
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    permit = Permit.query.get_or_404(permit_id)
+    if permit.user_id != user_id and (not user or user.role != 'inspector'):
+        return jsonify({'error': 'Unauthorized'}), 403
     comments = Comment.query.filter_by(permit_id=permit_id).order_by(Comment.created_at.asc()).all()
     return jsonify([c.to_dict() for c in comments]), 200
 
@@ -763,7 +767,11 @@ def verify_blockchain(permit_id):
 @app.route('/api/permits/<int:permit_id>/timeline', methods=['GET'])
 @jwt_required()
 def get_timeline(permit_id):
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
     permit = Permit.query.get_or_404(permit_id)
+    if permit.user_id != user_id and (not user or user.role != 'inspector'):
+        return jsonify({'error': 'Unauthorized'}), 403
     events = PermitEvent.query.filter_by(permit_id=permit_id).order_by(PermitEvent.created_at.asc()).all()
     return jsonify([e.to_dict() for e in events]), 200
 
@@ -1493,6 +1501,8 @@ def update_profile():
     return jsonify(user.to_dict()), 200
 
 
+AVATAR_EXTENSIONS = {'jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'}
+
 @app.route('/api/auth/profile/avatar', methods=['POST'])
 @jwt_required()
 def upload_avatar():
@@ -1503,6 +1513,9 @@ def upload_avatar():
     file = request.files['file']
     if file.filename == '':
         return jsonify({'error': 'Empty filename'}), 400
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in AVATAR_EXTENSIONS:
+        return jsonify({'error': 'File type not allowed. Use jpg, jpeg, png, gif, webp, or bmp'}), 400
     filename = secure_filename(f"avatar_{user_id}_{file.filename}")
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
