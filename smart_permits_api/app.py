@@ -805,6 +805,14 @@ PDF_TRANSLATIONS = {
         'footer_digital': 'This document is digitally generated and verified by SmartPermits Platform.',
         'footer_generated': 'Generated on',
         'footer_tamper': 'Tampering with this certificate is a criminal offense under municipal regulations.',
+        'dept_subtitle': 'Issued by the Department of Municipal Affairs & Urban Development',
+        'permit_id': 'Permit ID',
+        'validity_period': 'Validity Period',
+        'authority_disclaimer': 'This permit has been reviewed and approved by a certified municipal inspector and is legally binding under Municipal Code \u00a714.2',
+        'municipal_inspector': 'Municipal Inspector',
+        'dept_urban': 'Department of Urban Development',
+        'official_seal': 'OFFICIAL SEAL',
+        'scan_etherscan': 'Scan to Verify on Etherscan',
     },
     'ro': {
         'subtitle': 'Certificat Oficial de Autorizație Municipală',
@@ -834,6 +842,14 @@ PDF_TRANSLATIONS = {
         'footer_digital': 'Acest document este generat digital și verificat de Platforma SmartPermits.',
         'footer_generated': 'Generat la',
         'footer_tamper': 'Falsificarea acestui certificat constituie infracțiune conform reglementărilor municipale.',
+        'dept_subtitle': 'Emis de Departamentul de Afaceri Municipale și Dezvoltare Urbană',
+        'permit_id': 'ID Autorizație',
+        'validity_period': 'Perioadă de Valabilitate',
+        'authority_disclaimer': 'Această autorizație a fost verificată și aprobată de un inspector municipal certificat și este obligatorie din punct de vedere legal conform Codului Municipal \u00a714.2',
+        'municipal_inspector': 'Inspector Municipal',
+        'dept_urban': 'Departamentul de Dezvoltare Urbană',
+        'official_seal': 'SIGILIU OFICIAL',
+        'scan_etherscan': 'Scanați pentru Verificare Etherscan',
     },
     'es': {
         'subtitle': 'Certificado Oficial de Permiso Municipal',
@@ -863,6 +879,14 @@ PDF_TRANSLATIONS = {
         'footer_digital': 'Este documento es generado digitalmente y verificado por la Plataforma SmartPermits.',
         'footer_generated': 'Generado el',
         'footer_tamper': 'La falsificación de este certificado es un delito penal según las regulaciones municipales.',
+        'dept_subtitle': 'Emitido por el Departamento de Asuntos Municipales y Desarrollo Urbano',
+        'permit_id': 'ID de Permiso',
+        'validity_period': 'Período de Validez',
+        'authority_disclaimer': 'Este permiso ha sido revisado y aprobado por un inspector municipal certificado y es legalmente vinculante bajo el Código Municipal \u00a714.2',
+        'municipal_inspector': 'Inspector Municipal',
+        'dept_urban': 'Departamento de Desarrollo Urbano',
+        'official_seal': 'SELLO OFICIAL',
+        'scan_etherscan': 'Escanear para Verificar en Etherscan',
     },
     'fr': {
         'subtitle': 'Certificat Officiel de Permis Municipal',
@@ -892,6 +916,14 @@ PDF_TRANSLATIONS = {
         'footer_digital': 'Ce document est généré numériquement et vérifié par la Plateforme SmartPermits.',
         'footer_generated': 'Généré le',
         'footer_tamper': 'La falsification de ce certificat est une infraction pénale selon les réglementations municipales.',
+        'dept_subtitle': 'Émis par le Département des Affaires Municipales et du Développement Urbain',
+        'permit_id': 'ID du Permis',
+        'validity_period': 'Période de Validité',
+        'authority_disclaimer': 'Ce permis a été examiné et approuvé par un inspecteur municipal certifié et est juridiquement contraignant en vertu du Code Municipal \u00a714.2',
+        'municipal_inspector': 'Inspecteur Municipal',
+        'dept_urban': 'Département du Développement Urbain',
+        'official_seal': 'SCEAU OFFICIEL',
+        'scan_etherscan': 'Scanner pour Vérifier sur Etherscan',
     },
     'it': {
         'subtitle': 'Certificato Ufficiale di Permesso Comunale',
@@ -921,6 +953,14 @@ PDF_TRANSLATIONS = {
         'footer_digital': 'Questo documento è generato digitalmente e verificato dalla Piattaforma SmartPermits.',
         'footer_generated': 'Generato il',
         'footer_tamper': 'La manomissione di questo certificato è un reato penale ai sensi dei regolamenti comunali.',
+        'dept_subtitle': 'Emesso dal Dipartimento degli Affari Municipali e dello Sviluppo Urbano',
+        'permit_id': 'ID Permesso',
+        'validity_period': 'Periodo di Validità',
+        'authority_disclaimer': 'Questo permesso è stato esaminato e approvato da un ispettore municipale certificato ed è legalmente vincolante ai sensi del Codice Municipale \u00a714.2',
+        'municipal_inspector': 'Ispettore Municipale',
+        'dept_urban': 'Dipartimento dello Sviluppo Urbano',
+        'official_seal': 'SIGILLO UFFICIALE',
+        'scan_etherscan': 'Scansiona per Verificare su Etherscan',
     },
     'de': {
         'subtitle': 'Offizielle Kommunale Genehmigungsurkunde',
@@ -950,6 +990,14 @@ PDF_TRANSLATIONS = {
         'footer_digital': 'Dieses Dokument wurde digital erstellt und von der SmartPermits-Plattform verifiziert.',
         'footer_generated': 'Erstellt am',
         'footer_tamper': 'Die Fälschung dieser Urkunde ist eine Straftat gemäß den kommunalen Vorschriften.',
+        'dept_subtitle': 'Ausgestellt vom Amt für Kommunale Angelegenheiten und Stadtentwicklung',
+        'permit_id': 'Genehmigungs-ID',
+        'validity_period': 'Gültigkeitszeitraum',
+        'authority_disclaimer': 'Diese Genehmigung wurde von einem zertifizierten kommunalen Inspektor geprüft und genehmigt und ist gemäß Kommunalordnung \u00a714.2 rechtlich bindend',
+        'municipal_inspector': 'Kommunalinspektor',
+        'dept_urban': 'Amt für Stadtentwicklung',
+        'official_seal': 'OFFIZIELLES SIEGEL',
+        'scan_etherscan': 'Zum Verifizieren auf Etherscan Scannen',
     },
     'pt': {
         'subtitle': 'Certificado Oficial de Licença Municipal',
@@ -979,6 +1027,14 @@ PDF_TRANSLATIONS = {
         'footer_digital': 'Este documento é gerado digitalmente e verificado pela Plataforma SmartPermits.',
         'footer_generated': 'Gerado em',
         'footer_tamper': 'A falsificação deste certificado é crime segundo os regulamentos municipais.',
+        'dept_subtitle': 'Emitido pelo Departamento de Assuntos Municipais e Desenvolvimento Urbano',
+        'permit_id': 'ID da Licença',
+        'validity_period': 'Período de Validade',
+        'authority_disclaimer': 'Esta licença foi revista e aprovada por um inspetor municipal certificado e é legalmente vinculativa ao abrigo do Código Municipal \u00a714.2',
+        'municipal_inspector': 'Inspetor Municipal',
+        'dept_urban': 'Departamento de Desenvolvimento Urbano',
+        'official_seal': 'SELO OFICIAL',
+        'scan_etherscan': 'Digitalizar para Verificar no Etherscan',
     },
     'pl': {
         'subtitle': 'Oficjalny Certyfikat Pozwolenia Miejskiego',
@@ -1008,6 +1064,14 @@ PDF_TRANSLATIONS = {
         'footer_digital': 'Ten dokument jest wygenerowany cyfrowo i zweryfikowany przez Platformę SmartPermits.',
         'footer_generated': 'Wygenerowano',
         'footer_tamper': 'Fałszowanie tego certyfikatu jest przestępstwem zgodnie z przepisami miejskimi.',
+        'dept_subtitle': 'Wydane przez Departament Spraw Miejskich i Rozwoju Urbanistycznego',
+        'permit_id': 'ID Pozwolenia',
+        'validity_period': 'Okres Ważności',
+        'authority_disclaimer': 'Niniejsze pozwolenie zostało sprawdzone i zatwierdzone przez certyfikowanego inspektora miejskiego i jest prawnie wiążące na mocy Kodeksu Miejskiego \u00a714.2',
+        'municipal_inspector': 'Inspektor Miejski',
+        'dept_urban': 'Departament Rozwoju Urbanistycznego',
+        'official_seal': 'PIECZĘĆ URZĘDOWA',
+        'scan_etherscan': 'Zeskanuj aby Zweryfikować na Etherscan',
     },
     'tr': {
         'subtitle': 'Resmi Belediye İzin Belgesi',
@@ -1037,6 +1101,14 @@ PDF_TRANSLATIONS = {
         'footer_digital': 'Bu belge SmartPermits Platformu tarafından dijital olarak oluşturulmuş ve doğrulanmıştır.',
         'footer_generated': 'Oluşturulma tarihi',
         'footer_tamper': 'Bu belgenin tahrif edilmesi belediye yönetmeliklerine göre suçtur.',
+        'dept_subtitle': 'Belediye İşleri ve Kentsel Gelişim Departmanı Tarafından Düzenlendi',
+        'permit_id': 'İzin Kimliği',
+        'validity_period': 'Geçerlilik Dönemi',
+        'authority_disclaimer': 'Bu izin, sertifikalı bir belediye müfettişi tarafından incelenmiş ve onaylanmıştır; Belediye Kanunu \u00a714.2 kapsamında yasal olarak bağlayıcıdır',
+        'municipal_inspector': 'Belediye Müfettişi',
+        'dept_urban': 'Kentsel Gelişim Departmanı',
+        'official_seal': 'RESMİ MÜHÜR',
+        'scan_etherscan': "Etherscan'de Doğrulamak İçin Tarayın",
     },
     'uk': {
         'subtitle': 'Офіційний Муніципальний Дозвільний Сертифікат',
@@ -1066,6 +1138,14 @@ PDF_TRANSLATIONS = {
         'footer_digital': 'Цей документ створено цифрово та підтверджено Платформою SmartPermits.',
         'footer_generated': 'Створено',
         'footer_tamper': 'Підробка цього сертифіката є кримінальним правопорушенням згідно з муніципальними правилами.',
+        'dept_subtitle': 'Видано Департаментом Муніципальних Справ та Міського Розвитку',
+        'permit_id': 'ID Дозволу',
+        'validity_period': 'Термін Дійсності',
+        'authority_disclaimer': "Цей дозвіл перевірено та затверджено сертифікованим муніципальним інспектором і є юридично обов'язковим відповідно до Муніципального кодексу \u00a714.2",
+        'municipal_inspector': 'Муніципальний Інспектор',
+        'dept_urban': 'Департамент Міського Розвитку',
+        'official_seal': 'ОФІЦІЙНА ПЕЧАТКА',
+        'scan_etherscan': 'Скануйте для Перевірки на Etherscan',
     },
 }
 
@@ -1156,20 +1236,35 @@ def _register_unicode_fonts():
             ('/usr/share/fonts/truetype/freefont/FreeSans.ttf', '/usr/share/fonts/truetype/freefont/FreeSansBold.ttf'),
         ]
 
+    regular_name, bold_name = 'Helvetica', 'Helvetica-Bold'
     for regular, bold in candidates:
         if os.path.exists(regular):
             try:
                 pdfmetrics.registerFont(TTFont('UnicodeFont', regular))
                 bold_path = bold if os.path.exists(bold) else regular
                 pdfmetrics.registerFont(TTFont('UnicodeFont-Bold', bold_path))
-                return 'UnicodeFont', 'UnicodeFont-Bold'
+                regular_name, bold_name = 'UnicodeFont', 'UnicodeFont-Bold'
+                break
             except Exception:
                 continue
 
-    return 'Helvetica', 'Helvetica-Bold'
+    mono_name = 'Courier'
+    mono_candidates = [os.path.join(local_dir, 'DejaVuSansMono.ttf')]
+    if sys.platform != 'win32':
+        mono_candidates.append('/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf')
+    for mono_path in mono_candidates:
+        if os.path.exists(mono_path):
+            try:
+                pdfmetrics.registerFont(TTFont('UnicodeMono', mono_path))
+                mono_name = 'UnicodeMono'
+                break
+            except Exception:
+                continue
+
+    return regular_name, bold_name, mono_name
 
 
-_PDF_FONT, _PDF_FONT_BOLD = _register_unicode_fonts()
+_PDF_FONT, _PDF_FONT_BOLD, _PDF_FONT_MONO = _register_unicode_fonts()
 
 
 @app.route('/api/permits/<int:permit_id>/certificate', methods=['GET'])
@@ -1184,12 +1279,35 @@ def get_certificate(permit_id):
     try:
         from reportlab.lib.pagesizes import A4
         from reportlab.lib import colors as rl_colors
-        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage, HRFlowable
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image as RLImage, HRFlowable, Flowable
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-        from reportlab.lib.units import cm, mm
+        from reportlab.lib.units import cm
         from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+        from reportlab.lib.colors import HexColor
         from xml.sax.saxutils import escape as xml_escape
         import qrcode
+
+        PAGE_W, PAGE_H = A4
+        L_MARGIN = 2.5 * cm
+        R_MARGIN = 2.5 * cm
+        T_MARGIN = 2.0 * cm
+        B_MARGIN = 2.8 * cm
+        CONTENT_W = PAGE_W - L_MARGIN - R_MARGIN
+
+        C_TEAL = HexColor('#005f6b')
+        C_TEAL_LIGHT = HexColor('#EAF4F4')
+        C_TEAL_BOX = HexColor('#D4EFF2')
+        C_GOLD = HexColor('#C9A84C')
+        C_DARK = HexColor('#0D1B2A')
+        C_GREEN = HexColor('#1a7f4b')
+        C_RED = HexColor('#c0392b')
+        C_GRAY = HexColor('#6B7280')
+        C_DARK_GRAY = HexColor('#444444')
+        C_BG = HexColor('#F8F9FA')
+        C_WHITE = rl_colors.white
+        C_BC_GREEN = HexColor('#00CC66')
+        C_BC_BLUE = HexColor('#90CDF4')
+        C_BC_LABEL = HexColor('#A0AEC0')
 
         qr_data = f"SmartPermits-Verify-{permit.id}-{permit.permit_type}"
         etherscan_url = None
@@ -1204,108 +1322,364 @@ def get_certificate(permit_id):
         with open(qr_path, 'wb') as f:
             f.write(qr_buffer.read())
 
-        pdf_buffer = io.BytesIO()
-        doc = SimpleDocTemplate(pdf_buffer, pagesize=A4, topMargin=1.5*cm, bottomMargin=1.5*cm, leftMargin=2*cm, rightMargin=2*cm)
-        styles = getSampleStyleSheet()
-
-        primary_color = rl_colors.HexColor('#0D9488')
-        dark_color = rl_colors.HexColor('#0F766E')
-        light_bg = rl_colors.HexColor('#F0FDFA')
-        gold_color = rl_colors.HexColor('#D4A843')
-
-        title_style = ParagraphStyle('CertTitle', parent=styles['Title'], fontSize=28, textColor=primary_color, spaceAfter=4, fontName=_PDF_FONT_BOLD, alignment=TA_CENTER)
-        subtitle_style = ParagraphStyle('CertSub', parent=styles['Normal'], fontSize=13, textColor=rl_colors.HexColor('#6B7280'), alignment=TA_CENTER, spaceAfter=6, fontName=_PDF_FONT)
-        cert_id_style = ParagraphStyle('CertId', parent=styles['Normal'], fontSize=11, textColor=dark_color, alignment=TA_CENTER, fontName=_PDF_FONT_BOLD, spaceAfter=16)
-        section_header = ParagraphStyle('SecHead', parent=styles['Normal'], fontSize=13, textColor=primary_color, fontName=_PDF_FONT_BOLD, spaceAfter=8, spaceBefore=12)
-        cell_style = ParagraphStyle('Cell', parent=styles['Normal'], fontSize=10, leading=14, fontName=_PDF_FONT)
-        cell_bold = ParagraphStyle('CellBold', parent=styles['Normal'], fontSize=10, leading=14, fontName=_PDF_FONT_BOLD)
-        footer_style = ParagraphStyle('Footer', parent=styles['Normal'], fontSize=8, textColor=rl_colors.HexColor('#9CA3AF'), alignment=TA_CENTER, spaceBefore=16, fontName=_PDF_FONT)
-        link_style = ParagraphStyle('Link', parent=styles['Normal'], fontSize=9, textColor=rl_colors.HexColor('#0D9488'), fontName=_PDF_FONT, alignment=TA_CENTER)
-
-        def _cell(text):
-            return Paragraph(xml_escape(str(text or '')), cell_style)
-
-        def _bold(text):
-            return Paragraph(xml_escape(str(text or '')), cell_bold)
-
-        elements = []
-
-        elements.append(HRFlowable(width="100%", thickness=3, color=primary_color, spaceAfter=12))
-        elements.append(Paragraph("\u2756 SmartPermits", title_style))
-        elements.append(Paragraph(t['subtitle'], subtitle_style))
-        elements.append(Paragraph(f"{t['cert_no']} SP-{permit.id:05d}", cert_id_style))
-        elements.append(HRFlowable(width="100%", thickness=1, color=rl_colors.HexColor('#E5E7EB'), spaceAfter=16))
-
         applicant_name = permit.applicant.full_name if permit.applicant else ''
         issued = permit.updated_at.strftime('%B %d, %Y') if permit.updated_at else ''
         applied = permit.created_at.strftime('%B %d, %Y') if permit.created_at else ''
         expires = permit.expires_at.strftime('%B %d, %Y') if permit.expires_at else t['non_expiring']
-
+        validity_str = f"{issued} \u2192 {expires}" if permit.expires_at else t['non_expiring']
         localized_permit_type = pt_trans.get(permit.permit_type, permit.permit_type)
+        cert_no_str = f"\u2116 SP-{permit.id:05d}"
+        gen_time = datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC')
 
-        elements.append(Paragraph(t['permit_info'], section_header))
+        styles = getSampleStyleSheet()
+
+        s_emblem = ParagraphStyle('Emblem', parent=styles['Normal'], fontSize=22, textColor=C_GOLD,
+                                  alignment=TA_CENTER, fontName=_PDF_FONT_BOLD, spaceAfter=3, spaceBefore=4)
+        s_cert_title = ParagraphStyle('CertTitle', parent=styles['Normal'], fontSize=13, textColor=C_TEAL,
+                                      alignment=TA_CENTER, fontName=_PDF_FONT_BOLD, spaceAfter=3, leading=16)
+        s_dept_sub = ParagraphStyle('DeptSub', parent=styles['Normal'], fontSize=9, textColor=C_GRAY,
+                                    alignment=TA_CENTER, fontName=_PDF_FONT, spaceAfter=5, leading=12)
+        s_cert_no = ParagraphStyle('CertNo', parent=styles['Normal'], fontSize=11, textColor=C_TEAL,
+                                   alignment=TA_CENTER, fontName=_PDF_FONT_BOLD, leading=14)
+        s_section = ParagraphStyle('Section', parent=styles['Normal'], fontSize=10, textColor=C_TEAL,
+                                   fontName=_PDF_FONT_BOLD, leading=13, leftIndent=6)
+        s_label = ParagraphStyle('Label', parent=styles['Normal'], fontSize=9, textColor=C_DARK_GRAY,
+                                 fontName=_PDF_FONT_BOLD, leading=13)
+        s_value = ParagraphStyle('Value', parent=styles['Normal'], fontSize=9, textColor=rl_colors.black,
+                                 fontName=_PDF_FONT, leading=13)
+        s_pill = ParagraphStyle('Pill', parent=styles['Normal'], fontSize=8.5, textColor=C_WHITE,
+                                fontName=_PDF_FONT_BOLD, alignment=TA_CENTER, leading=11)
+        s_disclaimer = ParagraphStyle('Disclaimer', parent=styles['Normal'], fontSize=8, textColor=C_GRAY,
+                                      alignment=TA_CENTER, fontName=_PDF_FONT, leading=11, spaceBefore=2, spaceAfter=2)
+        s_sig_text = ParagraphStyle('SigText', parent=styles['Normal'], fontSize=8, textColor=C_DARK_GRAY,
+                                    alignment=TA_CENTER, fontName=_PDF_FONT, leading=11)
+        s_mono_green = ParagraphStyle('MonoGreen', parent=styles['Normal'], fontSize=7.5, textColor=C_BC_GREEN,
+                                      fontName=_PDF_FONT_MONO, leading=10)
+        s_mono = ParagraphStyle('Mono', parent=styles['Normal'], fontSize=8, textColor=C_WHITE,
+                                fontName=_PDF_FONT_MONO, leading=11)
+        s_bc_label = ParagraphStyle('BCLabel', parent=styles['Normal'], fontSize=7.5, textColor=HexColor('#9CA3AF'),
+                                    fontName=_PDF_FONT, leading=10)
+        s_bc_verify = ParagraphStyle('BCVerify', parent=styles['Normal'], fontSize=8, textColor=C_BC_BLUE,
+                                     fontName=_PDF_FONT, leading=11)
+        s_qr_cap = ParagraphStyle('QRCap', parent=styles['Normal'], fontSize=7, textColor=C_GRAY,
+                                  alignment=TA_CENTER, fontName=_PDF_FONT, leading=9)
+        s_footer_note = ParagraphStyle('FootNote', parent=styles['Normal'], fontSize=7, textColor=C_GRAY,
+                                       alignment=TA_CENTER, fontName=_PDF_FONT, leading=10, spaceAfter=2)
+
+        def _lbl(text):
+            return Paragraph(xml_escape(str(text or '')), s_label)
+
+        def _val(text):
+            return Paragraph(xml_escape(str(text or '')), s_value)
+
+        def _section_header(title):
+            accent = Table([['']], colWidths=[5], rowHeights=[14])
+            accent.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (0, 0), C_TEAL),
+                ('TOPPADDING', (0, 0), (0, 0), 0),
+                ('BOTTOMPADDING', (0, 0), (0, 0), 0),
+                ('LEFTPADDING', (0, 0), (0, 0), 0),
+                ('RIGHTPADDING', (0, 0), (0, 0), 0),
+            ]))
+            title_p = Paragraph(xml_escape(str(title)), s_section)
+            row = Table([[accent, title_p]], colWidths=[8, CONTENT_W - 8])
+            row.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 3),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+            ]))
+            return row
+
+        def _status_pill(status_text):
+            status_lower = (permit.status or '').lower()
+            if status_lower == 'completed':
+                pill_bg = C_GREEN
+            elif status_lower == 'approved':
+                pill_bg = C_TEAL
+            else:
+                pill_bg = C_RED
+            p = Paragraph(xml_escape(str(status_text)), s_pill)
+            pill = Table([[p]], colWidths=[88], rowHeights=[16])
+            pill.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), pill_bg),
+                ('TOPPADDING', (0, 0), (-1, -1), 2),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+                ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            ]))
+            return pill
+
+        class SealFlowable(Flowable):
+            def __init__(self, sz=80):
+                Flowable.__init__(self)
+                self.sz = sz
+                self.width = sz
+                self.height = sz
+
+            def draw(self):
+                c = self.canv
+                c.saveState()
+                cx = self.sz / 2
+                cy = self.sz / 2
+                r = self.sz / 2 - 4
+                c.setStrokeColor(C_TEAL)
+                c.setFillColor(C_WHITE)
+                c.setLineWidth(1.5)
+                c.setDash([3, 3])
+                c.circle(cx, cy, r, stroke=1, fill=1)
+                c.setDash([])
+                c.setLineWidth(0.75)
+                c.circle(cx, cy, r - 8, stroke=1, fill=0)
+                c.setFillColor(C_TEAL)
+                c.setFont(_PDF_FONT_BOLD, 13)
+                c.drawCentredString(cx, cy - 6, '\u2605')
+                c.setFont(_PDF_FONT_BOLD, 4)
+                seal_label = t.get('official_seal', 'OFFICIAL SEAL')
+                c.drawCentredString(cx, cy + r - 11, seal_label)
+                c.restoreState()
+
+        def _draw_page_decor(canvas_obj, doc_obj):
+            canvas_obj.saveState()
+            bm = 1.0 * cm
+
+            canvas_obj.setFillColor(C_BG)
+            canvas_obj.rect(0, 0, PAGE_W, PAGE_H, stroke=0, fill=1)
+
+            card_in = 0.75 * cm
+            canvas_obj.setFillColor(C_WHITE)
+            canvas_obj.rect(card_in, card_in, PAGE_W - 2 * card_in, PAGE_H - 2 * card_in, stroke=0, fill=1)
+
+            canvas_obj.setStrokeColor(C_TEAL)
+            canvas_obj.setLineWidth(1.5)
+            canvas_obj.rect(bm, bm, PAGE_W - 2 * bm, PAGE_H - 2 * bm, stroke=1, fill=0)
+
+            ibm = bm + 6
+            canvas_obj.setStrokeColor(C_GOLD)
+            canvas_obj.setLineWidth(0.75)
+            canvas_obj.rect(ibm, ibm, PAGE_W - 2 * ibm, PAGE_H - 2 * ibm, stroke=1, fill=0)
+
+            canvas_obj.saveState()
+            canvas_obj.setFont('Helvetica-Bold', 60)
+            try:
+                canvas_obj.setFillColorRGB(0.82, 0.82, 0.82, alpha=0.04)
+            except TypeError:
+                canvas_obj.setFillColor(HexColor('#F5F5F5'))
+            canvas_obj.translate(PAGE_W / 2, PAGE_H * 0.42)
+            canvas_obj.rotate(45)
+            canvas_obj.drawCentredString(0, 0, 'ISSUED')
+            canvas_obj.restoreState()
+
+            footer_h = 1.0 * cm
+            canvas_obj.setFillColor(C_TEAL)
+            canvas_obj.rect(0, 0, PAGE_W, footer_h, stroke=0, fill=1)
+            try:
+                canvas_obj.setFillAlpha(1.0)
+            except Exception:
+                pass
+            canvas_obj.setFillColor(C_WHITE)
+            canvas_obj.setFont(_PDF_FONT, 7.5)
+            canvas_obj.drawString(bm + 4, footer_h / 2 - 3.5, 'SmartPermits Platform  |  smartpermits.gov')
+            canvas_obj.setFont(_PDF_FONT_BOLD, 9)
+            canvas_obj.drawCentredString(PAGE_W / 2, footer_h / 2 - 4, '\u25C6')
+            canvas_obj.setFont(_PDF_FONT, 7.5)
+            canvas_obj.drawRightString(PAGE_W - bm - 4, footer_h / 2 - 3.5, f'Generated: {gen_time}')
+
+            canvas_obj.setFillColor(C_GOLD)
+            canvas_obj.setFont(_PDF_FONT_BOLD, 8.5)
+            canvas_obj.drawCentredString(PAGE_W / 2, footer_h + 24, '\u2014\u2014\u2014\u2014  \u25C6  \u2014\u2014\u2014\u2014')
+            canvas_obj.setFillColor(HexColor('#9CA3AF'))
+            canvas_obj.setFont(_PDF_FONT, 6.5)
+            canvas_obj.drawCentredString(PAGE_W / 2, footer_h + 10, t['footer_tamper'])
+            canvas_obj.restoreState()
+
+        elements = []
+        elements.append(Spacer(1, 0.2 * cm))
+
+        elements.append(Paragraph('\u2756', s_emblem))
+        elements.append(Paragraph('OFFICIAL MUNICIPAL PERMIT CERTIFICATE', s_cert_title))
+        elements.append(Paragraph(xml_escape(t.get('dept_subtitle', 'Issued by the Department of Municipal Affairs & Urban Development')), s_dept_sub))
+        elements.append(HRFlowable(width='100%', thickness=3, color=C_TEAL, spaceAfter=5, spaceBefore=1))
+
+        cert_box = Table([[Paragraph(cert_no_str, s_cert_no)]], colWidths=[CONTENT_W])
+        cert_box.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), C_TEAL_BOX),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 10),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 10),
+        ]))
+        elements.append(cert_box)
+        elements.append(Spacer(1, 0.45 * cm))
+
+        elements.append(_section_header(t['permit_info'].upper()))
+        elements.append(Spacer(1, 0.1 * cm))
+
+        col1_w = CONTENT_W * 0.36
+        col2_w = CONTENT_W * 0.64
+        status_display = t.get('completed', 'COMPLETED')
+        raw_desc = permit.description or t['na']
+        desc_text = raw_desc if len(raw_desc) <= 80 else raw_desc[:77] + '...'
         info_data = [
-            [_bold(t['permit_type']), _cell(localized_permit_type)],
-            [_bold(t['applicant']), _cell(applicant_name)],
-            [_bold(t['description']), _cell(permit.description or t['na'])],
-            [_bold(t['fee_amount']), _cell(f'${permit.fee_amount:.2f}')],
-            [_bold(t['status']), _cell(f'{t["completed"]} \u2714')],
-            [_bold(t['application_date']), _cell(applied)],
-            [_bold(t['issued_date']), _cell(issued)],
-            [_bold(t['valid_until']), _cell(expires)],
+            [_lbl(t['permit_type']), _val(localized_permit_type)],
+            [_lbl(t.get('permit_id', 'Permit ID')), _val(cert_no_str)],
+            [_lbl(t['applicant']), _val(applicant_name)],
+            [_lbl(t['description']), _val(desc_text)],
+            [_lbl(t['fee_amount']), _val(f'${permit.fee_amount:.2f}')],
+            [_lbl(t['status']), _status_pill(status_display)],
+            [_lbl(t['application_date']), _val(applied)],
+            [_lbl(t['issued_date']), _val(issued)],
+            [_lbl(t.get('validity_period', 'Validity Period')), _val('\u25B6  ' + validity_str)],
         ]
 
-        info_table = Table(info_data, colWidths=[5*cm, 11*cm])
+        row_ts = []
+        for idx in range(len(info_data)):
+            row_bg = C_TEAL_LIGHT if idx % 2 == 0 else C_WHITE
+            row_ts.append(('BACKGROUND', (0, idx), (-1, idx), row_bg))
+
+        info_table = Table(info_data, colWidths=[col1_w, col2_w])
         info_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (0, -1), light_bg),
-            ('GRID', (0, 0), (-1, -1), 0.5, rl_colors.HexColor('#D1D5DB')),
-            ('ROWBACKGROUNDS', (0, 0), (-1, -1), [rl_colors.white, rl_colors.HexColor('#FAFAFA')]),
-            ('PADDING', (0, 0), (-1, -1), 10),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('TOPPADDING', (0, 0), (-1, -1), 8),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ]))
+            ('LINEBELOW', (0, -1), (-1, -1), 0, C_WHITE),
+        ] + row_ts))
         elements.append(info_table)
-        elements.append(Spacer(1, 0.6*cm))
+        elements.append(Spacer(1, 0.45 * cm))
+
+        elements.append(HRFlowable(width='100%', thickness=0.5, color=HexColor('#DDDDDD'), spaceAfter=5))
+        elements.append(Paragraph(xml_escape(t.get('authority_disclaimer', 'This permit has been reviewed and approved by a certified municipal inspector and is legally binding under Municipal Code \u00a714.2')), s_disclaimer))
+        elements.append(Spacer(1, 0.15 * cm))
+
+        class SigLineFlowable(Flowable):
+            def __init__(self, avail_w, line_w=120):
+                Flowable.__init__(self)
+                self.avail_w = avail_w
+                self.line_w = line_w
+                self.width = avail_w
+                self.height = 20
+
+            def draw(self):
+                c = self.canv
+                c.saveState()
+                c.setStrokeColor(HexColor('#9CA3AF'))
+                c.setLineWidth(0.5)
+                x1 = (self.avail_w - self.line_w) / 2
+                c.line(x1, 5, x1 + self.line_w, 5)
+                c.restoreState()
+
+        sig_col_w = CONTENT_W * 0.58
+        sig_inner = Table(
+            [
+                [SigLineFlowable(sig_col_w, 120)],
+                [Paragraph(xml_escape(t.get('municipal_inspector', 'Municipal Inspector')), s_sig_text)],
+                [Paragraph(xml_escape(t.get('dept_urban', 'Department of Urban Development')), s_sig_text)],
+            ],
+            colWidths=[sig_col_w]
+        )
+        sig_inner.setStyle(TableStyle([
+            ('TOPPADDING', (0, 0), (-1, -1), 1),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 1),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+        ]))
+
+        auth_row = Table([[sig_inner, SealFlowable(sz=80)]], colWidths=[CONTENT_W * 0.7, CONTENT_W * 0.3])
+        auth_row.setStyle(TableStyle([
+            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ('ALIGN', (1, 0), (1, 0), 'CENTER'),
+            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+            ('LEFTPADDING', (0, 0), (-1, -1), 0),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+        ]))
+        elements.append(auth_row)
+        elements.append(Spacer(1, 0.45 * cm))
+
+        s_divider = ParagraphStyle('Divider', parent=styles['Normal'], fontSize=9, textColor=C_GOLD,
+                                   alignment=TA_CENTER, fontName=_PDF_FONT_BOLD, leading=12, spaceBefore=6, spaceAfter=6)
+
+        def _trunc_hash(h, prefix_len=20, suffix_len=8):
+            if h and len(h) > prefix_len + suffix_len + 3:
+                return h[:prefix_len] + '\u2026' + h[-suffix_len:]
+            return h or ''
 
         if permit.blockchain_tx_hash or permit.blockchain_hash:
-            elements.append(Paragraph(t['blockchain_verification'], section_header))
-            bc_data = []
+            elements.append(HRFlowable(width='100%', thickness=0.5, color=HexColor('#DDDDDD'), spaceAfter=5))
+            elements.append(_section_header(t['blockchain_verification'].upper()))
+            elements.append(Spacer(1, 0.1 * cm))
+
+            bc_box_w = CONTENT_W * 0.62
+            qr_col_w = CONTENT_W - bc_box_w
+
+            bc_rows = [[Paragraph('VERIFIED ON ETHEREUM SEPOLIA TESTNET', s_mono_green)]]
+            label_rows = []
             if permit.blockchain_tx_hash:
-                bc_data.append([_bold(t['tx_hash']), _cell(permit.blockchain_tx_hash)])
-                bc_data.append([_bold(t['network']), _cell('Ethereum Sepolia Testnet')])
-                bc_data.append([_bold(t['etherscan_link']), Paragraph(f'<a href="{etherscan_url}" color="#0D9488">{etherscan_url}</a>', cell_style)])
+                label_rows.append(len(bc_rows))
+                bc_rows.append([Paragraph(xml_escape(t['tx_hash']) + ':', s_bc_label)])
+                bc_rows.append([Paragraph(xml_escape(_trunc_hash(permit.blockchain_tx_hash)), s_mono)])
             if permit.blockchain_hash:
-                bc_data.append([_bold(t['doc_hash']), _cell(permit.blockchain_hash)])
-            bc_data.append([_bold(t['verification_status']), _cell(f'{t["verified_blockchain"]} \u2705' if permit.blockchain_tx_hash else t['hash_local'])])
+                label_rows.append(len(bc_rows))
+                bc_rows.append([Paragraph(xml_escape(t['doc_hash']) + ':', s_bc_label)])
+                bc_rows.append([Paragraph(xml_escape(_trunc_hash(permit.blockchain_hash)), s_mono)])
+            if permit.blockchain_tx_hash:
+                bc_rows.append([Paragraph('\u2714 ' + xml_escape(t['verified_blockchain']), s_bc_verify)])
+                tx_short = _trunc_hash(permit.blockchain_tx_hash, prefix_len=10, suffix_len=6)
+                url_display = f'\u2192 sepolia.etherscan.io/tx/{tx_short}'
+                bc_rows.append([Paragraph(
+                    f'<a href="{etherscan_url}" color="#90CDF4">{xml_escape(url_display)}</a>',
+                    s_bc_verify
+                )])
+            else:
+                bc_rows.append([Paragraph('\u2714 ' + xml_escape(t['hash_local']), s_bc_verify)])
 
-            bc_table = Table(bc_data, colWidths=[5*cm, 11*cm])
-            bc_table.setStyle(TableStyle([
-                ('BACKGROUND', (0, 0), (0, -1), rl_colors.HexColor('#ECFDF5')),
-                ('GRID', (0, 0), (-1, -1), 0.5, rl_colors.HexColor('#D1D5DB')),
-                ('PADDING', (0, 0), (-1, -1), 8),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            bc_ts = [
+                ('BACKGROUND', (0, 0), (-1, -1), C_DARK),
+                ('TOPPADDING', (0, 0), (-1, -1), 2),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 2),
+                ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+                ('TOPPADDING', (0, 0), (0, 0), 8),
+                ('BOTTOMPADDING', (0, len(bc_rows) - 1), (0, len(bc_rows) - 1), 8),
+            ]
+            for lr in label_rows:
+                bc_ts.append(('TOPPADDING', (0, lr), (0, lr), 7))
+            bc_box = Table(bc_rows, colWidths=[bc_box_w])
+            bc_box.setStyle(TableStyle(bc_ts))
+
+            qr_img = RLImage(qr_path, width=2.6 * cm, height=2.6 * cm, hAlign='CENTER')
+            qr_cap = Paragraph(xml_escape(t.get('scan_etherscan', 'Scan to Verify on Etherscan')), s_qr_cap)
+            qr_inner = Table([[qr_img], [qr_cap]], colWidths=[qr_col_w])
+            qr_inner.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), C_WHITE),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('TOPPADDING', (0, 0), (-1, -1), 4),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                ('LEFTPADDING', (0, 0), (-1, -1), 4),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 4),
             ]))
-            elements.append(bc_table)
-            elements.append(Spacer(1, 0.6*cm))
 
-        elements.append(HRFlowable(width="100%", thickness=0.5, color=rl_colors.HexColor('#E5E7EB'), spaceAfter=12))
+            bc_combined = Table([[bc_box, qr_inner]], colWidths=[bc_box_w, qr_col_w])
+            bc_combined.setStyle(TableStyle([
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('TOPPADDING', (0, 0), (-1, -1), 0),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                ('RIGHTPADDING', (0, 0), (0, 0), 6),
+                ('RIGHTPADDING', (1, 0), (1, 0), 0),
+            ]))
+            elements.append(bc_combined)
+            elements.append(Spacer(1, 0.3 * cm))
 
-        qr_label = ParagraphStyle('QRLabel', parent=styles['Normal'], fontSize=10, textColor=rl_colors.HexColor('#6B7280'), alignment=TA_CENTER, spaceAfter=6, fontName=_PDF_FONT)
-        elements.append(Paragraph(t['scan_verify'], qr_label))
-        elements.append(RLImage(qr_path, width=3.5*cm, height=3.5*cm, hAlign='CENTER'))
-
-        if etherscan_url:
-            elements.append(Spacer(1, 0.3*cm))
-            elements.append(Paragraph(f'<a href="{etherscan_url}" color="#0D9488">{t["view_etherscan"]} \u2197</a>', link_style))
-
-        elements.append(Spacer(1, 0.8*cm))
-        elements.append(HRFlowable(width="100%", thickness=2, color=gold_color, spaceAfter=8))
-        elements.append(Paragraph(t['footer_digital'], footer_style))
-        elements.append(Paragraph(f"{t['footer_generated']} {datetime.utcnow().strftime('%B %d, %Y at %H:%M UTC')}", footer_style))
-        elements.append(Paragraph(t['footer_tamper'], footer_style))
-
-        doc.build(elements)
+        pdf_buffer = io.BytesIO()
+        doc = SimpleDocTemplate(
+            pdf_buffer, pagesize=A4,
+            topMargin=T_MARGIN, bottomMargin=B_MARGIN,
+            leftMargin=L_MARGIN, rightMargin=R_MARGIN
+        )
+        doc.build(elements, onFirstPage=_draw_page_decor, onLaterPages=_draw_page_decor)
         pdf_bytes = pdf_buffer.getvalue()
         pdf_buffer.close()
         try:

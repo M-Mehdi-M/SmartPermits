@@ -219,22 +219,48 @@ GET http://localhost:5000/api/permits/{id}/verify-blockchain
 ```
 Returns: `blockchain_hash`, `blockchain_tx_hash`, `etherscan_url`, and `verified` (true/false)
 
-### 13. PDF Certificate (Professional Design)
+### 13. PDF Certificate (Professional Government Design)
 
 1. Open a "Completed" permit (approved + paid)
 2. Tap "Download Certificate"
 3. PDF is saved to Downloads folder and automatically opens in the device's PDF viewer
-4. PDF contains:
-   - Teal-branded header with diamond icon and "SmartPermits" title
-   - Certificate number (e.g., "SP-00001")
-   - Permit information table with alternating row colors
-   - Application date, issued date, and valid-until date
-   - Blockchain verification section with clickable Etherscan link (if blockchain was configured)
-   - QR code that links to Etherscan transaction (or verification URL)
-   - Gold footer seal with tamper warning
-5. Change language to Romanian in Settings, then download the certificate again — verify Romanian characters (ăîâșț) render correctly without black squares
-6. Try other languages (Polish, Turkish, Ukrainian) to confirm all special characters display properly
-7. The PDF language is determined by the `?lang=` parameter passed when downloading, which the app reads from the current language setting
+4. Verify the overall page layout:
+   - Off-white (#F8F9FA) background with white content card
+   - Classic double-line decorative border — outer dark teal (#005f6b) and inner gold (#C9A84C) offset 6pt inward
+   - Diagonal "ISSUED" watermark lightly visible across the page at ~15% opacity
+5. Verify the **Header Zone**:
+   - Gold ⚜ emblem centered at top
+   - "OFFICIAL MUNICIPAL PERMIT CERTIFICATE" in bold teal 13pt all-caps
+   - Department subtitle "Issued by the Department of Municipal Affairs & Urban Development" in italic gray 9pt
+   - Thick teal horizontal rule separator
+   - Certificate number formatted as **№ SP-00001** (using `№` symbol) in a light teal background box
+6. Verify the **Permit Information section**:
+   - "PERMIT INFORMATION" section header with a teal left accent bar
+   - Two-column table with label column (bold, dark gray) and value column (regular black)
+   - Alternating row backgrounds: white and light teal (#EAF4F4), no visible cell borders
+   - Rows include: Permit Type, Permit ID, Applicant, Description, Fee Amount, Status, Application Date, Issued Date, Validity Period
+   - **STATUS row** shows a colored pill badge — green for COMPLETED, teal for APPROVED, red for REJECTED
+   - **Validity Period row** shows issued date → expiry date with arrow separator
+7. Verify the **Authority Block**:
+   - Italic disclaimer text: "This permit has been reviewed and approved by a certified municipal inspector..."
+   - Dashed signature line with "Municipal Inspector" and "Department of Urban Development" below
+   - Official seal circle drawn to the right with dashed circumference, inner ring, star, and "OFFICIAL SEAL" text in teal
+8. Verify the **Blockchain Verification section** (if blockchain is configured):
+   - "BLOCKCHAIN VERIFICATION" header with teal accent bar
+   - Dark-themed inset box with #0D1B2A background and white/green text
+   - "VERIFIED ON ETHEREUM SEPOLIA TESTNET" in green monospace at the top
+   - Transaction Hash and Document Hash in monospace 7.5pt (Courier or DejaVuSansMono)
+   - Green checkmark ✔ status line and Etherscan URL in light blue
+   - QR code to the right of the dark box with "Scan to Verify on Etherscan" caption below
+9. Verify the **Footer Zone**:
+   - Full-width dark teal bar at the very bottom of the page
+   - Left side: "SmartPermits Platform | smartpermits.gov" in white 7.5pt
+   - Center: gold diamond symbol ◆
+   - Right side: "Generated: [date] at [time] UTC" in white 7.5pt
+   - Just above the bar: tamper disclaimer in gray 7pt italic
+10. Change language to Romanian in Settings, then download the certificate again — verify Romanian characters (ăîâșț) render correctly in all zones including the authority disclaimer and section headers
+11. Try Polish (łźż), Turkish (çğışö), Ukrainian (Кирилиця) — all special characters must display without black squares or boxes
+12. The PDF language applies to all text: section headers, table labels, authority disclaimer, official seal label, scan caption, footer disclaimer
 
 ### 14. In-App Chat / Comments
 
@@ -436,8 +462,12 @@ To manually verify a permit's blockchain notarization without the app:
 ### PDF Certificate Issues
 - Ensure `reportlab` and `qrcode` are installed: `pip install -r requirements.txt`
 - Permit must be in "Completed" status
-- Check server logs for certificate generation errors
-- For proper Unicode rendering (Romanian ăîâșț, Polish łźż, etc.), the `fonts/` directory with DejaVuSans TTF files must exist in `smart_permits_api/`
+- Check server logs for certificate generation errors — the endpoint returns `{"error": "Certificate generation failed: ..."}` with the exact exception
+- For proper Unicode rendering (Romanian ăîâșț, Polish łźż, etc.), the `fonts/` directory with `DejaVuSans.ttf` and `DejaVuSans-Bold.ttf` must exist in `smart_permits_api/fonts/`
+- For monospace hash rendering, `DejaVuSansMono.ttf` is used if present; otherwise `Courier` (built-in) is used automatically — no action needed
+- If the decorative border or watermark is missing, your ReportLab version may not support `setFillAlpha()` — update with `pip install --upgrade reportlab`
+- The dark blockchain inset box requires ReportLab ≥ 3.3 for correct background rendering on nested tables
+- QR code to the right of the blockchain box requires the `qrcode` package with Pillow: `pip install qrcode[pil]`
 
 ### AI Analysis Not Working
 - Ensure `GEMINI_API_KEY` is set in the `.env` file
