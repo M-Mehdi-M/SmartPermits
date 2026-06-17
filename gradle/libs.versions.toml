@@ -1,5 +1,5 @@
 [versions]
-agp = "9.2.0"
+agp = "9.2.1"
 junit = "4.13.2"
 junitVersion = "1.3.0"
 espressoCore = "3.7.0"
@@ -16,6 +16,7 @@ swiperefreshlayout = "1.1.0"
 glide = "4.16.0"
 mpandroidchart = "v3.1.0"
 osmdroid = "6.1.18"
+socketio = "2.1.1"
 
 [libraries]
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -35,6 +36,7 @@ swiperefreshlayout = { group = "androidx.swiperefreshlayout", name = "swiperefre
 glide = { group = "com.github.bumptech.glide", name = "glide", version.ref = "glide" }
 mpandroidchart = { group = "com.github.PhilJay", name = "MPAndroidChart", version.ref = "mpandroidchart" }
 osmdroid = { group = "org.osmdroid", name = "osmdroid-android", version.ref = "osmdroid" }
+socketio-client = { group = "io.socket", name = "socket.io-client", version.ref = "socketio" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

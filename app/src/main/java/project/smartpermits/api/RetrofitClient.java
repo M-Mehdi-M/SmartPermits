@@ -14,13 +14,15 @@ import java.util.concurrent.TimeUnit;
 
 public class RetrofitClient {
 
-    private static final String BASE_URL = "http://192.168.137.1:5000/api/";
+    private static final String BASE_URL = ApiConfig.BASE_API_URL;
     private static RetrofitClient instance;
     private final ApiService apiService;
     private final SharedPreferences prefs;
+    private final Context appContext;
 
     private RetrofitClient(Context context) {
-        prefs = context.getApplicationContext()
+        appContext = context.getApplicationContext();
+        prefs = appContext
                 .getSharedPreferences("smart_permits_prefs", Context.MODE_PRIVATE);
 
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
@@ -45,7 +47,7 @@ public class RetrofitClient {
                 if (token != null && !token.isEmpty()) {
                     prefs.edit().remove("auth_token").apply();
                     android.content.Intent intent = new android.content.Intent("project.smartpermits.SESSION_EXPIRED");
-                    context.getApplicationContext().sendBroadcast(intent);
+                    appContext.sendBroadcast(intent);
                 }
             }
             return response;
@@ -133,6 +135,7 @@ public class RetrofitClient {
     }
 
     public void clearSession() {
+        SocketIOManager.getInstance(appContext).disconnect();
         boolean darkMode = prefs.getBoolean("dark_mode", false);
         boolean followSystem = prefs.getBoolean("follow_system_theme", false);
         boolean notif = prefs.getBoolean("notifications_enabled", true);

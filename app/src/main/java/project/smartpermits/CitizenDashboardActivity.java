@@ -1,7 +1,12 @@
 package project.smartpermits;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
@@ -12,8 +17,11 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -28,11 +36,15 @@ import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.textfield.TextInputEditText;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import project.smartpermits.adapters.PermitAdapter;
 import project.smartpermits.api.RetrofitClient;
+import project.smartpermits.api.SocketIOManager;
 import project.smartpermits.models.Permit;
+import project.smartpermits.models.User;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -59,6 +71,23 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
     private String currentSearch = "";
     private String currentStatusFilter = "";
 
+    private BroadcastReceiver socketReceiver;
+    private ActivityResultLauncher<Intent> applyPermitLauncher;
+    private boolean receiverRegistered = false;
+
+    private final Handler pollHandler = new Handler(Looper.getMainLooper());
+    private static final long POLL_INTERVAL_MS = 6000;
+    private final Map<Integer, String> knownStatuses = new HashMap<>();
+    private boolean firstPollDone = false;
+
+    private final Runnable pollRunnable = new Runnable() {
+        @Override
+        public void run() {
+            silentRefresh();
+            pollHandler.postDelayed(this, POLL_INTERVAL_MS);
+        }
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -74,6 +103,10 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
         ExtendedFloatingActionButton fabApply = findViewById(R.id.fabApply);
         etSearch = findViewById(R.id.etSearch);
         chipGroupFilter = findViewById(R.id.chipGroupFilter);
+
+        applyPermitLauncher = registerForActivityResult(
+                new ActivityResultContracts.StartActivityForResult(),
+                result -> loadPermits());
 
         String userName = RetrofitClient.getInstance(this).getUserName();
         tvUserName = findViewById(R.id.tvUserName);
@@ -95,7 +128,7 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
         swipeRefresh.setOnRefreshListener(this::loadPermits);
 
         fabApply.setOnClickListener(v ->
-                startActivity(new Intent(this, ApplyPermitActivity.class)));
+                applyPermitLauncher.launch(new Intent(this, ApplyPermitActivity.class)));
 
         btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
 
@@ -167,16 +200,115 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
 
         NotificationHelper.createChannel(this);
         NotificationHelper.requestPermissionIfNeeded(this);
+        initializeSocketReceiver();
+    }
+
+    private void initializeSocketReceiver() {
+        socketReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent == null) return;
+                String action = intent.getAction();
+                if ("project.smartpermits.PERMIT_STATUS_UPDATED".equals(action)
+                        || "project.smartpermits.PERMIT_REVIEWED".equals(action)) {
+                    loadPermits();
+                }
+            }
+        };
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        pollHandler.removeCallbacks(pollRunnable);
+        if (socketReceiver != null && receiverRegistered) {
+            unregisterReceiver(socketReceiver);
+            receiverRegistered = false;
+        }
     }
 
     @Override
     protected void onResume() {
         super.onResume();
+        if (socketReceiver != null && !receiverRegistered) {
+            IntentFilter filter = new IntentFilter();
+            filter.addAction("project.smartpermits.PERMIT_STATUS_UPDATED");
+            filter.addAction("project.smartpermits.PERMIT_REVIEWED");
+            filter.addAction("project.smartpermits.NEW_COMMENT");
+            filter.addAction("project.smartpermits.COMMENT_NOTIFICATION");
+            ContextCompat.registerReceiver(this, socketReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+            receiverRegistered = true;
+        }
+        ensureSocketConnected();
         String name = RetrofitClient.getInstance(this).getUserName();
         tvUserName.setText(name);
         tvDrawerName.setText(name);
         loadAvatar();
         loadPermits();
+        pollHandler.removeCallbacks(pollRunnable);
+        pollHandler.postDelayed(pollRunnable, POLL_INTERVAL_MS);
+    }
+
+    private void ensureSocketConnected() {
+        RetrofitClient client = RetrofitClient.getInstance(this);
+        if (SocketIOManager.getInstance(this).isConnected()) return;
+        int userId = client.getUserId();
+        if (userId > 0) {
+            SocketIOManager.getInstance(this).connect(userId);
+            return;
+        }
+        client.getApi().getProfile().enqueue(new Callback<User>() {
+            @Override
+            public void onResponse(Call<User> call, Response<User> response) {
+                if (response.isSuccessful() && response.body() != null) {
+                    User profile = response.body();
+                    client.saveUserId(profile.getId());
+                    if (profile.getFullName() != null) client.saveUserName(profile.getFullName());
+                    if (profile.getRole() != null) client.saveUserRole(profile.getRole());
+                    SocketIOManager.getInstance(CitizenDashboardActivity.this).connect(profile.getId());
+                    runOnUiThread(() -> {
+                        tvUserName.setText(client.getUserName());
+                        tvDrawerName.setText(client.getUserName());
+                    });
+                }
+            }
+            @Override public void onFailure(Call<User> call, Throwable t) {}
+        });
+    }
+
+    private void silentRefresh() {
+        RetrofitClient.getInstance(this).getApi().getMyPermits()
+                .enqueue(new Callback<List<Permit>>() {
+                    @Override
+                    public void onResponse(Call<List<Permit>> call, Response<List<Permit>> response) {
+                        if (response.isSuccessful() && response.body() != null) {
+                            List<Permit> fresh = response.body();
+                            if (firstPollDone) {
+                                for (Permit p : fresh) {
+                                    String oldStatus = knownStatuses.get(p.getId());
+                                    String newStatus = p.getStatus();
+                                    if (newStatus != null && !newStatus.equals(oldStatus) && oldStatus != null) {
+                                        String title = "approved".equals(newStatus) ? "Permit Approved"
+                                                : "rejected".equals(newStatus) ? "Permit Rejected"
+                                                : "completed".equals(newStatus) ? "Permit Completed"
+                                                : "Permit Updated";
+                                        String type = p.getPermitType() != null ? p.getPermitType() : "Your permit";
+                                        NotificationHelper.showNotification(
+                                                CitizenDashboardActivity.this, title, type + " status changed", p.getId());
+                                    }
+                                }
+                            }
+                            knownStatuses.clear();
+                            for (Permit p : fresh) {
+                                if (p.getStatus() != null) knownStatuses.put(p.getId(), p.getStatus());
+                            }
+                            firstPollDone = true;
+                            allPermits = fresh;
+                            filterPermits();
+                        }
+                    }
+                    @Override public void onFailure(Call<List<Permit>> call, Throwable t) {}
+                });
     }
 
     private void loadAvatar() {
@@ -198,15 +330,20 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
                         swipeRefresh.setRefreshing(false);
                         if (response.isSuccessful() && response.body() != null) {
                             allPermits = response.body();
+                            knownStatuses.clear();
+                            for (Permit p : allPermits) {
+                                if (p.getStatus() != null) knownStatuses.put(p.getId(), p.getStatus());
+                            }
+                            firstPollDone = true;
                             filterPermits();
                         }
                     }
-
                     @Override
                     public void onFailure(Call<List<Permit>> call, Throwable t) {
                         progressBar.setVisibility(View.GONE);
                         swipeRefresh.setRefreshing(false);
-                        Toast.makeText(CitizenDashboardActivity.this, getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
+                        Toast.makeText(CitizenDashboardActivity.this,
+                                getString(R.string.error_generic, t.getMessage()), Toast.LENGTH_LONG).show();
                     }
                 });
     }
@@ -220,9 +357,7 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
                     || (p.getCreatedAt() != null && p.getCreatedAt().contains(currentSearch));
             boolean matchesStatus = currentStatusFilter.isEmpty()
                     || currentStatusFilter.equals(p.getStatus());
-            if (matchesSearch && matchesStatus) {
-                filtered.add(p);
-            }
+            if (matchesSearch && matchesStatus) filtered.add(p);
         }
         adapter.setPermits(filtered);
         emptyView.setVisibility(filtered.isEmpty() ? View.VISIBLE : View.GONE);

@@ -30,7 +30,7 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **Real-Time Status Timeline / Audit Trail** — A visual timeline on the permit detail screen shows every state change with timestamps: Submitted → Documents Analyzed by AI → Reviewed by Inspector → Blockchain Notarized → Payment Received → Appointment Scheduled → Inspection Completed → Certificate Issued. Each entry has a timestamp, the actor name, their role, and any notes
 - **Predictive Wait Time** — The system uses historical data to predict the specific wait time for each submission based on: permit type historical average, number of documents uploaded, current inspector workload (pending queue size), and day of week submitted. Displayed as a range (e.g., "2–4 days") with a confidence percentage indicator
 - **Smart Deadline Reminders & Expiry Tracking** — Permits have expiry dates set when completed based on permit type (e.g., 365 days for Construction, 30 days for Events). Citizens see a countdown on their dashboard cards. Expiring permits (≤30 days) are flagged in amber. Expired permits are flagged in red. Citizens can start a renewal directly from the permit detail screen
-- **Push Notifications** — When an inspector approves/rejects a permit, notifications are sent to the citizen via Firebase Cloud Messaging (FCM). Comments and appointment scheduling also trigger notifications
+- **Push Notifications** — When an inspector approves/rejects a permit, notifications are sent to the citizen via Firebase Cloud Messaging (FCM). Comments and appointment scheduling also trigger notifications. In-app real-time notifications are also delivered via Socket.IO: comment replies ring a system notification on the other party's device without any manual refresh
 - **Analytics Dashboard** — Inspector statistics screen showing total permits reviewed, approval vs rejection ratio (pie chart), average review time, and busiest permit types (bar chart) using MPAndroidChart
 - **Appointment Scheduling** — After approval, citizens schedule on-site inspection appointments using a date picker and time slot selector
 - **In-App Chat / Comments** — Comment thread on each permit where citizens ask questions and inspectors request additional documents
@@ -49,6 +49,8 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **Auto Session Expiry Handling** — 401 responses automatically clear the token and broadcast `SESSION_EXPIRED` to redirect the user to login
 - **Theme & Language Persistence on Sign-Out** — Dark mode, follow-system, and language preferences are preserved when signing out
 - **Pull-to-Refresh** — Swipe down to reload data on all dashboards
+- **Real-Time Updates** — Socket.IO (Flask-SocketIO + socket.io-client 2.x) keeps inspector and citizen dashboards live. New permit submissions appear on the inspector's list within seconds. Status changes push notifications to the citizen. Comment events ring system notifications on both parties' devices. A 6-second silent-poll fallback guarantees updates even when the socket is unreachable
+- **Shared API/Socket Config** — `ApiConfig.java` holds a single `BASE_API_URL` and `SOCKET_SERVER_URL` constant. Change one file when switching networks
 - **Containerized Backend** — Dockerfile included for production-ready deployment
 - **FCM Integration** — Backend sends push notifications via Firebase Admin SDK when available
 - **Auto Trash Cleanup** — Permits in trash for more than 30 days are automatically purged on server startup
@@ -336,11 +338,12 @@ SmartPermits/
 
 3. Sync Gradle and build the project
 
-4. **For emulator**: Update `BASE_URL` in `RetrofitClient.java` to `http://10.0.2.2:5000/api/`
+4. **For emulator**: Update `BASE_API_URL` and `SOCKET_SERVER_URL` in `app/src/main/java/project/smartpermits/api/ApiConfig.java` to `http://10.0.2.2:5000/api/` and `http://10.0.2.2:5000` respectively
 
-5. **For physical device**: Update `BASE_URL` in `RetrofitClient.java` to your machine's LAN IP:
+5. **For physical device**: Update both constants in `ApiConfig.java` to your machine's current Wi-Fi IP (run `ipconfig` → "Wireless LAN adapter Wi-Fi" → IPv4 Address):
    ```java
-   private static final String BASE_URL = "http://192.168.1.X:5000/api/";
+   public static final String BASE_API_URL    = "http://192.168.1.X:5000/api/";
+   public static final String SOCKET_SERVER_URL = "http://192.168.1.X:5000";
    ```
 
 6. Run on device or emulator
@@ -473,6 +476,9 @@ Note: The AI document analysis reads image files directly via Pillow. PDFs and o
 - `GET /api/uploads/{filename}` does not require authentication. Filenames are generated with a permit ID prefix via `werkzeug.secure_filename`, providing some obscurity but not cryptographic access control
 - AI analysis only directly reads image-type files. PDFs and office documents are acknowledged to the AI by name and label but pages are not extracted
 - `cleanup_old_trash` runs once per server process startup, not on a recurring timer
+- Comment notifications are only sent when the permit has a `reviewed_by` inspector assigned. Comments on fresh (not yet reviewed) permits do not trigger a notification to any inspector
+- The Socket.IO client uses v2.x protocol which requires Flask-SocketIO 5.x on the server. Do not downgrade the `socket.io-client` dependency below `2.1.0`
+- Server IP must be updated in `ApiConfig.java` whenever the development machine's Wi-Fi IP changes (common after reconnecting to a hotspot)
 
 ## Building
 

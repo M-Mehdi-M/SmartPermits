@@ -12,10 +12,19 @@ public class AppointmentRequest {
     @SerializedName("notes")
     private String notes;
 
+    @SerializedName("status")
+    private String status;
+
     public AppointmentRequest(String date, String timeSlot, String notes) {
         this.date = date;
         this.timeSlot = timeSlot;
         this.notes = notes;
     }
-}
 
+    public AppointmentRequest(String date, String timeSlot, String status, String notes) {
+        this.date = date;
+        this.timeSlot = timeSlot;
+        this.status = status;
+        this.notes = notes;
+    }
+}

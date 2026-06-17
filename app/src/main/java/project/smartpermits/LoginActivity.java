@@ -17,6 +17,7 @@ import com.google.android.material.button.MaterialButtonToggleGroup;
 import com.google.android.material.textfield.TextInputEditText;
 
 import project.smartpermits.api.RetrofitClient;
+import project.smartpermits.api.SocketIOManager;
 import project.smartpermits.models.LoginRequest;
 import project.smartpermits.models.LoginResponse;
 import project.smartpermits.models.RegisterRequest;
@@ -197,6 +198,9 @@ public class LoginActivity extends AppCompatActivity {
             client.saveAvatarUrl(avatar != null ? avatar : "");
             int userId = response.getUser().getId();
             client.saveUserId(userId);
+            
+            SocketIOManager.getInstance(this).connect(userId);
+            
             navigateToDashboard(role);
         } else {
             client.saveUserRole("citizen");

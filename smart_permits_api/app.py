@@ -16,6 +16,7 @@ from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from werkzeug.utils import secure_filename
 from models import db, User, Permit, Document, Comment, Appointment, PermitEvent, PERMIT_VALIDITY_DAYS
 from datetime import datetime, timedelta
@@ -32,6 +33,7 @@ CORS(app)
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 db.init_app(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
@@ -151,6 +153,43 @@ with app.app_context():
     db.create_all()
     run_migrations()
     seed_data()
+
+
+_connected_users = {}
+
+
+@socketio.on('connect')
+def handle_connect():
+    user_id = request.args.get('user_id')
+    if user_id:
+        _connected_users[request.sid] = int(user_id)
+        user = User.query.get(int(user_id))
+        if user:
+            join_room(f'user_{user_id}')
+            if user.role == 'inspector':
+                join_room('inspectors')
+            emit('connected', {'user_id': user_id, 'timestamp': datetime.utcnow().isoformat()})
+
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    if request.sid in _connected_users:
+        del _connected_users[request.sid]
+
+
+@socketio.on('join_permit_room')
+def on_join_permit(data):
+    permit_id = data.get('permit_id')
+    if permit_id:
+        join_room(f'permit_{permit_id}')
+        emit('joined_permit', {'permit_id': permit_id})
+
+
+@socketio.on('leave_permit_room')
+def on_leave_permit(data):
+    permit_id = data.get('permit_id')
+    if permit_id:
+        leave_room(f'permit_{permit_id}')
 
 
 import re as _re
@@ -275,6 +314,12 @@ def create_permit():
     log_permit_event(permit.id, 'Submitted', actor_name=user.full_name if user else '', actor_role='citizen', notes=f'{permit_type} application submitted')
     db.session.commit()
     db.session.refresh(permit)
+
+    socketio.emit('new_permit_submitted', {
+        'permit': permit.to_dict(),
+        'timestamp': datetime.utcnow().isoformat()
+    }, room='inspectors')
+
     return jsonify(permit.to_dict()), 201
 
 
@@ -622,6 +667,20 @@ def review_permit(permit_id):
         except Exception as e:
             permit.blockchain_error = f'Notarization failed: {str(e)}'
     db.session.commit()
+
+    socketio.emit('permit_status_updated', {
+        'permit_id': permit_id,
+        'status': action,
+        'reviewer_name': user.full_name,
+        'notes': notes,
+        'timestamp': datetime.utcnow().isoformat()
+    }, room=f'user_{permit.user_id}')
+
+    socketio.emit('permit_reviewed', {
+        'permit': permit.to_dict(),
+        'timestamp': datetime.utcnow().isoformat()
+    }, room=f'permit_{permit_id}')
+
     send_push_notification(
         permit.user_id,
         f'Permit {status_label}',
@@ -659,8 +718,22 @@ def add_comment(permit_id):
     if permit:
         commenter = User.query.get(user_id)
         commenter_name = commenter.full_name if commenter else 'Someone'
+
+        socketio.emit('new_comment', {
+            'comment': comment.to_dict(),
+            'permit_id': permit_id,
+            'timestamp': datetime.utcnow().isoformat()
+        }, room=f'permit_{permit_id}')
+
         notify_user_id = permit.reviewed_by if user_id == permit.user_id else permit.user_id
         if notify_user_id:
+            socketio.emit('comment_notification', {
+                'permit_id': permit_id,
+                'commenter_name': commenter_name,
+                'message_preview': message[:100],
+                'timestamp': datetime.utcnow().isoformat()
+            }, room=f'user_{notify_user_id}')
+
             send_push_notification(
                 notify_user_id,
                 'New Comment',
@@ -699,6 +772,14 @@ def schedule_appointment(permit_id):
     db.session.add(appt)
     log_permit_event(permit.id, 'Appointment Scheduled', actor_name=user.full_name if user else '', actor_role='citizen', notes=f'{date} at {time_slot}')
     db.session.commit()
+
+    socketio.emit('appointment_scheduled', {
+        'appointment': appt.to_dict(),
+        'permit_type': permit.permit_type,
+        'applicant_name': user.full_name if user else '',
+        'timestamp': datetime.utcnow().isoformat()
+    }, room='inspectors')
+
     inspectors = User.query.filter_by(role='inspector').all()
     for insp in inspectors:
         send_push_notification(
@@ -735,7 +816,6 @@ def update_appointment(appt_id):
     data = request.get_json(silent=True) or {}
     new_status = data.get('status', '')
     if new_status in ('confirmed', 'cancelled', 'completed'):
-        old_status = appt.status
         appt.status = new_status
         if new_status == 'completed':
             user = User.query.get(int(get_jwt_identity()))
@@ -743,6 +823,29 @@ def update_appointment(appt_id):
     if 'notes' in data:
         appt.notes = data['notes']
     db.session.commit()
+
+    permit = Permit.query.get(appt.permit_id)
+    if permit and new_status in ('confirmed', 'cancelled', 'completed'):
+        status_titles = {
+            'confirmed': 'Inspection Confirmed',
+            'completed': 'Inspection Completed',
+            'cancelled': 'Inspection Cancelled'
+        }
+        socketio.emit('appointment_status_updated', {
+            'appointment': appt.to_dict(),
+            'status': new_status,
+            'permit_id': permit.id,
+            'permit_type': permit.permit_type,
+            'timestamp': datetime.utcnow().isoformat()
+        }, room=f'user_{permit.user_id}')
+
+        send_push_notification(
+            permit.user_id,
+            status_titles.get(new_status, 'Inspection Update'),
+            f'Your {permit.permit_type} inspection has been {new_status}',
+            {'permit_id': str(permit.id)}
+        )
+
     return jsonify(appt.to_dict()), 200
 
 
@@ -1934,4 +2037,4 @@ def get_permit_types():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True, allow_unsafe_werkzeug=True)

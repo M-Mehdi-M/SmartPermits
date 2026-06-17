@@ -132,8 +132,9 @@
 10. Press the "Pin Here" button to place the marker
 11. Enter a description and see the fee preview
 12. Tap "Submit Application"
-13. Success screen appears immediately (AI analysis runs in the background)
-14. Tap "Back to Dashboard" and see new permit
+13. **The permit appears immediately on the dashboard with "Submitted" status** — no waiting for AI analysis
+14. AI analysis runs in the background; when it finishes the inspector sees it in the review screen
+15. If the inspector app is open, a "New Permit Application" system notification appears within ≤6 seconds
 
 ### 7. Status Timeline / Audit Trail
 
@@ -262,7 +263,7 @@ Returns: `blockchain_hash`, `blockchain_tx_hash`, `etherscan_url`, and `verified
 11. Try Polish (łźż), Turkish (çğışö), Ukrainian (Кирилиця) — all special characters must display without black squares or boxes
 12. The PDF language applies to all text: section headers, table labels, authority disclaimer, official seal label, scan caption, footer disclaimer
 
-### 14. In-App Chat / Comments
+### 14. In-App Chat / Comments with Live Notifications
 
 1. Open any permit detail (citizen or inspector)
 2. Tap "Comments" button
@@ -270,6 +271,8 @@ Returns: `blockchain_hash`, `blockchain_tx_hash`, `etherscan_url`, and `verified
 4. Messages appear in a chat-style interface
 5. Your messages appear on the right, others on the left
 6. Comments are restricted to participants — citizens can only see their own permit's comments, inspectors can see all comments
+7. **Comment notification (citizen → inspector)**: While the inspector app is open on the dashboard, send a comment from the citizen app — within seconds the inspector receives a system notification showing "New Comment from [citizen name]" and the message preview, without any manual refresh
+8. **Comment notification (inspector → citizen)**: While the citizen app is open on the dashboard, send a comment from the inspector app — the citizen receives a system notification showing the inspector's name and message preview
 
 ### 15. Payment and Expiry
 
@@ -364,9 +367,27 @@ Returns: `blockchain_hash`, `blockchain_tx_hash`, `etherscan_url`, and `verified
 4. All permits, documents, comments, and appointments are permanently deleted
 5. You are redirected to the login screen
 
+### Real-Time Updates & Notifications
+
+SmartPermits uses Socket.IO (via the Flask-SocketIO backend) for live updates plus a 6-second silent-polling fallback:
+
+| Event | Who receives it | Delivery |
+|---|---|---|
+| New permit submitted | Inspector dashboard | Socket broadcast + poll fallback |
+| Permit status changed (approved/rejected) | Citizen dashboard | Socket broadcast + poll fallback |
+| Comment posted by citizen | Inspector (system notification) | Socket `comment_notification` event |
+| Comment posted by inspector | Citizen (system notification) | Socket `comment_notification` event |
+| Appointment scheduled | Inspector (system notification) | Socket `appointment_scheduled` event |
+
+**Requirements for live notifications:**
+- Both devices must be on the same Wi-Fi network as the Flask server
+- The server IP in `ApiConfig.java` must match your current Wi-Fi IP (`ipconfig` → Wi-Fi adapter IPv4)
+- Grant notification permission when the app prompts on first launch (Android 13+)
+- Sign out and sign back in if you installed a fresh build — this re-establishes the socket connection with the correct user ID
+
 ---
 
-## Complete End-to-End Test Flow
+
 
 1. Start the Flask backend
 2. Change language to Romanian in Settings
@@ -432,7 +453,8 @@ To manually verify a permit's blockchain notarization without the app:
 ### App Shows "Connection error"
 - Ensure Flask server is running
 - For emulator: use `10.0.2.2:5000`
-- For physical device: use your PC's LAN IP, ensure both devices are on the same Wi-Fi
+- For physical device: use your PC's current Wi-Fi IP (run `ipconfig`, look at "Wireless LAN adapter Wi-Fi" → IPv4 Address). Update `BASE_API_URL` and `SOCKET_SERVER_URL` in `app/src/main/java/project/smartpermits/api/ApiConfig.java`
+- Ensure both phone and PC are on the same Wi-Fi network
 
 ### Login Fails
 - Restart Flask server to re-seed test accounts
@@ -481,7 +503,19 @@ To manually verify a permit's blockchain notarization without the app:
 - Without blockchain config: the permit still gets a `blockchain_hash` locally; only the on-chain TX is skipped
 - Check the `blockchain_error` field in the permit response for the exact error
 
-### Comments or Timeline Return 403
+### Notifications Not Working
+- Grant notification permission: Android Settings → Apps → SmartPermits → Notifications → Allow All
+- Ensure the socket connects: sign out and sign back in on both citizen and inspector apps to force a fresh socket handshake
+- Verify the server IP in `ApiConfig.java` matches your current Wi-Fi IP (re-check with `ipconfig` — the IP can change when reconnecting to Wi-Fi)
+- Socket events require the backend to be running with `python app.py` (not inside Docker unless ports are forwarded)
+- Comment notifications require the permit to have a `reviewed_by` inspector assigned (the backend only sends `comment_notification` to `permit.reviewed_by` when the commenter is the citizen). If the permit hasn't been touched by an inspector yet, no `reviewed_by` is set and the comment notification is not sent
+
+### Inspector Dashboard Not Updating Without Refresh
+- The dashboard polls every 6 seconds silently in the background — new permits appear automatically within ≤6 s
+- If the list never updates, the server IP in `ApiConfig.java` may be stale — update it to your current Wi-Fi IP and rebuild
+- The socket path `/socket.io/` must match the Flask-SocketIO mount path
+
+
 - Citizens can only access comments and timeline for their own permits
 - Inspectors can access all permits' comments and timeline
 - This is an authorization check — ensure you are logged in as the correct role

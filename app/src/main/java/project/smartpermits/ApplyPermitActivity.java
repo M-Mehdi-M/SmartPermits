@@ -47,7 +47,6 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import project.smartpermits.api.RetrofitClient;
-import project.smartpermits.models.AiAnalysisResponse;
 import project.smartpermits.models.Document;
 import project.smartpermits.models.Permit;
 import project.smartpermits.models.PermitRequest;
@@ -447,18 +446,8 @@ public class ApplyPermitActivity extends AppCompatActivity {
 
     private void onSubmitSuccess() {
         progressBar.setVisibility(View.GONE);
+        setResult(RESULT_OK);
         viewFlipper.setDisplayedChild(1);
-
-        if (createdPermitId > 0) {
-            RetrofitClient.getInstance(this).getApi()
-                    .triggerAiAnalysis(createdPermitId, LocaleHelper.getLanguage(this))
-                    .enqueue(new Callback<AiAnalysisResponse>() {
-                        @Override
-                        public void onResponse(Call<AiAnalysisResponse> call, Response<AiAnalysisResponse> response) {}
-                        @Override
-                        public void onFailure(Call<AiAnalysisResponse> call, Throwable t) {}
-                    });
-        }
     }
 
     @Override

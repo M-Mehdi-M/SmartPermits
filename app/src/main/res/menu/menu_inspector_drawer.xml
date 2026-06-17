@@ -18,6 +18,10 @@
             android:id="@+id/nav_analytics"
             android:icon="@android:drawable/ic_menu_sort_by_size"
             android:title="Analytics" />
+        <item
+            android:id="@+id/nav_schedule"
+            android:icon="@android:drawable/ic_menu_my_calendar"
+            android:title="My Schedule" />
     </group>
 
     <item android:title="General">

@@ -227,6 +227,7 @@
     <string name="invalid_credentials">Invalid credentials</string>
     <string name="connection_error">Connection error</string>
     <string name="username_min_chars">Username must be at least 3 characters</string>
+    <string name="username_error">Invalid username. Minimum 3 characters required.</string>
     <string name="valid_email_required">Please enter a valid email</string>
     <string name="password_min_chars">Password must be at least 6 characters</string>
     <string name="registration_failed">Registration failed</string>

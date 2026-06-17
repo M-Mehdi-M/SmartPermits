@@ -46,6 +46,7 @@ dependencies {
     implementation(libs.glide)
     implementation(libs.mpandroidchart)
     implementation(libs.osmdroid)
+    implementation(libs.socketio.client)
     testImplementation(libs.junit)
     androidTestImplementation(libs.ext.junit)
     androidTestImplementation(libs.espresso.core)

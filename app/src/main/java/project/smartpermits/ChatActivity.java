@@ -1,24 +1,27 @@
 package project.smartpermits;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.textfield.TextInputEditText;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import project.smartpermits.adapters.ChatAdapter;
 import project.smartpermits.api.RetrofitClient;
+import project.smartpermits.api.SocketIOManager;
 import project.smartpermits.models.Comment;
 import project.smartpermits.models.CommentRequest;
 import retrofit2.Call;
@@ -37,14 +40,7 @@ public class ChatActivity extends AppCompatActivity {
     private TextInputEditText etMessage;
     private ProgressBar progressBar;
     private int permitId;
-    private final Handler refreshHandler = new Handler(Looper.getMainLooper());
-    private final Runnable refreshRunnable = new Runnable() {
-        @Override
-        public void run() {
-            loadComments();
-            refreshHandler.postDelayed(this, 5000);
-        }
-    };
+    private BroadcastReceiver commentReceiver;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,7 +54,10 @@ public class ChatActivity extends AppCompatActivity {
         ImageButton btnSend = findViewById(R.id.btnSend);
 
         permitId = getIntent().getIntExtra("permit_id", -1);
-        if (permitId == -1) { finish(); return; }
+        if (permitId == -1) {
+            finish();
+            return;
+        }
 
         int currentUserId = RetrofitClient.getInstance(this).getUserId();
 
@@ -69,19 +68,35 @@ public class ChatActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
         btnSend.setOnClickListener(v -> sendMessage());
 
+        commentReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent == null) return;
+                int incomingPermitId = intent.getIntExtra("permit_id", -1);
+                if (incomingPermitId == permitId) {
+                    loadComments();
+                }
+            }
+        };
+
         loadComments();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        refreshHandler.postDelayed(refreshRunnable, 5000);
+        IntentFilter filter = new IntentFilter("project.smartpermits.NEW_COMMENT");
+        ContextCompat.registerReceiver(this, commentReceiver, filter, ContextCompat.RECEIVER_NOT_EXPORTED);
+        SocketIOManager.getInstance(this).joinPermitRoom(permitId);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        refreshHandler.removeCallbacks(refreshRunnable);
+        if (commentReceiver != null) {
+            unregisterReceiver(commentReceiver);
+        }
+        SocketIOManager.getInstance(this).leavePermitRoom(permitId);
     }
 
     private void loadComments() {
@@ -128,4 +143,3 @@ public class ChatActivity extends AppCompatActivity {
                 });
     }
 }
-
