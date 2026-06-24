@@ -440,7 +440,11 @@ LANG_NAMES = {
 @app.route('/api/permits/<int:permit_id>/ai-analyze', methods=['POST'])
 @jwt_required()
 def ai_analyze(permit_id):
+    user_id = int(get_jwt_identity())
     permit = Permit.query.get_or_404(permit_id)
+    user = User.query.get(user_id)
+    if permit.user_id != user_id and (not user or user.role != 'inspector'):
+        return jsonify({'error': 'Unauthorized'}), 403
     force = request.args.get('force', '').lower() in ('1', 'true', 'yes')
     requested_lang = request.args.get('lang', 'en').strip().lower() or 'en'
 
@@ -593,6 +597,8 @@ def renew_permit(permit_id):
         description=old_permit.description or '',
         status='submitted',
         fee_amount=fee,
+        latitude=old_permit.latitude,
+        longitude=old_permit.longitude,
         renewed_from=old_permit.id
     )
     db.session.add(new_permit)
@@ -706,7 +712,10 @@ def get_comments(permit_id):
 @jwt_required()
 def add_comment(permit_id):
     user_id = int(get_jwt_identity())
-    Permit.query.get_or_404(permit_id)
+    permit = Permit.query.get_or_404(permit_id)
+    user = User.query.get(user_id)
+    if permit.user_id != user_id and (not user or user.role != 'inspector'):
+        return jsonify({'error': 'Unauthorized'}), 403
     data = request.get_json(silent=True) or {}
     message = data.get('message', '').strip()
     if not message:
@@ -714,10 +723,8 @@ def add_comment(permit_id):
     comment = Comment(permit_id=permit_id, user_id=user_id, message=message)
     db.session.add(comment)
     db.session.commit()
-    permit = Permit.query.get(permit_id)
     if permit:
-        commenter = User.query.get(user_id)
-        commenter_name = commenter.full_name if commenter else 'Someone'
+        commenter_name = user.full_name if user else 'Someone'
 
         socketio.emit('new_comment', {
             'comment': comment.to_dict(),
@@ -795,7 +802,7 @@ def schedule_appointment(permit_id):
 @jwt_required()
 def get_appointments():
     user_id = int(get_jwt_identity())
-    user = User.query.get(user_id)
+    user = User.query.get_or_404(user_id)
     if user.role == 'inspector':
         appts = Appointment.query.filter_by(status='scheduled').order_by(Appointment.date.asc()).all()
     else:
@@ -812,7 +819,13 @@ def get_appointments():
 @app.route('/api/appointments/<int:appt_id>', methods=['PUT'])
 @jwt_required()
 def update_appointment(appt_id):
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
     appt = Appointment.query.get_or_404(appt_id)
+    appt_permit = Permit.query.get(appt.permit_id)
+    is_owner = appt_permit and appt_permit.user_id == user_id
+    if not is_owner and (not user or user.role != 'inspector'):
+        return jsonify({'error': 'Unauthorized'}), 403
     data = request.get_json(silent=True) or {}
     new_status = data.get('status', '')
     if new_status in ('confirmed', 'cancelled', 'completed'):
@@ -1373,7 +1386,11 @@ _PDF_FONT, _PDF_FONT_BOLD, _PDF_FONT_MONO = _register_unicode_fonts()
 @app.route('/api/permits/<int:permit_id>/certificate', methods=['GET'])
 @jwt_required()
 def get_certificate(permit_id):
+    user_id = int(get_jwt_identity())
     permit = Permit.query.get_or_404(permit_id)
+    user = User.query.get(user_id)
+    if permit.user_id != user_id and (not user or user.role != 'inspector'):
+        return jsonify({'error': 'Unauthorized'}), 403
     if permit.status != 'completed':
         return jsonify({'error': 'Certificate only available for completed permits'}), 400
     requested_lang = request.args.get('lang', 'en').strip().lower() or 'en'
@@ -1996,6 +2013,11 @@ def upload_avatar():
     filename = secure_filename(f"avatar_{user_id}_{file.filename}")
     filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
     file.save(filepath)
+    if user.avatar_url and user.avatar_url != filename:
+        try:
+            os.remove(os.path.join(app.config['UPLOAD_FOLDER'], user.avatar_url))
+        except OSError:
+            pass
     user.avatar_url = filename
     db.session.commit()
     return jsonify(user.to_dict()), 200

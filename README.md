@@ -38,7 +38,7 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **Search & Filter** — Search bar and filter chips on both citizen and inspector dashboards to filter by permit type, status, applicant name, and date
 - **Multi-Language Support** — 10 languages supported: English, Romanian, Spanish, French, Italian, German, Portuguese, Polish, Turkish, and Ukrainian. Language can be changed from Settings and affects all menu items, labels, buttons, and UI text throughout the entire app. The selected language persists across sessions and sign-outs
 - **Dark Mode** — Toggle in Settings with manual dark mode switch, follow-system option, and proper dark theme colors. Theme preference persists across sign-outs
-- **Permit Renewal / Reapply** — For completed permits, Renew button creates a new application pre-filled with previous data. For rejected permits, Reapply button does the same
+- **Permit Renewal / Reapply** — For completed permits, Renew button creates a new application pre-filled with previous data (permit type, description, and map location). For rejected permits, Reapply button does the same
 - **Change Password** — Change Password option in profile/settings with current password verification
 - **User Profile Management** — Edit profile name, email, and upload avatar photo (jpg, jpeg, png, gif, webp, bmp only)
 - **Trash / Recycle Bin** — Soft-delete permits to trash with 30-day auto-permanent-delete, restore option, and empty trash
@@ -47,6 +47,7 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **User Authentication** — Secure JWT-based login and registration with bcrypt password hashing. Tokens expire after 30 days
 - **Session Persistence** — Auto-login on app restart using saved tokens in SharedPreferences
 - **Auto Session Expiry Handling** — 401 responses automatically clear the token and broadcast `SESSION_EXPIRED` to redirect the user to login
+- **Per-Permit Access Control** — Permit-scoped endpoints (detail, timeline, comments, AI analysis, certificate download, appointment updates) enforce that the caller either owns the permit or is an inspector; everyone else receives 403
 - **Theme & Language Persistence on Sign-Out** — Dark mode, follow-system, and language preferences are preserved when signing out
 - **Pull-to-Refresh** — Swipe down to reload data on all dashboards
 - **Real-Time Updates** — Socket.IO (Flask-SocketIO + socket.io-client 2.x) keeps inspector and citizen dashboards live. New permit submissions appear on the inspector's list within seconds. Status changes push notifications to the citizen. Comment events ring system notifications on both parties' devices. A 6-second silent-poll fallback guarantees updates even when the socket is unreachable
@@ -384,7 +385,7 @@ docker run -p 5000:5000 \
 | POST | `/api/permits` | Yes | Create new permit application |
 | GET | `/api/permits/{id}` | Yes | Get permit details (includes timeline) |
 | POST | `/api/permits/{id}/upload` | Yes | Upload document to permit |
-| POST | `/api/permits/{id}/ai-analyze` | Yes | Trigger AI document analysis (`?lang=en`) |
+| POST | `/api/permits/{id}/ai-analyze` | Yes | Trigger AI document analysis (own permit or inspector, `?lang=en`) |
 | POST | `/api/permits/{id}/pay` | Yes | Simulate payment (sets expiry date) |
 | POST | `/api/permits/{id}/renew` | Yes | Renew/reapply for a permit |
 | POST | `/api/permits/{id}/trash` | Yes | Move permit to trash |
@@ -396,12 +397,12 @@ docker run -p 5000:5000 \
 | GET | `/api/permits/reviewed` | Yes | Get reviewed permits (inspector only) |
 | POST | `/api/permits/{id}/review` | Yes | Approve/reject permit (triggers blockchain + timeline) |
 | GET | `/api/permits/{id}/comments` | Yes | Get permit comments (own permit or inspector) |
-| POST | `/api/permits/{id}/comments` | Yes | Add comment to permit |
+| POST | `/api/permits/{id}/comments` | Yes | Add comment to permit (own permit or inspector) |
 | POST | `/api/permits/{id}/appointment` | Yes | Schedule inspection appointment |
 | GET | `/api/permits/{id}/timeline` | Yes | Get permit audit trail (own permit or inspector) |
 | GET | `/api/appointments` | Yes | Get appointments |
-| PUT | `/api/appointments/{id}` | Yes | Update appointment status |
-| GET | `/api/permits/{id}/certificate` | Yes | Download professional PDF certificate (`?lang=en`) |
+| PUT | `/api/appointments/{id}` | Yes | Update appointment status (own permit or inspector) |
+| GET | `/api/permits/{id}/certificate` | Yes | Download professional PDF certificate (own permit or inspector, `?lang=en`) |
 | GET | `/api/permits/stats/analytics` | Yes | Get analytics data (inspector only) |
 | GET | `/api/permit-types` | No | List available permit types with fees |
 | GET | `/api/uploads/{filename}` | No | Serve uploaded file |

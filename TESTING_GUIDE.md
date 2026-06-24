@@ -44,8 +44,8 @@
 
 1. Open Android Studio with the SmartPermits project
 2. Sync Gradle and build
-3. For emulator: change `BASE_URL` in `RetrofitClient.java` to `http://10.0.2.2:5000/api/`
-4. For physical phone: change `BASE_URL` to `http://YOUR_PC_IP:5000/api/` (same Wi-Fi network required)
+3. For emulator: set `BASE_API_URL` to `http://10.0.2.2:5000/api/` and `SOCKET_SERVER_URL` to `http://10.0.2.2:5000` in `app/src/main/java/project/smartpermits/api/ApiConfig.java`
+4. For physical phone: set both constants to your PC's current Wi-Fi IP, e.g. `http://YOUR_PC_IP:5000/api/` and `http://YOUR_PC_IP:5000` (same Wi-Fi network required)
 5. Click Run
 
 ### Step 3: Test Login
@@ -287,7 +287,7 @@ Returns: `blockchain_hash`, `blockchain_tx_hash`, `etherscan_url`, and `verified
 
 1. Open a "Completed" permit
 2. Tap "Renew" button
-3. A new permit is created with the same type and description, status "Submitted"
+3. A new permit is created with the same type, description, and pinned map location, status "Submitted"
 4. Timeline shows "Submitted" with note "Renewed from permit #X"
 5. For rejected permits, tap "Reapply" — works the same way
 
@@ -367,6 +367,14 @@ Returns: `blockchain_hash`, `blockchain_tx_hash`, `etherscan_url`, and `verified
 4. All permits, documents, comments, and appointments are permanently deleted
 5. You are redirected to the login screen
 
+### 25. Per-Permit Access Control (403)
+
+1. As `citizen1`, create a permit and note its ID
+2. Register or log in as a different citizen account (not an inspector)
+3. Using that second account, call any permit-scoped endpoint for the first citizen's permit ID, e.g. `GET /api/permits/{id}`, `GET /api/permits/{id}/timeline`, `GET /api/permits/{id}/certificate`, `POST /api/permits/{id}/comments`, `POST /api/permits/{id}/ai-analyze`, or `PUT /api/appointments/{id}`
+4. Every call must return `403 {"error": "Unauthorized"}` — a non-owner citizen cannot read or modify another citizen's permit
+5. Log in as `inspector1` and repeat the same calls — they succeed, because inspectors may act on all permits
+
 ### Real-Time Updates & Notifications
 
 SmartPermits uses Socket.IO (via the Flask-SocketIO backend) for live updates plus a 6-second silent-polling fallback:
@@ -387,7 +395,7 @@ SmartPermits uses Socket.IO (via the Flask-SocketIO backend) for live updates pl
 
 ---
 
-
+## Complete End-to-End Test
 
 1. Start the Flask backend
 2. Change language to Romanian in Settings
@@ -515,10 +523,10 @@ To manually verify a permit's blockchain notarization without the app:
 - If the list never updates, the server IP in `ApiConfig.java` may be stale — update it to your current Wi-Fi IP and rebuild
 - The socket path `/socket.io/` must match the Flask-SocketIO mount path
 
-
-- Citizens can only access comments and timeline for their own permits
-- Inspectors can access all permits' comments and timeline
-- This is an authorization check — ensure you are logged in as the correct role
+### "Unauthorized" (403) on a Permit Action
+- Permit-scoped endpoints (detail, timeline, comments read/write, AI analysis, certificate download, appointment status update) require the caller to either own the permit or be an inspector
+- Citizens can only act on their own permits; inspectors can act on all permits
+- If you get a 403, ensure you are logged in as the correct role for that permit
 
 ### Avatar Upload Fails
 - Only image files are accepted: jpg, jpeg, png, gif, webp, bmp
@@ -561,4 +569,4 @@ To manually verify a permit's blockchain notarization without the app:
 - **Language Resources**: `app/src/main/res/values-{lang}/strings.xml`
 - **Locale Helper**: `app/src/main/java/project/smartpermits/LocaleHelper.java`
 - **PDF Unicode Fonts**: `smart_permits_api/fonts/DejaVuSans.ttf`, `DejaVuSans-Bold.ttf`
-- **Retrofit Config**: `app/src/main/java/project/smartpermits/api/RetrofitClient.java` (change `BASE_URL` here)
+- **API / Socket Config**: `app/src/main/java/project/smartpermits/api/ApiConfig.java` (change `BASE_API_URL` and `SOCKET_SERVER_URL` here)
