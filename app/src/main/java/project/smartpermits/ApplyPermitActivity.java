@@ -89,6 +89,9 @@ public class ApplyPermitActivity extends AppCompatActivity {
     private final Map<String, CheckBox> requiredDocumentChecks = new LinkedHashMap<>();
     private String pendingDocLabel = null;
 
+    private String prefillType = null;
+    private String prefillDescription = null;
+
 
 
     private final ActivityResultLauncher<String> requiredDocLauncher =
@@ -142,6 +145,9 @@ public class ApplyPermitActivity extends AppCompatActivity {
         btnBack.setOnClickListener(v -> finish());
         btnSubmit.setOnClickListener(v -> submitApplication());
         btnBackToDashboard.setOnClickListener(v -> finish());
+
+        prefillType = getIntent().getStringExtra(CopilotActivity.EXTRA_PREFILL_TYPE);
+        prefillDescription = getIntent().getStringExtra(CopilotActivity.EXTRA_PREFILL_DESCRIPTION);
 
         setupMap();
         loadPermitTypes();
@@ -253,6 +259,7 @@ public class ApplyPermitActivity extends AppCompatActivity {
                                 @Override
                                 public void onNothingSelected(AdapterView<?> parent) {}
                             });
+                            applyPrefill(true);
                         }
                     }
 
@@ -278,8 +285,23 @@ public class ApplyPermitActivity extends AppCompatActivity {
                             @Override
                             public void onNothingSelected(AdapterView<?> parent) {}
                         });
+                        applyPrefill(false);
                     }
                 });
+    }
+
+    private void applyPrefill(boolean fromServerTypes) {
+        if (prefillType != null && fromServerTypes && permitTypes != null) {
+            for (int i = 0; i < permitTypes.size(); i++) {
+                if (prefillType.equals(permitTypes.get(i).getName())) {
+                    spinnerPermitType.setSelection(i);
+                    break;
+                }
+            }
+        }
+        if (prefillDescription != null && !prefillDescription.isEmpty()) {
+            etDescription.setText(prefillDescription);
+        }
     }
 
     private void onPermitTypeChanged(String type) {

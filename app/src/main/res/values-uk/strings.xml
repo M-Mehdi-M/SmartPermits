@@ -279,5 +279,26 @@
     <string name="server_error">Помилка сервера: %s</string>
     <string name="download_failed">Помилка завантаження (HTTP %d)</string>
     <string name="download_error">Помилка завантаження: %s</string>
-</resources>
 
+    <string name="copilot_title">Помічник з дозволів</string>
+    <string name="copilot_subtitle">Ваш AI-помічник з дозволів</string>
+    <string name="copilot_intro_title">Опишіть свій проєкт</string>
+    <string name="copilot_intro_body">Скажіть, що ви хочете побудувати чи зробити, і я знайду потрібний дозвіл, перелічу необхідні документи та оціню вартість і час.</string>
+    <string name="copilot_try_asking">СПРОБУЙТЕ ЗАПИТАТИ</string>
+    <string name="copilot_input_hint">Опишіть свій проєкт...</string>
+    <string name="copilot_thinking">Думаю...</string>
+    <string name="copilot_recommended_label">РЕКОМЕНДОВАНИЙ ДОЗВІЛ</string>
+    <string name="copilot_stat_fee">Збір</string>
+    <string name="copilot_stat_validity">Дійсний</string>
+    <string name="copilot_stat_eta">Орієнт. час</string>
+    <string name="copilot_required_docs">Необхідні документи</string>
+    <string name="copilot_start_application">Почати заявку</string>
+    <string name="copilot_ask_more">Запитати інше</string>
+    <string name="copilot_non_expiring">Без терміну</string>
+    <string name="copilot_days_value">%1$d днів</string>
+    <string name="copilot_eta_value">%1$d–%2$d днів</string>
+    <string name="copilot_suggestion_1">Я хочу добудувати другий поверх до свого будинку</string>
+    <string name="copilot_suggestion_2">Я хочу відкрити невеликий ресторан</string>
+    <string name="copilot_suggestion_3">Я хочу організувати захід на відкритому повітрі</string>
+    <string name="copilot_error">Вибачте, сталася помилка. Спробуйте ще раз.</string>
+</resources>

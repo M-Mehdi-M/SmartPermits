@@ -78,6 +78,7 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
     private final Handler pollHandler = new Handler(Looper.getMainLooper());
     private static final long POLL_INTERVAL_MS = 6000;
     private final Map<Integer, String> knownStatuses = new HashMap<>();
+    private final Map<Integer, Integer> knownLastComment = new HashMap<>();
     private boolean firstPollDone = false;
 
     private final Runnable pollRunnable = new Runnable() {
@@ -130,6 +131,11 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
         fabApply.setOnClickListener(v ->
                 applyPermitLauncher.launch(new Intent(this, ApplyPermitActivity.class)));
 
+        View btnCopilot = findViewById(R.id.btnCopilot);
+        if (btnCopilot != null) {
+            btnCopilot.setOnClickListener(v -> startActivity(new Intent(this, CopilotActivity.class)));
+        }
+
         btnMenu.setOnClickListener(v -> drawerLayout.openDrawer(GravityCompat.START));
 
         if (etSearch != null) {
@@ -167,6 +173,8 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
             int id = item.getItemId();
             if (id == R.id.nav_dashboard) {
                 return true;
+            } else if (id == R.id.nav_copilot) {
+                startActivity(new Intent(this, CopilotActivity.class));
             } else if (id == R.id.nav_history) {
                 startActivity(new Intent(this, PermitHistoryActivity.class));
             } else if (id == R.id.nav_trash) {
@@ -283,6 +291,7 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
                     public void onResponse(Call<List<Permit>> call, Response<List<Permit>> response) {
                         if (response.isSuccessful() && response.body() != null) {
                             List<Permit> fresh = response.body();
+                            int currentUserId = RetrofitClient.getInstance(CitizenDashboardActivity.this).getUserId();
                             if (firstPollDone) {
                                 for (Permit p : fresh) {
                                     String oldStatus = knownStatuses.get(p.getId());
@@ -296,11 +305,27 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
                                         NotificationHelper.showNotification(
                                                 CitizenDashboardActivity.this, title, type + " status changed", p.getId());
                                     }
+
+                                    // New-comment fallback: a comment from someone other than us
+                                    // (i.e. the inspector) whose id is newer than the last one we saw.
+                                    Integer oldCommentId = knownLastComment.get(p.getId());
+                                    int newCommentId = p.getLastCommentId();
+                                    Integer commenterId = p.getLastCommentUserId();
+                                    if (oldCommentId != null && newCommentId > oldCommentId
+                                            && commenterId != null && commenterId != currentUserId) {
+                                        String type = p.getPermitType() != null ? p.getPermitType() : "your permit";
+                                        NotificationHelper.showNotification(
+                                                CitizenDashboardActivity.this,
+                                                "New Comment",
+                                                "New message on " + type, p.getId());
+                                    }
                                 }
                             }
                             knownStatuses.clear();
+                            knownLastComment.clear();
                             for (Permit p : fresh) {
                                 if (p.getStatus() != null) knownStatuses.put(p.getId(), p.getStatus());
+                                knownLastComment.put(p.getId(), p.getLastCommentId());
                             }
                             firstPollDone = true;
                             allPermits = fresh;
@@ -331,8 +356,10 @@ public class CitizenDashboardActivity extends AppCompatActivity implements Permi
                         if (response.isSuccessful() && response.body() != null) {
                             allPermits = response.body();
                             knownStatuses.clear();
+                            knownLastComment.clear();
                             for (Permit p : allPermits) {
                                 if (p.getStatus() != null) knownStatuses.put(p.getId(), p.getStatus());
+                                knownLastComment.put(p.getId(), p.getLastCommentId());
                             }
                             firstPollDone = true;
                             filterPermits();

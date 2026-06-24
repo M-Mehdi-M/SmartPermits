@@ -278,5 +278,26 @@
     <string name="server_error">Błąd serwera: %s</string>
     <string name="download_failed">Pobieranie nie powiodło się (HTTP %d)</string>
     <string name="download_error">Błąd pobierania: %s</string>
-</resources>
 
+    <string name="copilot_title">Asystent Pozwolen</string>
+    <string name="copilot_subtitle">Twoj asystent pozwolen AI</string>
+    <string name="copilot_intro_title">Opisz swoj projekt</string>
+    <string name="copilot_intro_body">Powiedz mi, co chcesz zbudowac lub zrobic, a znajde odpowiednie pozwolenie, wypisze potrzebne dokumenty i oszacuje koszt oraz czas.</string>
+    <string name="copilot_try_asking">ZAPYTAJ</string>
+    <string name="copilot_input_hint">Opisz swoj projekt...</string>
+    <string name="copilot_thinking">Mysle...</string>
+    <string name="copilot_recommended_label">ZALECANE POZWOLENIE</string>
+    <string name="copilot_stat_fee">Oplata</string>
+    <string name="copilot_stat_validity">Wazne</string>
+    <string name="copilot_stat_eta">Szac. czas</string>
+    <string name="copilot_required_docs">Wymagane dokumenty</string>
+    <string name="copilot_start_application">Rozpocznij wniosek</string>
+    <string name="copilot_ask_more">Zapytaj o cos innego</string>
+    <string name="copilot_non_expiring">Bez wygasniecia</string>
+    <string name="copilot_days_value">%1$d dni</string>
+    <string name="copilot_eta_value">%1$d–%2$d dni</string>
+    <string name="copilot_suggestion_1">Chce dobudowac pietro do mojego domu</string>
+    <string name="copilot_suggestion_2">Chce otworzyc mala restauracje</string>
+    <string name="copilot_suggestion_3">Chce zorganizowac impreze plenerowa</string>
+    <string name="copilot_error">Przepraszamy, cos poszlo nie tak. Sprobuj ponownie.</string>
+</resources>

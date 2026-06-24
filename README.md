@@ -18,6 +18,7 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **Delete Account** — Users can permanently delete their account and all associated data from the profile screen with confirmation dialog
 
 ### AI Features
+- **AI Permit Copilot (Conversational Agent)** — A built-in AI chat assistant powered by Google Gemini with **function-calling**. A citizen describes their project in plain language (e.g. "I want to add a second floor to my house" or "I want to open a small restaurant") and the Copilot holds a real multi-turn conversation: it asks a short clarifying question when needed, then recommends the single best permit type, lists the required documents, and estimates the fee and processing time. The recommendation is rendered as a rich card with stat pills (Fee, Validity, Estimated time) and a one-tap **"Start application"** button that opens the permit form **pre-filled** with the recommended type and an AI-drafted description. The agent uses the same model-fallback chain as document analysis, and a server-side `propose_permit_application` tool constrains the model to a valid permit type. The processing-time estimate adapts to the live inspector queue. Reached from a ✨ sparkle button on the citizen dashboard header and a navigation-drawer item. **Fully multilingual** — the AI's questions, summary, and the drafted description are written entirely in the app's current language across all 10 supported languages
 - **AI Document Verification** — When a citizen submits a permit application with uploaded documents, the system automatically sends all document images to Google Gemini 2.5 Flash in a single API request. The AI analyzes every document together, identifies document types, extracts key information (dates, names, stamps), checks completeness against permit requirements, flags issues (blurry images, expired dates, missing stamps, irrelevant files), and provides a structured recommendation. The AI analysis is rendered with formatted text (bold headings, bullet points, styled sections) using a markdown-to-Spannable converter. The inspector sees a collapsible AI analysis card on the review screen — showing a compact 4-line preview, tappable to open the full analysis in a dialog. Only one AI request is made per permit submission to minimize cost
 - **Instant Submission** — Permit submission is instant for the citizen. The AI analysis runs in the background (fire-and-forget) so the user sees the success screen immediately without waiting. The inspector can view the analysis when it completes, or trigger it manually if needed
 - **Manual AI Trigger** — If the AI analysis was not available at submission time (e.g., API key not configured), the inspector can manually trigger it from the review screen using the "Run AI Analysis" button
@@ -30,7 +31,7 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **Real-Time Status Timeline / Audit Trail** — A visual timeline on the permit detail screen shows every state change with timestamps: Submitted → Documents Analyzed by AI → Reviewed by Inspector → Blockchain Notarized → Payment Received → Appointment Scheduled → Inspection Completed → Certificate Issued. Each entry has a timestamp, the actor name, their role, and any notes
 - **Predictive Wait Time** — The system uses historical data to predict the specific wait time for each submission based on: permit type historical average, number of documents uploaded, current inspector workload (pending queue size), and day of week submitted. Displayed as a range (e.g., "2–4 days") with a confidence percentage indicator
 - **Smart Deadline Reminders & Expiry Tracking** — Permits have expiry dates set when completed based on permit type (e.g., 365 days for Construction, 30 days for Events). Citizens see a countdown on their dashboard cards. Expiring permits (≤30 days) are flagged in amber. Expired permits are flagged in red. Citizens can start a renewal directly from the permit detail screen
-- **Push Notifications** — When an inspector approves/rejects a permit, notifications are sent to the citizen via Firebase Cloud Messaging (FCM). Comments and appointment scheduling also trigger notifications. In-app real-time notifications are also delivered via Socket.IO: comment replies ring a system notification on the other party's device without any manual refresh
+- **Push Notifications (work even when the app is closed)** — When an inspector approves/rejects a permit (and on comments and appointment scheduling), the other party gets a system notification. Delivery keeps working even when the receiving app is closed/swiped away: a **foreground service** keeps the Socket.IO connection alive in the background and posts the notification to the device's notification tray. This runs entirely over the LAN with **no Firebase project or keys required**. (An optional Firebase Cloud Messaging path also exists in the backend for OS-level push, used only if a Firebase service account is configured.)
 - **Analytics Dashboard** — Inspector statistics screen showing total permits reviewed, approval vs rejection ratio (pie chart), average review time, and busiest permit types (bar chart) using MPAndroidChart
 - **Appointment Scheduling** — After approval, citizens schedule on-site inspection appointments using a date picker and time slot selector
 - **In-App Chat / Comments** — Comment thread on each permit where citizens ask questions and inspectors request additional documents
@@ -53,7 +54,8 @@ A modern Android + Flask full-stack platform that digitizes the municipal permit
 - **Real-Time Updates** — Socket.IO (Flask-SocketIO + socket.io-client 2.x) keeps inspector and citizen dashboards live. New permit submissions appear on the inspector's list within seconds. Status changes push notifications to the citizen. Comment events ring system notifications on both parties' devices. A 6-second silent-poll fallback guarantees updates even when the socket is unreachable
 - **Shared API/Socket Config** — `ApiConfig.java` holds a single `BASE_API_URL` and `SOCKET_SERVER_URL` constant. Change one file when switching networks
 - **Containerized Backend** — Dockerfile included for production-ready deployment
-- **FCM Integration** — Backend sends push notifications via Firebase Admin SDK when available
+- **Background Notification Service** — A foreground service (`NotificationService`) keeps the Socket.IO connection alive so notifications are delivered even when the app is closed — no Firebase or keys needed. Started on login, restored on app relaunch while a session exists, stopped on logout. Shows a quiet persistent "Listening for permit updates" notification while active
+- **Optional FCM Integration** — The backend also includes an optional Firebase Admin SDK path that sends OS-level push when a `firebase-service-account.json` is present (no-op otherwise)
 - **Auto Trash Cleanup** — Permits in trash for more than 30 days are automatically purged on server startup
 
 ## Blockchain & Hash System — How It Works
@@ -219,6 +221,7 @@ SmartPermits/
 |   +-- LoginActivity.java
 |   +-- CitizenDashboardActivity.java
 |   +-- InspectorDashboardActivity.java
+|   +-- CopilotActivity.java
 |   +-- ApplyPermitActivity.java
 |   +-- PermitDetailActivity.java
 |   +-- PermitReviewActivity.java
@@ -320,13 +323,15 @@ SmartPermits/
 
 7. Server runs on `http://0.0.0.0:5000` with auto-seeded test accounts
 
-### Firebase Setup (Optional — for Push Notifications)
+### Firebase Setup (Optional — NOT required for closed-app notifications)
+
+> Closed-app notifications already work out of the box via the background foreground service over LAN Socket.IO — **no Firebase needed**. Configure Firebase only if you additionally want Google's OS-level FCM push (e.g. to survive device reboots or aggressive OEM battery managers).
 
 1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
 2. Add an Android app with package name `project.smartpermits`
 3. Download `google-services.json` and place it in the `app/` directory
 4. Download the Firebase service account JSON and place it in `smart_permits_api/` as `firebase-service-account.json`
-5. Push notifications will work automatically when both files are configured
+5. The backend push path activates automatically once `firebase-service-account.json` is present. **Note:** full Android-side FCM also requires adding the `firebase-messaging` dependency + the `google-services` plugin + a `FirebaseMessagingService`, which are **not** included in the current build (the app uses the foreground-service approach instead)
 
 ### Android Setup
 
@@ -404,6 +409,7 @@ docker run -p 5000:5000 \
 | PUT | `/api/appointments/{id}` | Yes | Update appointment status (own permit or inspector) |
 | GET | `/api/permits/{id}/certificate` | Yes | Download professional PDF certificate (own permit or inspector, `?lang=en`) |
 | GET | `/api/permits/stats/analytics` | Yes | Get analytics data (inspector only) |
+| POST | `/api/copilot/chat` | Yes | AI Permit Copilot conversation — returns a reply and (when ready) a structured permit recommendation (`?lang=en`) |
 | GET | `/api/permit-types` | No | List available permit types with fees |
 | GET | `/api/uploads/{filename}` | No | Serve uploaded file |
 | GET | `/api/permits/{id}/verify-blockchain` | No | Public blockchain verification for a permit |

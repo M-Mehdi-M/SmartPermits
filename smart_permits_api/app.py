@@ -89,6 +89,28 @@ FEE_TABLE = {
 }
 
 
+COPILOT_WAIT_BASE = {
+    'Construction Permit': 5,
+    'Renovation Permit': 4,
+    'Business License': 3,
+    'Food Service Permit': 4,
+    'Event Permit': 2,
+    'Signage Permit': 2,
+    'Demolition Permit': 4,
+    'Occupancy Certificate': 3,
+}
+
+
+def estimate_wait_days(permit_type):
+    base = COPILOT_WAIT_BASE.get(permit_type, 3)
+    try:
+        pending = Permit.query.filter_by(status='submitted').filter(Permit.deleted_at.is_(None)).count()
+    except Exception:
+        pending = 0
+    extra = pending // 5
+    return base + extra, base + extra + 2
+
+
 def seed_data():
     if User.query.filter_by(username='inspector1').first() is None:
         inspector = User(
@@ -732,21 +754,30 @@ def add_comment(permit_id):
             'timestamp': datetime.utcnow().isoformat()
         }, room=f'permit_{permit_id}')
 
-        notify_user_id = permit.reviewed_by if user_id == permit.user_id else permit.user_id
-        if notify_user_id:
-            socketio.emit('comment_notification', {
-                'permit_id': permit_id,
-                'commenter_name': commenter_name,
-                'message_preview': message[:100],
-                'timestamp': datetime.utcnow().isoformat()
-            }, room=f'user_{notify_user_id}')
+        notif_payload = {
+            'permit_id': permit_id,
+            'commenter_name': commenter_name,
+            'message_preview': message[:100],
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        push_title = 'New Comment'
+        push_body = f'{commenter_name} commented on {permit.permit_type}'
+        push_data = {'permit_id': str(permit_id)}
 
-            send_push_notification(
-                notify_user_id,
-                'New Comment',
-                f'{commenter_name} commented on {permit.permit_type}',
-                {'permit_id': str(permit_id)}
-            )
+        if user_id == permit.user_id:
+            # Citizen commented -> notify the assigned inspector, or all
+            # inspectors if none has been assigned yet (permit not reviewed).
+            if permit.reviewed_by:
+                socketio.emit('comment_notification', notif_payload, room=f'user_{permit.reviewed_by}')
+                send_push_notification(permit.reviewed_by, push_title, push_body, push_data)
+            else:
+                socketio.emit('comment_notification', notif_payload, room='inspectors')
+                for insp in User.query.filter_by(role='inspector').all():
+                    send_push_notification(insp.id, push_title, push_body, push_data)
+        else:
+            # Inspector commented -> notify the permit owner.
+            socketio.emit('comment_notification', notif_payload, room=f'user_{permit.user_id}')
+            send_push_notification(permit.user_id, push_title, push_body, push_data)
     return jsonify(comment.to_dict()), 201
 
 
@@ -2050,6 +2081,131 @@ def delete_account():
     db.session.delete(user)
     db.session.commit()
     return jsonify({'message': 'Account deleted successfully'}), 200
+
+
+@app.route('/api/copilot/chat', methods=['POST'])
+@jwt_required()
+def copilot_chat():
+    data = request.get_json(silent=True) or {}
+    messages = data.get('messages', []) or []
+    requested_lang = (request.args.get('lang', '') or data.get('lang', '') or 'en').strip().lower() or 'en'
+    lang_name = LANG_NAMES.get(requested_lang, 'English')
+
+    api_key = os.environ.get('GEMINI_API_KEY', '')
+    if not api_key:
+        return jsonify({'reply': 'The Permit Copilot is currently unavailable. Please configure the AI service.', 'recommendation': None}), 200
+
+    if not messages:
+        return jsonify({'reply': '', 'recommendation': None}), 200
+
+    try:
+        import time as _time
+        from google import genai
+        from google.genai import types
+
+        client = genai.Client(api_key=api_key)
+
+        type_lines = '\n'.join(f'- {k} (fee {v})' for k, v in FEE_TABLE.items())
+        system_text = (
+            "You are \"Permit Copilot\", a warm and concise municipal permitting assistant inside the SmartPermits app. "
+            "A citizen describes a project in plain language and you help them figure out exactly which municipal permit they need.\n\n"
+            "Available permit types:\n" + type_lines + "\n\n"
+            "Guidelines:\n"
+            "- Be friendly, short and reassuring. Never overwhelm the user.\n"
+            "- If the project is ambiguous, ask ONE short clarifying question. Otherwise go straight to a recommendation.\n"
+            "- Recommend exactly ONE permit type from the list by calling the propose_permit_application function.\n"
+            "- When you call the function, the 'summary' must be a short, friendly explanation (2-4 sentences, you may use **bold** and bullet points) telling the citizen which permit fits and why.\n"
+            "- The 'suggested_description' must be a clean, formal one-paragraph description the citizen can submit as their application text.\n"
+            "- Use light markdown only (**bold**, '- ' bullets). Keep it mobile friendly.\n\n"
+            f"ABSOLUTE RULE: Write EVERY word you produce — questions, explanations, the summary and the suggested_description — in {lang_name}. Do not use any other language."
+        )
+
+        propose_decl = types.FunctionDeclaration(
+            name='propose_permit_application',
+            description='Recommend the single best permit type once you understand the citizen project.',
+            parameters=types.Schema(
+                type=types.Type.OBJECT,
+                properties={
+                    'permit_type': types.Schema(type=types.Type.STRING, enum=list(FEE_TABLE.keys())),
+                    'suggested_description': types.Schema(type=types.Type.STRING),
+                    'summary': types.Schema(type=types.Type.STRING),
+                },
+                required=['permit_type', 'suggested_description', 'summary'],
+            ),
+        )
+
+        contents = []
+        for m in messages:
+            role = 'user' if m.get('role') == 'user' else 'model'
+            text = m.get('content', '') or ''
+            contents.append(types.Content(role=role, parts=[types.Part(text=text)]))
+
+        config = types.GenerateContentConfig(
+            system_instruction=system_text,
+            tools=[types.Tool(function_declarations=[propose_decl])],
+            temperature=0.6,
+        )
+
+        models_to_try = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.5-flash-lite']
+        response = None
+        last_error = None
+        for model_name in models_to_try:
+            for attempt in range(3):
+                try:
+                    response = client.models.generate_content(model=model_name, contents=contents, config=config)
+                    break
+                except Exception as retry_err:
+                    last_error = retry_err
+                    err_str = str(retry_err)
+                    if '503' in err_str or 'UNAVAILABLE' in err_str:
+                        _time.sleep(2 * (attempt + 1))
+                        continue
+                    elif '429' in err_str or 'RESOURCE_EXHAUSTED' in err_str:
+                        _time.sleep(3 * (attempt + 1))
+                        continue
+                    else:
+                        break
+            if response is not None:
+                break
+
+        if response is None:
+            raise last_error or Exception('All models failed')
+
+        function_call = None
+        text_parts = []
+        try:
+            for part in response.candidates[0].content.parts:
+                if getattr(part, 'function_call', None):
+                    function_call = part.function_call
+                elif getattr(part, 'text', None):
+                    text_parts.append(part.text)
+        except Exception:
+            pass
+
+        if function_call is not None:
+            args = dict(function_call.args) if function_call.args else {}
+            ptype = args.get('permit_type', '')
+            if ptype not in FEE_TABLE:
+                ptype = next(iter(FEE_TABLE))
+            summary = args.get('summary', '') or (''.join(text_parts))
+            low, high = estimate_wait_days(ptype)
+            recommendation = {
+                'permit_type': ptype,
+                'suggested_description': args.get('suggested_description', ''),
+                'fee': FEE_TABLE.get(ptype, 100.0),
+                'validity_days': PERMIT_VALIDITY_DAYS.get(ptype, 365),
+                'required_documents': REQUIRED_DOCUMENTS.get(ptype, []),
+                'estimated_days_min': low,
+                'estimated_days_max': high,
+            }
+            return jsonify({'reply': summary, 'recommendation': recommendation}), 200
+
+        reply = ''.join(text_parts).strip()
+        if not reply:
+            reply = getattr(response, 'text', '') or ''
+        return jsonify({'reply': reply, 'recommendation': None}), 200
+    except Exception as e:
+        return jsonify({'reply': f'The Permit Copilot ran into a problem: {str(e)}', 'recommendation': None}), 200
 
 
 @app.route('/api/permit-types', methods=['GET'])

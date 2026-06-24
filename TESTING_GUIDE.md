@@ -375,6 +375,38 @@ Returns: `blockchain_hash`, `blockchain_tx_hash`, `etherscan_url`, and `verified
 4. Every call must return `403 {"error": "Unauthorized"}` — a non-owner citizen cannot read or modify another citizen's permit
 5. Log in as `inspector1` and repeat the same calls — they succeed, because inspectors may act on all permits
 
+### 26. AI Permit Copilot (Conversational Agent)
+
+The Permit Copilot is an AI chat assistant (Google Gemini with function-calling) that lets a citizen describe a project in plain language and then recommends the right permit type, lists the required documents, estimates the fee and processing time, and pre-fills the application form.
+
+1. Login as `citizen1`
+2. Open the Copilot from either entry point:
+   - The **✨ sparkle button** in the top-right of the Citizen Dashboard header, or
+   - The **Permit Copilot** item at the top of the navigation drawer
+3. The intro screen shows a welcome message and three tappable suggestion chips (e.g. "I want to add a second floor to my house")
+4. Tap a suggestion **or** type your own project description (e.g. "I want to open a small restaurant downtown") and tap send
+5. A "Thinking…" indicator appears while the agent works
+6. The Copilot replies conversationally. It may ask **one short clarifying question** first — answer it in natural language and the conversation continues with full context
+7. Once it understands the project, the Copilot returns a **recommendation card** showing:
+   - The recommended permit type (localized)
+   - Three stat pills: **Fee**, **Valid for** (validity), and **Est. time** (predicted processing range, e.g. "3–5 days")
+   - The full **required-documents** checklist for that permit type
+   - A **"Start application"** button and an **"Ask something else"** link
+8. Tap **"Start application"** → the Apply for Permit screen opens with the **permit type already selected** and the **description pre-filled** with the AI-drafted text. The required-document checklist for that type is shown, ready for uploads
+9. Tap **"Ask something else"** to keep chatting (e.g. ask about a different project) without leaving the screen
+
+**Multi-language test (all 10 languages):**
+1. Go to Settings → App Language → select **Romanian** (or Spanish, French, Italian, German, Portuguese, Polish, Turkish, Ukrainian)
+2. Open the Copilot again — the title, subtitle, intro text, suggestion chips, stat labels, and buttons are all in the selected language
+3. Type your project in that language (or any language) — **the AI replies, asks questions, writes the summary, and drafts the suggested description entirely in the selected app language**
+4. The recommendation card's permit type and required documents are also shown localized
+5. Switch back to English and verify the replies return in English
+
+**Notes:**
+- The Copilot requires `GEMINI_API_KEY` in `smart_permits_api/.env`. If it is missing, the chat returns a friendly "currently unavailable" message instead of crashing
+- The processing-time estimate adapts to the live inspector queue (more pending permits → longer estimate)
+- Endpoint used: `POST /api/copilot/chat?lang=<code>` (see API reference)
+
 ### Real-Time Updates & Notifications
 
 SmartPermits uses Socket.IO (via the Flask-SocketIO backend) for live updates plus a 6-second silent-polling fallback:
@@ -387,11 +419,20 @@ SmartPermits uses Socket.IO (via the Flask-SocketIO backend) for live updates pl
 | Comment posted by inspector | Citizen (system notification) | Socket `comment_notification` event |
 | Appointment scheduled | Inspector (system notification) | Socket `appointment_scheduled` event |
 
+**Notifications keep working when the app is closed:** A foreground service (`NotificationService`) keeps the Socket.IO connection alive in the background, so the events above are delivered to the device's notification tray even after the receiving app is swiped away from recents. While logged in, a quiet persistent "SmartPermits — Listening for permit updates" notification indicates the service is running. No Firebase or keys are involved.
+
 **Requirements for live notifications:**
 - Both devices must be on the same Wi-Fi network as the Flask server
 - The server IP in `ApiConfig.java` must match your current Wi-Fi IP (`ipconfig` → Wi-Fi adapter IPv4)
 - Grant notification permission when the app prompts on first launch (Android 13+)
 - Sign out and sign back in if you installed a fresh build — this re-establishes the socket connection with the correct user ID
+
+**Test: notification while the app is closed**
+1. Log in on both devices (inspector + citizen); confirm the persistent "Listening for permit updates" notification appears on each
+2. On the **receiving** device, swipe the app away from recents (fully close the UI)
+3. On the **other** device, perform an action (approve/reject a permit, post a comment, or schedule an appointment)
+4. ✅ The closed device still rings a system notification within a few seconds; tapping it opens the relevant permit
+5. (Limitations: device reboot and aggressive OEM battery managers — Xiaomi/Huawei — can stop the service; those cases need the optional FCM path)
 
 ---
 

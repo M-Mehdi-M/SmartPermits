@@ -278,5 +278,26 @@
     <string name="server_error">Sunucu hatası: %s</string>
     <string name="download_failed">İndirme başarısız (HTTP %d)</string>
     <string name="download_error">İndirme hatası: %s</string>
-</resources>
 
+    <string name="copilot_title">Izin Yardimcisi</string>
+    <string name="copilot_subtitle">Yapay zeka izin asistaniniz</string>
+    <string name="copilot_intro_title">Projenizi anlatin</string>
+    <string name="copilot_intro_body">Ne insa etmek veya yapmak istediginizi soyleyin; dogru izni bulayim, gereken belgeleri listeleyeyim ve maliyet ile sureyi tahmin edeyim.</string>
+    <string name="copilot_try_asking">SORMAYI DENEYIN</string>
+    <string name="copilot_input_hint">Projenizi anlatin...</string>
+    <string name="copilot_thinking">Dusunuyor...</string>
+    <string name="copilot_recommended_label">ONERILEN IZIN</string>
+    <string name="copilot_stat_fee">Ucret</string>
+    <string name="copilot_stat_validity">Gecerli</string>
+    <string name="copilot_stat_eta">Tah. sure</string>
+    <string name="copilot_required_docs">Gerekli belgeler</string>
+    <string name="copilot_start_application">Basvuruyu baslat</string>
+    <string name="copilot_ask_more">Baska bir sey sor</string>
+    <string name="copilot_non_expiring">Suresiz</string>
+    <string name="copilot_days_value">%1$d gun</string>
+    <string name="copilot_eta_value">%1$d–%2$d gun</string>
+    <string name="copilot_suggestion_1">Evime ikinci bir kat eklemek istiyorum</string>
+    <string name="copilot_suggestion_2">Kucuk bir restoran acmak istiyorum</string>
+    <string name="copilot_suggestion_3">Acik hava etkinligi duzenlemek istiyorum</string>
+    <string name="copilot_error">Uzgunuz, bir seyler ters gitti. Lutfen tekrar deneyin.</string>
+</resources>

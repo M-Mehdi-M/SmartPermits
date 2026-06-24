@@ -278,4 +278,26 @@
     <string name="server_error">Erro do servidor: %s</string>
     <string name="download_failed">Download falhou (HTTP %d)</string>
     <string name="download_error">Erro de download: %s</string>
+
+    <string name="copilot_title">Copiloto de Licencas</string>
+    <string name="copilot_subtitle">O seu assistente de licencas com IA</string>
+    <string name="copilot_intro_title">Descreva o seu projeto</string>
+    <string name="copilot_intro_body">Diga-me o que quer construir ou fazer e eu encontro a licenca certa, listo os documentos necessarios e estimo o custo e o tempo.</string>
+    <string name="copilot_try_asking">EXPERIMENTE PERGUNTAR</string>
+    <string name="copilot_input_hint">Descreva o seu projeto...</string>
+    <string name="copilot_thinking">A pensar...</string>
+    <string name="copilot_recommended_label">LICENCA RECOMENDADA</string>
+    <string name="copilot_stat_fee">Taxa</string>
+    <string name="copilot_stat_validity">Valido</string>
+    <string name="copilot_stat_eta">Tempo est.</string>
+    <string name="copilot_required_docs">Documentos necessarios</string>
+    <string name="copilot_start_application">Iniciar pedido</string>
+    <string name="copilot_ask_more">Perguntar outra coisa</string>
+    <string name="copilot_non_expiring">Sem expiracao</string>
+    <string name="copilot_days_value">%1$d dias</string>
+    <string name="copilot_eta_value">%1$d–%2$d dias</string>
+    <string name="copilot_suggestion_1">Quero adicionar um andar a minha casa</string>
+    <string name="copilot_suggestion_2">Quero abrir um pequeno restaurante</string>
+    <string name="copilot_suggestion_3">Quero organizar um evento ao ar livre</string>
+    <string name="copilot_error">Desculpe, algo correu mal. Tente novamente.</string>
 </resources>

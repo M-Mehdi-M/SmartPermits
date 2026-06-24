@@ -14,6 +14,8 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
@@ -55,6 +57,16 @@
         <activity android:name=".InspectorScheduleActivity" android:exported="false" />
         <activity android:name=".SettingsActivity" android:exported="false" />
         <activity android:name=".TrashActivity" android:exported="false" />
+        <activity android:name=".CopilotActivity" android:exported="false" android:windowSoftInputMode="adjustResize" />
+
+        <service
+            android:name=".NotificationService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Maintains a realtime Socket.IO connection to deliver permit notifications while the app is closed" />
+        </service>
 
         <provider
             android:name="androidx.core.content.FileProvider"

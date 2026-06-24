@@ -142,4 +142,7 @@ public interface ApiService {
 
     @GET("permits/{id}/timeline")
     Call<java.util.List<project.smartpermits.models.PermitEvent>> getTimeline(@Path("id") int id);
+
+    @POST("copilot/chat")
+    Call<project.smartpermits.models.CopilotResponse> copilotChat(@Body project.smartpermits.models.CopilotRequest request, @Query("lang") String lang);
 }

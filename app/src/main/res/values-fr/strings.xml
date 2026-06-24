@@ -278,5 +278,26 @@
     <string name="server_error">Erreur serveur : %s</string>
     <string name="download_failed">Échec du téléchargement (HTTP %d)</string>
     <string name="download_error">Erreur de téléchargement : %s</string>
-</resources>
 
+    <string name="copilot_title">Copilote de Permis</string>
+    <string name="copilot_subtitle">Votre assistant permis IA</string>
+    <string name="copilot_intro_title">Decrivez votre projet</string>
+    <string name="copilot_intro_body">Dites-moi ce que vous voulez construire ou faire, et je trouverai le bon permis, listerai les documents necessaires et estimerai le cout et le delai.</string>
+    <string name="copilot_try_asking">ESSAYEZ DE DEMANDER</string>
+    <string name="copilot_input_hint">Decrivez votre projet...</string>
+    <string name="copilot_thinking">Reflexion...</string>
+    <string name="copilot_recommended_label">PERMIS RECOMMANDE</string>
+    <string name="copilot_stat_fee">Frais</string>
+    <string name="copilot_stat_validity">Valide</string>
+    <string name="copilot_stat_eta">Delai est.</string>
+    <string name="copilot_required_docs">Documents requis</string>
+    <string name="copilot_start_application">Demarrer la demande</string>
+    <string name="copilot_ask_more">Demander autre chose</string>
+    <string name="copilot_non_expiring">Sans expiration</string>
+    <string name="copilot_days_value">%1$d jours</string>
+    <string name="copilot_eta_value">%1$d–%2$d jours</string>
+    <string name="copilot_suggestion_1">Je veux ajouter un etage a ma maison</string>
+    <string name="copilot_suggestion_2">Je veux ouvrir un petit restaurant</string>
+    <string name="copilot_suggestion_3">Je veux organiser un evenement en plein air</string>
+    <string name="copilot_error">Desole, une erreur est survenue. Veuillez reessayer.</string>
+</resources>

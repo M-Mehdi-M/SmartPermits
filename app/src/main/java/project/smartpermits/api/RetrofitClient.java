@@ -135,6 +135,7 @@ public class RetrofitClient {
     }
 
     public void clearSession() {
+        project.smartpermits.NotificationService.stop(appContext);
         SocketIOManager.getInstance(appContext).disconnect();
         boolean darkMode = prefs.getBoolean("dark_mode", false);
         boolean followSystem = prefs.getBoolean("follow_system_theme", false);

@@ -147,6 +147,15 @@ class Permit(db.Model):
             for ev in self.events:
                 timeline.append(ev.to_dict())
 
+        # Expose the newest comment so clients can detect new messages via polling
+        # (a reliable fallback for the real-time 'comment_notification' socket event).
+        last_comment_id = 0
+        last_comment_user_id = None
+        if self.comments:
+            last_comment = self.comments[-1]
+            last_comment_id = last_comment.id
+            last_comment_user_id = last_comment.user_id
+
         return {
             'id': self.id,
             'user_id': self.user_id,
@@ -178,7 +187,9 @@ class Permit(db.Model):
             'deleted_at': self.deleted_at.isoformat() if self.deleted_at else None,
             'days_until_permanent_delete': max(0, 30 - (datetime.utcnow() - self.deleted_at).days) if self.deleted_at else None,
             'documents': [d.to_dict() for d in self.documents],
-            'timeline': timeline
+            'timeline': timeline,
+            'last_comment_id': last_comment_id,
+            'last_comment_user_id': last_comment_user_id
         }
 
 

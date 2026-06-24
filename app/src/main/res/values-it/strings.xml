@@ -278,5 +278,26 @@
     <string name="server_error">Errore del server: %s</string>
     <string name="download_failed">Download fallito (HTTP %d)</string>
     <string name="download_error">Errore di download: %s</string>
-</resources>
 
+    <string name="copilot_title">Copilota Permessi</string>
+    <string name="copilot_subtitle">Il tuo assistente permessi IA</string>
+    <string name="copilot_intro_title">Descrivi il tuo progetto</string>
+    <string name="copilot_intro_body">Dimmi cosa vuoi costruire o fare e trovero il permesso giusto, elenchero i documenti necessari e stimero costo e tempo.</string>
+    <string name="copilot_try_asking">PROVA A CHIEDERE</string>
+    <string name="copilot_input_hint">Descrivi il tuo progetto...</string>
+    <string name="copilot_thinking">Sto pensando...</string>
+    <string name="copilot_recommended_label">PERMESSO CONSIGLIATO</string>
+    <string name="copilot_stat_fee">Tariffa</string>
+    <string name="copilot_stat_validity">Valido</string>
+    <string name="copilot_stat_eta">Tempo stim.</string>
+    <string name="copilot_required_docs">Documenti richiesti</string>
+    <string name="copilot_start_application">Avvia richiesta</string>
+    <string name="copilot_ask_more">Chiedi altro</string>
+    <string name="copilot_non_expiring">Senza scadenza</string>
+    <string name="copilot_days_value">%1$d giorni</string>
+    <string name="copilot_eta_value">%1$d–%2$d giorni</string>
+    <string name="copilot_suggestion_1">Voglio aggiungere un piano alla mia casa</string>
+    <string name="copilot_suggestion_2">Voglio aprire un piccolo ristorante</string>
+    <string name="copilot_suggestion_3">Voglio organizzare un evento all’aperto</string>
+    <string name="copilot_error">Spiacenti, qualcosa e andato storto. Riprova.</string>
+</resources>

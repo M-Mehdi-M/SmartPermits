@@ -97,6 +97,12 @@ public class Permit {
     @SerializedName("timeline")
     private List<PermitEvent> timeline;
 
+    @SerializedName("last_comment_id")
+    private int lastCommentId;
+
+    @SerializedName("last_comment_user_id")
+    private Integer lastCommentUserId;
+
     public int getId() { return id; }
     public int getUserId() { return userId; }
     public String getApplicantName() { return applicantName; }
@@ -128,5 +134,7 @@ public class Permit {
     public String getDeletedAt() { return deletedAt; }
     public Integer getDaysUntilPermanentDelete() { return daysUntilPermanentDelete; }
     public List<PermitEvent> getTimeline() { return timeline; }
+    public int getLastCommentId() { return lastCommentId; }
+    public Integer getLastCommentUserId() { return lastCommentUserId; }
 }
 

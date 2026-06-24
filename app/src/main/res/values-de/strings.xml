@@ -278,5 +278,26 @@
     <string name="server_error">Serverfehler: %s</string>
     <string name="download_failed">Download fehlgeschlagen (HTTP %d)</string>
     <string name="download_error">Download-Fehler: %s</string>
-</resources>
 
+    <string name="copilot_title">Genehmigungs-Copilot</string>
+    <string name="copilot_subtitle">Ihr KI-Genehmigungsassistent</string>
+    <string name="copilot_intro_title">Beschreiben Sie Ihr Projekt</string>
+    <string name="copilot_intro_body">Sagen Sie mir, was Sie bauen oder tun mochten, und ich finde die richtige Genehmigung, liste die notigen Dokumente auf und schatze Kosten und Zeit.</string>
+    <string name="copilot_try_asking">FRAGEN SIE</string>
+    <string name="copilot_input_hint">Beschreiben Sie Ihr Projekt...</string>
+    <string name="copilot_thinking">Denke nach...</string>
+    <string name="copilot_recommended_label">EMPFOHLENE GENEHMIGUNG</string>
+    <string name="copilot_stat_fee">Gebuhr</string>
+    <string name="copilot_stat_validity">Gultig</string>
+    <string name="copilot_stat_eta">Gesch. Zeit</string>
+    <string name="copilot_required_docs">Erforderliche Dokumente</string>
+    <string name="copilot_start_application">Antrag starten</string>
+    <string name="copilot_ask_more">Etwas anderes fragen</string>
+    <string name="copilot_non_expiring">Kein Ablauf</string>
+    <string name="copilot_days_value">%1$d Tage</string>
+    <string name="copilot_eta_value">%1$d–%2$d Tage</string>
+    <string name="copilot_suggestion_1">Ich mochte ein Stockwerk auf mein Haus bauen</string>
+    <string name="copilot_suggestion_2">Ich mochte ein kleines Restaurant eroffnen</string>
+    <string name="copilot_suggestion_3">Ich mochte eine Outdoor-Veranstaltung organisieren</string>
+    <string name="copilot_error">Entschuldigung, etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.</string>
+</resources>

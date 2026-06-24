@@ -16,7 +16,7 @@
 6. Referința completă a API-ului REST
 7. Comunicare în timp real (Socket.IO) și notificări push (FCM)
 8. Funcționalități principale (detaliate)
-9. Subsisteme avansate (AI, Blockchain, PDF, Predicție)
+9. Subsisteme avansate (AI, Copilot conversațional, Blockchain, PDF, Predicție)
 10. Arhitectura aplicației Android
 11. Securitate
 12. Internaționalizare (i18n) și temă
@@ -94,7 +94,7 @@ SmartPermits urmează o arhitectură **client-server pe trei straturi**:
 **Trei canale de comunicare client ↔ server:**
 1. **REST/HTTP** — operațiile CRUD și acțiunile (login, creare permit, upload, review, plată etc.).
 2. **WebSocket (Socket.IO)** — evenimente push instantanee server → client (permit nou, revizuire, comentariu, programare).
-3. **Firebase Cloud Messaging** — notificări push de sistem, ca mecanism complementar (fallback) atunci când aplicația nu este în prim-plan.
+3. **Serviciu de prim-plan (foreground service)** — un `NotificationService` Android menține conexiunea Socket.IO activă în fundal, astfel încât notificările sunt livrate în tava de notificări a sistemului **chiar și atunci când aplicația este închisă** (eliminată din recente). Funcționează integral pe LAN, fără chei sau cont extern. *(Opțional, backend-ul include și un canal Firebase Cloud Messaging, folosit doar dacă este configurat un cont de serviciu Firebase.)*
 
 ---
 
@@ -274,6 +274,7 @@ Toate rutele sunt prefixate cu `/api/`. Cele marcate 🔒 necesită antet `Autho
 | 🔒 GET | `/permits/{id}` | Detalii permis (cu timeline și documente) |
 | 🔒 POST | `/permits/{id}/upload` | Upload document (multipart + `document_label`) |
 | 🔒 POST | `/permits/{id}/ai-analyze` | Declanșează/întoarce analiza AI (`?lang=&force=`) |
+| 🔒 POST | `/copilot/chat` | Agent AI conversațional (Permit Copilot) — întoarce răspuns + recomandare de permis (`?lang=`) |
 | 🔒 POST | `/permits/{id}/pay` | Plată simulată (approved → completed) |
 | 🔒 POST | `/permits/{id}/renew` | Reînnoire/reaplicare (din completed/rejected) |
 | 🔒 GET | `/permits/{id}/timeline` | Evenimentele de audit |
@@ -331,10 +332,18 @@ La conectare, clientul transmite `?user_id=<id>`. Serverul îl alătură la:
 
 Clientul Android (`SocketIOManager`) reconvertește aceste evenimente în **broadcast-uri locale Android** (ex. `project.smartpermits.NEW_PERMIT`, `...PERMIT_STATUS_UPDATED`, `...NEW_COMMENT`), pe care Activitățile le ascultă pentru a-și actualiza UI-ul instant. Reconectarea este automată (delay 1–5 s, încercări nelimitate).
 
-### 7.3 Notificări push (Firebase Cloud Messaging)
-`send_push_notification(user_id, title, body, data)` trimite mesaje prin Firebase Admin SDK, **doar dacă** există fișierul `firebase-service-account.json` și utilizatorul are un `fcm_token`. Push-ul este folosit pentru: aprobare/respingere, comentariu nou, programare/actualizare inspecție. Dacă Firebase nu este configurat, funcția devine no-op (sistemul rămâne funcțional).
+### 7.3 Notificări când aplicația este închisă (serviciu de prim-plan)
+Mecanismul principal pentru livrarea notificărilor atunci când aplicația nu este deschisă este un **serviciu de prim-plan** Android, `NotificationService`. Acesta menține procesul aplicației și conexiunea Socket.IO active, astfel încât receptorul de difuzare global din `SmartPermitsApp` poate transforma în continuare evenimentele socket în notificări de sistem (`NotificationHelper`), chiar dacă utilizatorul a închis interfața.
 
-> **Livrare dublă:** evenimentele importante sunt trimise atât prin Socket.IO (instant, când aplicația rulează) cât și prin FCM (fallback, sistem de operare).
+**Caracteristici:**
+- Pornit la autentificare (`LoginActivity`), readus la viață la relansarea aplicației dacă există o sesiune (`SmartPermitsApp.onCreate`) și oprit la deconectare (`RetrofitClient.clearSession`).
+- `START_STICKY` + `onTaskRemoved` — serviciul este repornit de sistem sub presiune de memorie și supraviețuiește eliminării din aplicațiile recente.
+- Afișează o notificare persistentă, de prioritate redusă („Listening for permit updates"), cerință obligatorie pentru rularea unui serviciu de prim-plan. Pe Android 14+ tipul serviciului este `specialUse` (declarat în manifest cu permisiunile `FOREGROUND_SERVICE` și `FOREGROUND_SERVICE_SPECIAL_USE`).
+- Nu necesită niciun cont extern, cheie sau fișier de configurare — funcționează integral pe LAN, reutilizând infrastructura Socket.IO existentă.
+
+**Notificări push opționale (Firebase Cloud Messaging):** suplimentar, `send_push_notification(user_id, title, body, data)` poate trimite mesaje prin Firebase Admin SDK, **doar dacă** există fișierul `firebase-service-account.json` și utilizatorul are un `fcm_token`. Dacă Firebase nu este configurat, funcția devine no-op. Această cale (împreună cu SDK-ul `firebase-messaging` și un `FirebaseMessagingService` pe Android) ar fi necesară doar pentru push la nivel de sistem de operare (de ex. supraviețuirea unui restart al dispozitivului) și **nu** este activată în build-ul curent.
+
+> **Limitări:** serviciul de prim-plan livrează fiabil cât timp dispozitivul este pornit; nu supraviețuiește unui restart al dispozitivului și poate fi oprit de managerele agresive de baterie ale unor producători (Xiaomi/Huawei). Pentru aceste cazuri ar fi necesară calea FCM.
 
 ---
 
@@ -465,6 +474,24 @@ Pentru permisele `submitted`, sistemul estimează durata pe baza datelor istoric
 ### 9.5 Analitice pentru inspector (`/permits/stats/analytics`)
 Întoarce: total revizuite, total aprobate (approved+completed), total respinse, total în așteptare, distribuția pe tipuri de permis (`permit_type_counts`) și timpul mediu de procesare în ore. Vizualizat în Android cu MPAndroidChart (pie/bar).
 
+### 9.6 Asistent conversațional „Permit Copilot" (agent AI cu function-calling)
+**Endpoint:** `POST /api/copilot/chat?lang=<cod>`
+
+Spre deosebire de analiza de documente (un singur apel, fără memorie), Copilot este un **agent conversațional** care poartă un dialog pe mai multe ture cu cetățeanul și îl ghidează de la o descriere în limbaj natural („Vreau să adaug un etaj casei mele") până la cererea de permis precompletată.
+
+**Logică (din funcția `copilot_chat`):**
+1. Clientul trimite întregul istoric al conversației (`messages`: listă de `{role, content}` cu rolurile `user`/`assistant`) împreună cu limba aplicației.
+2. Se construiește o **instrucțiune de sistem** care: prezintă cele 8 tipuri de permise cu taxele lor, cere un ton scurt și prietenos, limitează la **o singură întrebare de clarificare** dacă proiectul e ambiguu și impune ca **fiecare cuvânt** (întrebări, rezumat, descriere sugerată) să fie scris în limba selectată.
+3. Se declară un **instrument (tool) de function-calling**, `propose_permit_application`, cu parametri tipați (`permit_type` constrâns prin **enum** la cele 8 tipuri valide, `suggested_description`, `summary`). Astfel modelul nu poate „inventa" un tip inexistent.
+4. Istoricul se transformă în `types.Content` (rol `user`/`model`) și se trimite cu `GenerateContentConfig(system_instruction, tools, temperature=0.6)`.
+5. Aceeași **cascadă de modele + retry** ca la analiza AI (`gemini-2.5-flash` → `2.0-flash` → `2.5-flash-lite`, 3 reîncercări cu backoff la 503/429).
+6. Se inspectează răspunsul:
+   - dacă modelul a apelat funcția → se citesc argumentele, se validează `permit_type`, iar serverul **îmbogățește** recomandarea cu taxa (`FEE_TABLE`), valabilitatea (`PERMIT_VALIDITY_DAYS`), lista documentelor necesare (`REQUIRED_DOCUMENTS`) și **estimarea timpului** (`estimate_wait_days` — bază pe tip + factor de coadă din numărul de permise în așteptare). Se întoarce `{reply, recommendation}`;
+   - altfel → se întoarce doar `reply` (întrebarea de clarificare, în limba aplicației).
+7. Dacă `GEMINI_API_KEY` lipsește sau apare o eroare, se întoarce un mesaj prietenos (degradare elegantă), fără a bloca aplicația.
+
+**Pe partea de Android** (`CopilotActivity` + `CopilotAdapter`): un ecran de chat dedicat (bule utilizator/AI, indicator „se gândește", chip-uri de sugestii inițiale) accesibil dintr-un buton ✨ în antetul dashboard-ului cetățeanului și dintr-un element de meniu. Recomandarea este afișată ca un **card** cu pastile de statistici (Taxă / Valabil / Timp est.) și lista documentelor (localizate). Butonul **„Începe cererea"** deschide `ApplyPermitActivity` cu tipul **preselectat** și descrierea **precompletată** (prin `Intent` extras), reutilizând fluxul existent de aplicare. Limba este preluată din `LocaleHelper` și trimisă ca parametru `lang`, deci atât interfața (din `strings.xml`, 10 limbi) cât și răspunsurile AI sunt în limba utilizatorului.
+
 ---
 
 ## 10. Arhitectura aplicației Android
@@ -480,9 +507,10 @@ project.smartpermits/
 ├── models/                   — clase de date (Gson): User, Permit, Document, Comment,
 │                               Appointment, PermitEvent, PermitType, + Request/Response DTOs
 ├── adapters/                 — PermitAdapter, PendingPermitAdapter, ChatAdapter,
-│                               TrashAdapter, AppointmentAdapter
+│                               CopilotAdapter, TrashAdapter, AppointmentAdapter
 ├── (Activities)              — LoginActivity, MainActivity, CitizenDashboardActivity,
-│                               InspectorDashboardActivity, ApplyPermitActivity,
+│                               InspectorDashboardActivity, CopilotActivity,
+│                               ApplyPermitActivity,
 │                               PermitDetailActivity, PermitReviewActivity,
 │                               PermitHistoryActivity, ReviewHistoryActivity,
 │                               ChatActivity, ScheduleAppointmentActivity,
@@ -492,7 +520,8 @@ project.smartpermits/
 │                               DocumentViewerActivity, TrashActivity
 ├── SmartPermitsApp.java      — clasa Application (init temă/limbă/Socket.IO)
 ├── LocaleHelper.java         — schimbare limbă (10 limbi)
-├── NotificationHelper.java   — canale + afișare notificări (FCM/local)
+├── NotificationService.java  — serviciu de prim-plan (menține Socket.IO viu când app e închisă)
+├── NotificationHelper.java   — canale + afișare notificări (socket/local + canal serviciu)
 ├── CurrencyHelper.java       — formatare sume
 └── PermitTypeHelper.java     — mapare tip → documente necesare
 ```
@@ -527,7 +556,7 @@ INTERNET, CAMERA, READ/WRITE_EXTERNAL_STORAGE, READ_MEDIA_IMAGES/VIDEO/AUDIO, PO
 ### 12.1 Cele 10 limbi
 English (implicit, `values/`), Română (`values-ro`), Spaniolă (`values-es`), Franceză (`values-fr`), Italiană (`values-it`), Germană (`values-de`), Portugheză (`values-pt`), Poloneză (`values-pl`), Turcă (`values-tr`), Ucraineană (`values-uk`).
 
-Limba afectează: toate textele UI, mesajele de eroare, textul certificatelor PDF (`PDF_TRANSLATIONS`), denumirile tipurilor de permis (`PERMIT_TYPE_TRANSLATIONS`) și **limba analizei AI** (parametrul `lang` trimis la `/ai-analyze`). Limba selectată persistă peste sign-out/sign-in (gestionată de `LocaleHelper`, păstrată în preferințe).
+Limba afectează: toate textele UI, mesajele de eroare, textul certificatelor PDF (`PDF_TRANSLATIONS`), denumirile tipurilor de permis (`PERMIT_TYPE_TRANSLATIONS`), **limba analizei AI** (parametrul `lang` trimis la `/ai-analyze`) și **limba agentului conversațional Permit Copilot** (parametrul `lang` trimis la `/copilot/chat` — întrebările, rezumatul și descrierea sugerată sunt generate integral în limba aplicației). Limba selectată persistă peste sign-out/sign-in (gestionată de `LocaleHelper`, păstrată în preferințe).
 
 ### 12.2 Mod întunecat (Dark Mode)
 Toggle manual în Settings + opțiune „urmărește setarea de sistem". Tema persistă peste sesiuni (păstrată la `clearSession`).
@@ -612,6 +641,7 @@ docker run -p 5000:5000 -e GEMINI_API_KEY=... smartpermits-api
 | Încărcare documente (etichetate) | ✅ | ✅ |
 | Hartă + locație (osmdroid) | ✅ | ✅ |
 | Analiză AI Gemini (10 limbi, fallback de modele) | ✅ | ✅ |
+| Asistent conversațional AI „Permit Copilot" (function-calling, 10 limbi) | ✅ | ✅ |
 | Revizuire inspector | ✅ | ✅ |
 | Notarizare blockchain (Sepolia) | ✅ | ✅ |
 | Verificare publică blockchain | ✅ | ✅ |
@@ -625,7 +655,8 @@ docker run -p 5000:5000 -e GEMINI_API_KEY=... smartpermits-api
 | Predicție timp de procesare | ✅ | ⚠️ (necesită date istorice) |
 | Analitice inspector (grafice) | ✅ | ✅ |
 | Comunicare în timp real (Socket.IO) | ✅ | ✅ |
-| Notificări push (FCM) | ✅ | ⚠️ (opțional — necesită config Firebase) |
+| Notificări când app e închisă (serviciu de prim-plan) | ✅ | ✅ |
+| Notificări push FCM (opțional, la nivel de OS) | ✅ (scaffold backend) | ⚠️ (opțional — necesită config Firebase) |
 | Suport multilingv (10 limbi) | ✅ | ✅ |
 | Mod întunecat | ✅ | ✅ |
 | Profil, avatar, schimbare parolă, ștergere cont | ✅ | ✅ |
@@ -937,6 +968,48 @@ def run_trash_cleanup():
 **Ce ilustrează:** politica de tip „coș de gunoi" — ștergerea este reversibilă timp de 30 de zile (`deleted_at`), după care datele sunt eliminate definitiv, inclusiv fișierele de pe disc. Curățarea se declanșează o singură dată per pornire, prin hook-ul `before_request`, fără a necesita un planificator separat.
 
 *Legendă sugerată:* „Fig. X — Ștergere temporară (soft-delete) și curățarea automată a coșului."
+
+### 18.13 Agentul conversațional cu function-calling (Permit Copilot)
+**Fișier:** `smart_permits_api/app.py` (funcția `copilot_chat`)
+
+```python
+propose_decl = types.FunctionDeclaration(
+    name='propose_permit_application',
+    description='Recommend the single best permit type once you understand the citizen project.',
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            'permit_type': types.Schema(type=types.Type.STRING, enum=list(FEE_TABLE.keys())),
+            'suggested_description': types.Schema(type=types.Type.STRING),
+            'summary': types.Schema(type=types.Type.STRING),
+        },
+        required=['permit_type', 'suggested_description', 'summary'],
+    ),
+)
+
+config = types.GenerateContentConfig(
+    system_instruction=system_text,                       # impune limba + tonul + regulile
+    tools=[types.Tool(function_declarations=[propose_decl])],
+    temperature=0.6,
+)
+response = client.models.generate_content(model=model_name, contents=contents, config=config)
+
+# dacă modelul a apelat funcția, serverul îmbogățește recomandarea cu date sigure:
+args = dict(function_call.args)
+ptype = args.get('permit_type')
+recommendation = {
+    'permit_type': ptype,
+    'suggested_description': args.get('suggested_description', ''),
+    'fee': FEE_TABLE.get(ptype, 100.0),
+    'validity_days': PERMIT_VALIDITY_DAYS.get(ptype, 365),
+    'required_documents': REQUIRED_DOCUMENTS.get(ptype, []),
+    'estimated_days_min': low, 'estimated_days_max': high,   # din estimate_wait_days()
+}
+```
+
+**Ce ilustrează:** diferența dintre un simplu apel la AI și un **agent**. Modelul nu întoarce text liber pentru tipul permisului — este obligat, prin schema funcției cu **enum**, să aleagă unul dintre cele 8 tipuri valide. Serverul nu are încredere oarbă în model: preia doar intenția (tipul + descrierea + rezumatul) și **completează el însuși** taxa, valabilitatea, documentele și estimarea de timp din sursele de adevăr (`FEE_TABLE`, `PERMIT_VALIDITY_DAYS`, `REQUIRED_DOCUMENTS`). Instrucțiunea de sistem forțează întregul răspuns în limba aplicației.
+
+*Legendă sugerată:* „Fig. X — Agent AI cu function-calling: schema constrânsă (enum) și îmbogățirea recomandării pe server."
 
 ---
 

@@ -278,4 +278,26 @@
     <string name="server_error">Eroare server: %s</string>
     <string name="download_failed">Descărcare eșuată (HTTP %d)</string>
     <string name="download_error">Eroare descărcare: %s</string>
+
+    <string name="copilot_title">Asistent Permise</string>
+    <string name="copilot_subtitle">Asistentul tau AI pentru permise</string>
+    <string name="copilot_intro_title">Descrie proiectul tau</string>
+    <string name="copilot_intro_body">Spune-mi ce vrei sa construiesti sau sa faci, iar eu voi gasi permisul potrivit, voi enumera documentele necesare si voi estima costul si timpul.</string>
+    <string name="copilot_try_asking">INTREABA</string>
+    <string name="copilot_input_hint">Descrie proiectul tau...</string>
+    <string name="copilot_thinking">Se gandeste...</string>
+    <string name="copilot_recommended_label">PERMIS RECOMANDAT</string>
+    <string name="copilot_stat_fee">Taxa</string>
+    <string name="copilot_stat_validity">Valabil</string>
+    <string name="copilot_stat_eta">Timp est.</string>
+    <string name="copilot_required_docs">Documente necesare</string>
+    <string name="copilot_start_application">Incepe cererea</string>
+    <string name="copilot_ask_more">Intreaba altceva</string>
+    <string name="copilot_non_expiring">Fara expirare</string>
+    <string name="copilot_days_value">%1$d zile</string>
+    <string name="copilot_eta_value">%1$d–%2$d zile</string>
+    <string name="copilot_suggestion_1">Vreau sa adaug un etaj la casa mea</string>
+    <string name="copilot_suggestion_2">Vreau sa deschid un mic restaurant</string>
+    <string name="copilot_suggestion_3">Vreau sa organizez un eveniment in aer liber</string>
+    <string name="copilot_error">Ne pare rau, a aparut o eroare. Incearca din nou.</string>
 </resources>

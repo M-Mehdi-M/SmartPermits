@@ -62,6 +62,8 @@
     <string name="notifications">Notifications</string>
     <string name="push_notifications">Push Notifications</string>
     <string name="push_notifications_desc">Receive permit status updates</string>
+    <string name="notif_service_title">SmartPermits</string>
+    <string name="notif_service_text">Listening for permit updates</string>
     <string name="status_timeline">Status Timeline</string>
     <string name="estimated_wait">Estimated Wait</string>
     <string name="confidence">Confidence</string>
@@ -279,4 +281,26 @@
     <string name="server_error">Server error: %s</string>
     <string name="download_failed">Download failed (HTTP %d)</string>
     <string name="download_error">Download error: %s</string>
+
+    <string name="copilot_title">Permit Copilot</string>
+    <string name="copilot_subtitle">Your AI permitting assistant</string>
+    <string name="copilot_intro_title">Describe your project</string>
+    <string name="copilot_intro_body">Tell me what you want to build or do, and I\'ll find the right permit, list the documents you need, and estimate the cost and time.</string>
+    <string name="copilot_try_asking">TRY ASKING</string>
+    <string name="copilot_input_hint">Describe your project...</string>
+    <string name="copilot_thinking">Thinking...</string>
+    <string name="copilot_recommended_label">RECOMMENDED PERMIT</string>
+    <string name="copilot_stat_fee">Fee</string>
+    <string name="copilot_stat_validity">Valid for</string>
+    <string name="copilot_stat_eta">Est. time</string>
+    <string name="copilot_required_docs">Required documents</string>
+    <string name="copilot_start_application">Start application</string>
+    <string name="copilot_ask_more">Ask something else</string>
+    <string name="copilot_non_expiring">No expiry</string>
+    <string name="copilot_days_value">%1$d days</string>
+    <string name="copilot_eta_value">%1$d–%2$d days</string>
+    <string name="copilot_suggestion_1">I want to add a second floor to my house</string>
+    <string name="copilot_suggestion_2">I want to open a small restaurant</string>
+    <string name="copilot_suggestion_3">I want to host an outdoor event</string>
+    <string name="copilot_error">Sorry, something went wrong. Please try again.</string>
 </resources>

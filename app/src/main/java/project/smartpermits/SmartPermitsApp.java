@@ -17,6 +17,11 @@ public class SmartPermitsApp extends Application {
         super.onCreate();
         NotificationHelper.createChannel(this);
         registerGlobalReceiver();
+        // If a session already exists (app reopened / restarted by the system), bring the
+        // background listener back up so notifications arrive even when the UI is closed.
+        if (project.smartpermits.api.RetrofitClient.getInstance(this).isLoggedIn()) {
+            NotificationService.start(this);
+        }
     }
 
     private void registerGlobalReceiver() {

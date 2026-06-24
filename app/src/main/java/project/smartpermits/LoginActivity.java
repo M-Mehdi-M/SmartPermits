@@ -200,7 +200,8 @@ public class LoginActivity extends AppCompatActivity {
             client.saveUserId(userId);
             
             SocketIOManager.getInstance(this).connect(userId);
-            
+            NotificationService.start(this);
+
             navigateToDashboard(role);
         } else {
             client.saveUserRole("citizen");

@@ -19,6 +19,8 @@ public class NotificationHelper {
 
     private static final String CHANNEL_ID = "smart_permits_channel";
     private static final String CHANNEL_NAME = "SmartPermits Notifications";
+    private static final String SERVICE_CHANNEL_ID = "smart_permits_service_channel";
+    private static final String SERVICE_CHANNEL_NAME = "Background Connection";
     private static final int NOTIFICATION_PERMISSION_CODE = 1001;
 
     public static void createChannel(Context context) {
@@ -29,6 +31,36 @@ public class NotificationHelper {
         if (manager != null) {
             manager.createNotificationChannel(channel);
         }
+    }
+
+    public static void createServiceChannel(Context context) {
+        NotificationChannel channel = new NotificationChannel(
+                SERVICE_CHANNEL_ID, SERVICE_CHANNEL_NAME, NotificationManager.IMPORTANCE_LOW);
+        channel.setDescription("Keeps SmartPermits connected so you receive updates when the app is closed");
+        channel.setShowBadge(false);
+        NotificationManager manager = context.getSystemService(NotificationManager.class);
+        if (manager != null) {
+            manager.createNotificationChannel(channel);
+        }
+    }
+
+    /** Persistent, low-priority notification required to run the background listener service. */
+    public static android.app.Notification buildServiceNotification(Context context) {
+        createServiceChannel(context);
+        Intent intent = new Intent(context, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+                context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+
+        return new NotificationCompat.Builder(context, SERVICE_CHANNEL_ID)
+                .setSmallIcon(android.R.drawable.stat_notify_sync)
+                .setContentTitle(context.getString(R.string.notif_service_title))
+                .setContentText(context.getString(R.string.notif_service_text))
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setOngoing(true)
+                .setShowWhen(false)
+                .setContentIntent(pendingIntent)
+                .build();
     }
 
     public static void requestPermissionIfNeeded(Activity activity) {

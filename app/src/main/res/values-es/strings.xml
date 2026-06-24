@@ -278,5 +278,26 @@
     <string name="server_error">Error del servidor: %s</string>
     <string name="download_failed">Descarga fallida (HTTP %d)</string>
     <string name="download_error">Error de descarga: %s</string>
-</resources>
 
+    <string name="copilot_title">Copiloto de Permisos</string>
+    <string name="copilot_subtitle">Tu asistente de permisos con IA</string>
+    <string name="copilot_intro_title">Describe tu proyecto</string>
+    <string name="copilot_intro_body">Dime que quieres construir o hacer y encontrare el permiso adecuado, enumerare los documentos necesarios y estimare el costo y el tiempo.</string>
+    <string name="copilot_try_asking">PRUEBA A PREGUNTAR</string>
+    <string name="copilot_input_hint">Describe tu proyecto...</string>
+    <string name="copilot_thinking">Pensando...</string>
+    <string name="copilot_recommended_label">PERMISO RECOMENDADO</string>
+    <string name="copilot_stat_fee">Tarifa</string>
+    <string name="copilot_stat_validity">Valido</string>
+    <string name="copilot_stat_eta">Tiempo est.</string>
+    <string name="copilot_required_docs">Documentos requeridos</string>
+    <string name="copilot_start_application">Iniciar solicitud</string>
+    <string name="copilot_ask_more">Preguntar otra cosa</string>
+    <string name="copilot_non_expiring">Sin caducidad</string>
+    <string name="copilot_days_value">%1$d dias</string>
+    <string name="copilot_eta_value">%1$d–%2$d dias</string>
+    <string name="copilot_suggestion_1">Quiero anadir un segundo piso a mi casa</string>
+    <string name="copilot_suggestion_2">Quiero abrir un pequeno restaurante</string>
+    <string name="copilot_suggestion_3">Quiero organizar un evento al aire libre</string>
+    <string name="copilot_error">Lo sentimos, algo salio mal. Intentalo de nuevo.</string>
+</resources>

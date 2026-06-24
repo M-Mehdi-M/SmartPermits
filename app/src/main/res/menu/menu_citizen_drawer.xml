@@ -7,6 +7,10 @@
             android:icon="@android:drawable/ic_menu_today"
             android:title="@string/nav_dashboard" />
         <item
+            android:id="@+id/nav_copilot"
+            android:icon="@drawable/ic_copilot_spark"
+            android:title="@string/copilot_title" />
+        <item
             android:id="@+id/nav_history"
             android:icon="@android:drawable/ic_menu_recent_history"
             android:title="@string/nav_history" />
