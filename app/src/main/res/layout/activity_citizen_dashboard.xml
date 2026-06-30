@@ -153,6 +153,13 @@
                     android:text="@string/filter_completed"
                     android:tag="completed"
                     style="@style/Widget.Material3.Chip.Filter" />
+
+                <com.google.android.material.chip.Chip
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/expired"
+                    android:tag="expired"
+                    style="@style/Widget.Material3.Chip.Filter" />
             </com.google.android.material.chip.ChipGroup>
         </HorizontalScrollView>
 

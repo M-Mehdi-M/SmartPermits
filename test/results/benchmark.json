@@ -1,0 +1,197 @@
+{
+  "iterations": 10,
+  "crud_threshold_ms": 500.0,
+  "crud_average_ms": 38.699,
+  "crud_within_threshold": true,
+  "routes": [
+    {
+      "method": "POST",
+      "route": "/api/auth/login",
+      "category": "crud",
+      "category_label": "CRUD",
+      "avg_ms": 207.357,
+      "min_ms": 204.764,
+      "max_ms": 217.793,
+      "samples_ms": [
+        205.926,
+        205.747,
+        205.05,
+        209.151,
+        217.793,
+        207.509,
+        205.679,
+        204.764,
+        206.927,
+        205.023
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/permits",
+      "category": "crud",
+      "category_label": "CRUD",
+      "avg_ms": 12.95,
+      "min_ms": 4.199,
+      "max_ms": 27.718,
+      "samples_ms": [
+        4.199,
+        4.672,
+        6.414,
+        8.241,
+        27.718,
+        14.747,
+        12.242,
+        14.391,
+        17.882,
+        18.991
+      ]
+    },
+    {
+      "method": "POST",
+      "route": "/api/permits",
+      "category": "crud",
+      "category_label": "CRUD",
+      "avg_ms": 14.141,
+      "min_ms": 11.435,
+      "max_ms": 22.662,
+      "samples_ms": [
+        22.662,
+        15.568,
+        14.095,
+        11.973,
+        16.34,
+        12.798,
+        11.942,
+        12.636,
+        11.435,
+        11.959
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/permits/<id>",
+      "category": "crud",
+      "category_label": "CRUD",
+      "avg_ms": 6.11,
+      "min_ms": 5.155,
+      "max_ms": 9.983,
+      "samples_ms": [
+        7.401,
+        5.164,
+        5.456,
+        5.155,
+        9.983,
+        6.025,
+        5.829,
+        5.307,
+        5.395,
+        5.382
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/permits/pending",
+      "category": "crud",
+      "category_label": "CRUD",
+      "avg_ms": 6.989,
+      "min_ms": 5.272,
+      "max_ms": 13.424,
+      "samples_ms": [
+        8.088,
+        5.272,
+        5.98,
+        5.541,
+        13.424,
+        5.637,
+        5.462,
+        7.025,
+        6.926,
+        6.53
+      ]
+    },
+    {
+      "method": "POST",
+      "route": "/api/permits/<id>/ai-analyze",
+      "category": "ai",
+      "category_label": "AI (mocked)",
+      "avg_ms": 9.198,
+      "min_ms": 7.574,
+      "max_ms": 13.404,
+      "samples_ms": [
+        13.404,
+        8.101,
+        8.516,
+        9.899,
+        11.38,
+        8.036,
+        8.235,
+        9.247,
+        7.574,
+        7.585
+      ]
+    },
+    {
+      "method": "POST",
+      "route": "/api/permits/<id>/review",
+      "category": "crud",
+      "category_label": "CRUD",
+      "avg_ms": 12.329,
+      "min_ms": 10.961,
+      "max_ms": 15.448,
+      "samples_ms": [
+        14.09,
+        11.311,
+        11.294,
+        15.448,
+        13.578,
+        11.858,
+        10.961,
+        11.167,
+        12.391,
+        11.193
+      ]
+    },
+    {
+      "method": "POST",
+      "route": "/api/permits/<id>/pay",
+      "category": "crud",
+      "category_label": "CRUD",
+      "avg_ms": 11.019,
+      "min_ms": 9.537,
+      "max_ms": 11.726,
+      "samples_ms": [
+        11.71,
+        11.551,
+        11.255,
+        10.814,
+        11.556,
+        11.004,
+        9.537,
+        11.726,
+        9.83,
+        11.208
+      ]
+    },
+    {
+      "method": "GET",
+      "route": "/api/permits/<id>/certificate",
+      "category": "pdf",
+      "category_label": "PDF render",
+      "avg_ms": 45.502,
+      "min_ms": 29.579,
+      "max_ms": 159.288,
+      "samples_ms": [
+        159.288,
+        33.067,
+        34.802,
+        29.579,
+        34.812,
+        31.53,
+        30.647,
+        31.695,
+        37.812,
+        31.784
+      ]
+    }
+  ]
+}

@@ -119,6 +119,7 @@ public class TrashAdapter extends RecyclerView.Adapter<TrashAdapter.ViewHolder> 
                 case "approved": chipColor = Color.parseColor("#16A34A"); break;
                 case "rejected": chipColor = Color.parseColor("#DC2626"); break;
                 case "completed": chipColor = Color.parseColor("#0D9488"); break;
+                case "expired": chipColor = Color.parseColor("#475569"); break;
                 default: chipColor = Color.parseColor("#6B7280"); break;
             }
             chipStatus.setChipBackgroundColor(ColorStateList.valueOf(chipColor));

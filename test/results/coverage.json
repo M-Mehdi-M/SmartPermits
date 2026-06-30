@@ -1,0 +1,414 @@
+{
+  "cf": {
+    "counts": {
+      "total": 43,
+      "pass": 41,
+      "partial": 1,
+      "not_covered": 1
+    },
+    "items": [
+      {
+        "id": "CF1",
+        "description": "Citizen self-registration returns token + user",
+        "test": "test_auth::test_register_success_returns_token_and_user",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF2",
+        "description": "Password stored as bcrypt hash (never plaintext)",
+        "test": "test_auth::test_register_hashes_password_with_bcrypt",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF3",
+        "description": "Registration validation (required fields, email, length)",
+        "test": "test_auth::test_register_missing_fields_*, *_invalid_email_*, *_short_password_*, *_short_username_*",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF4",
+        "description": "Duplicate username/email rejected with 409",
+        "test": "test_auth::test_register_duplicate_username_returns_409, *_duplicate_email_*",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF5",
+        "description": "Role handling (default citizen, inspector allowed, invalid forced)",
+        "test": "test_auth::test_register_invalid_role_forced_to_citizen, *_inspector_role_allowed",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF6",
+        "description": "Login with JWT issuance / `_get_current_user`",
+        "test": "test_auth::test_login_correct_password_returns_200_and_token, *_jwt_identifies_current_user_via_profile",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF7",
+        "description": "Change password (with current-password check)",
+        "test": "test_auth::test_change_password_success, *_wrong_current_*, *_short_new_*",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF8",
+        "description": "Profile view & update (name/email, duplicate guard)",
+        "test": "test_auth::test_jwt_identifies_current_user_via_profile, test_misc::test_profile_update_changes_full_name, *_duplicate_email_returns_409",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF9",
+        "description": "Avatar image upload",
+        "test": "\u2014",
+        "status": "not_covered",
+        "status_label": "Not covered"
+      },
+      {
+        "id": "CF10",
+        "description": "FCM push token registration",
+        "test": "test_misc::test_fcm_token_save",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF11",
+        "description": "Account self-deletion with cascade",
+        "test": "test_misc::test_delete_account_removes_user_and_permits",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF12",
+        "description": "Create permit application (state `submitted`)",
+        "test": "test_permits::test_create_permit_sets_submitted_state_and_fee",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF13",
+        "description": "Fee assigned from FEE_TABLE (+ default fallback)",
+        "test": "test_permits::test_create_permit_sets_submitted_state_and_fee, *_unknown_type_uses_default_fee",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF14",
+        "description": "List own permits (user isolation)",
+        "test": "test_permits::test_list_my_permits_returns_only_owner_permits",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF15",
+        "description": "Search / status / type filtering",
+        "test": "test_permits::test_list_search_filter, *_status_filter, *_type_filter",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF16",
+        "description": "Permit detail with owner/inspector access control",
+        "test": "test_permits::test_get_permit_owner_access, *_inspector_access, *_other_citizen_forbidden, *_not_found_returns_404",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF17",
+        "description": "Document upload with extension whitelist",
+        "test": "test_misc::test_document_upload_endpoint_accepts_image, *_rejects_disallowed_extension, *_unauthorized",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF18",
+        "description": "Required-document checklist per permit type",
+        "test": "test_copilot::test_copilot_recommendation_enriched_from_tables",
+        "status": "partial",
+        "status_label": "Partial"
+      },
+      {
+        "id": "CF19",
+        "description": "Inspector pending queue (role-gated)",
+        "test": "test_permits::test_pending_list_inspector_only",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF20",
+        "description": "Review approve/reject + event + owner notification",
+        "test": "test_permits::test_review_approve_sets_state_and_reviewer, *_reject_sets_state, *_logs_event_and_notifies_owner",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF21",
+        "description": "Guard against double review",
+        "test": "test_permits::test_review_double_review_guarded, *_invalid_action_returns_400",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF22",
+        "description": "Reviewed-history list for inspector",
+        "test": "test_permits::test_reviewed_list_returns_inspector_decisions",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF23",
+        "description": "Payment transitions permit to `completed`",
+        "test": "test_permits::test_pay_completes_permit_and_sets_expiry, *_non_approved_returns_400, *_already_paid_returns_400",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF24",
+        "description": "Expiry date computed from validity table",
+        "test": "test_permits::test_pay_completes_permit_and_sets_expiry",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF25",
+        "description": "Occupancy Certificate has no expiry",
+        "test": "test_permits::test_pay_occupancy_certificate_has_no_expiry",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF26",
+        "description": "Renewal / reapply with `renewed_from` link",
+        "test": "test_permits::test_renew_creates_new_submitted_permit_with_link, *_reapply_rejected_permit_allowed, *_renew_submitted_permit_returns_400",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF27",
+        "description": "Automatic expiry sweep of completed permits",
+        "test": "test_permits::test_expire_sweep_marks_completed_past_expiry, *_expire_check_endpoint",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF28",
+        "description": "Inspector analytics aggregation",
+        "test": "test_misc::test_analytics_inspector_only",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF29",
+        "description": "Permit comment thread (post/get)",
+        "test": "test_misc::test_comment_post_and_get, *_empty_message_rejected",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF30",
+        "description": "Comment notification routing",
+        "test": "test_misc::test_comment_notifies_inspector_when_citizen_posts",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF31",
+        "description": "Appointment scheduling + validations",
+        "test": "test_misc::test_appointment_scheduling_for_approved_permit, *_rejected_for_non_approved_permit, *_past_date_rejected, *_double_booking_rejected",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF32",
+        "description": "Appointment status update + event log",
+        "test": "test_timeline::test_appointment_completion_logs_event",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF33",
+        "description": "AI document analysis (success path)",
+        "test": "test_ai::test_ai_analyze_success_saves_result, *_success_logs_event",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF34",
+        "description": "AI endpoint never returns 500 (graceful)",
+        "test": "test_ai::test_ai_analyze_without_key_*, *_no_documents_*, *_exception_returns_200_failed_message",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF35",
+        "description": "AI caching + force + language recompute",
+        "test": "test_ai::test_ai_analyze_caches_result, *_force_recomputes, *_language_change_recomputes",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF36",
+        "description": "Permit Copilot conversational replies",
+        "test": "test_copilot::test_copilot_ambiguous_returns_text_reply, *_without_key_*, *_empty_messages_*, *_exception_*",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF37",
+        "description": "Copilot recommendation enrichment + enum constraint",
+        "test": "test_copilot::test_copilot_recommendation_enriched_from_tables, *_invalid_permit_type_falls_back_to_enum",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF38",
+        "description": "Deterministic permit hash (canonical JSON)",
+        "test": "test_blockchain::test_compute_hash_is_deterministic, *_canonical_regardless_of_doc_order, *_changes_on_single_byte_difference, *_handles_none_description",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF39",
+        "description": "Blockchain notarization with graceful degradation",
+        "test": "test_blockchain::test_write_hash_missing_env_returns_error, *_notarize_returns_hash_even_when_blockchain_fails, *_notarize_hashes_document_files, test_permits::test_approve_sets_blockchain_hash_locally",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF40",
+        "description": "Public verification endpoint (+ Etherscan URL)",
+        "test": "test_blockchain::test_verify_endpoint_shape_after_approval, *_verify_endpoint_no_record, *_verify_etherscan_url_built_from_tx_hash",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF41",
+        "description": "Certificate PDF only for completed permits",
+        "test": "test_pdf::test_certificate_for_completed_permit_returns_pdf, *_has_attachment_disposition, *_only_for_completed_permits, *_unauthorized_returns_403",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF42",
+        "description": "Multi-language certificate + font fallback",
+        "test": "test_pdf::test_certificate_localized_language, *_font_registration_returns_three_names",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CF43",
+        "description": "Soft-delete trash (trash/restore/permanent/empty/cleanup)",
+        "test": "test_trash (all 8 tests)",
+        "status": "pass",
+        "status_label": "Pass"
+      }
+    ]
+  },
+  "cnf": {
+    "counts": {
+      "total": 13,
+      "pass": 12,
+      "partial": 1,
+      "not_covered": 0
+    },
+    "items": [
+      {
+        "id": "CNF1",
+        "description": "CRUD response time under 500 ms reference",
+        "test": "benchmark.py (CRUD average \u2248 37 ms)",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CNF2",
+        "description": "Endpoints protected by JWT",
+        "test": "test_auth::test_protected_route_without_token_returns_401",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CNF3",
+        "description": "Role-based authorization enforced",
+        "test": "test_permits::test_inspector_cannot_create_permit_returns_403, *_review_by_citizen_forbidden, *_pending_list_inspector_only, test_misc::test_analytics_inspector_only",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CNF4",
+        "description": "Per-user data isolation",
+        "test": "test_permits::test_list_my_permits_returns_only_owner_permits, *_get_permit_other_citizen_forbidden",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CNF5",
+        "description": "No external API contact during tests",
+        "test": "conftest::_isolate_external + mocked Gemini / web3 / Socket.IO",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CNF6",
+        "description": "Input validation & sanitization",
+        "test": "registration validation, test_misc::test_comment_empty_message_rejected, appointment date tests",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CNF7",
+        "description": "Real-time event emission (Socket.IO)",
+        "test": "test_permits::test_create_permit_notifies_inspectors_via_socket, *_review_logs_event_and_notifies_owner, test_misc::test_comment_notifies_inspector_when_citizen_posts",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CNF8",
+        "description": "Internationalization (10 languages)",
+        "test": "test_ai::test_ai_analyze_language_change_recomputes, test_pdf::test_certificate_localized_language (en/ro asserted; remaining languages share the same code path)",
+        "status": "partial",
+        "status_label": "Partial"
+      },
+      {
+        "id": "CNF9",
+        "description": "Audit trail / event logging",
+        "test": "test_timeline::test_log_permit_event_adds_without_committing, *_full_lifecycle_records_expected_event_types, *_timeline_endpoint_returns_events",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CNF10",
+        "description": "Data retention \u2014 30-day trash cleanup",
+        "test": "test_trash::test_cleanup_old_trash_respects_30_day_rule",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CNF11",
+        "description": "Tamper-evidence via SHA-256 hashing",
+        "test": "test_blockchain::test_compute_hash_changes_on_single_byte_difference, *_notarize_hashes_document_files",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CNF12",
+        "description": "State-transition guards / idempotency",
+        "test": "test_permits::test_review_double_review_guarded, *_pay_already_paid_returns_400, test_misc::test_appointment_double_booking_rejected",
+        "status": "pass",
+        "status_label": "Pass"
+      },
+      {
+        "id": "CNF13",
+        "description": "Graceful error handling (no crashes on failure)",
+        "test": "test_ai::test_ai_analyze_exception_returns_200_failed_message, test_copilot::test_copilot_exception_returns_graceful_message",
+        "status": "pass",
+        "status_label": "Pass"
+      }
+    ]
+  }
+}

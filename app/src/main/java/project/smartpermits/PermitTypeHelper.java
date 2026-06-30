@@ -85,6 +85,7 @@ public class PermitTypeHelper {
             case "approved": return ctx.getString(R.string.filter_approved);
             case "rejected": return ctx.getString(R.string.filter_rejected);
             case "completed": return ctx.getString(R.string.filter_completed);
+            case "expired": return ctx.getString(R.string.expired);
             default: return status.substring(0, 1).toUpperCase() + status.substring(1);
         }
     }

@@ -308,6 +308,7 @@ public class PermitDetailActivity extends AppCompatActivity {
             case "approved": chipColor = Color.parseColor("#10B981"); break;
             case "rejected": chipColor = Color.parseColor("#EF4444"); break;
             case "completed": chipColor = Color.parseColor("#0D9488"); break;
+            case "expired": chipColor = Color.parseColor("#475569"); break;
             default: chipColor = Color.parseColor("#64748B"); break;
         }
         chipStatus.setChipBackgroundColor(ColorStateList.valueOf(chipColor));
@@ -325,7 +326,7 @@ public class PermitDetailActivity extends AppCompatActivity {
             btnPay.setOnClickListener(v -> payPermit());
         }
 
-        if (("completed".equals(status) || "rejected".equals(status)) && "citizen".equals(role)) {
+        if (("completed".equals(status) || "rejected".equals(status) || "expired".equals(status)) && "citizen".equals(role)) {
             btnRenew.setVisibility(View.VISIBLE);
             btnRenew.setText("rejected".equals(status) ? getString(R.string.reapply) : getString(R.string.renew));
             btnRenew.setOnClickListener(v -> renewPermit());

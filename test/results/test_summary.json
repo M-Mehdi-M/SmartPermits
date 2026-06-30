@@ -1,0 +1,78 @@
+{
+  "total_tests": 118,
+  "total_passed": 118,
+  "total_failed": 0,
+  "summary_line": "118 passed in 89.06s (0:01:29)",
+  "modules": [
+    {
+      "key": "auth",
+      "label": "Auth",
+      "passed": 18,
+      "failed": 0,
+      "total": 18
+    },
+    {
+      "key": "permits",
+      "label": "Permits",
+      "passed": 34,
+      "failed": 0,
+      "total": 34
+    },
+    {
+      "key": "ai",
+      "label": "AI",
+      "passed": 9,
+      "failed": 0,
+      "total": 9
+    },
+    {
+      "key": "copilot",
+      "label": "Copilot",
+      "passed": 6,
+      "failed": 0,
+      "total": 6
+    },
+    {
+      "key": "blockchain",
+      "label": "Blockchain",
+      "passed": 10,
+      "failed": 0,
+      "total": 10
+    },
+    {
+      "key": "pdf",
+      "label": "PDF",
+      "passed": 6,
+      "failed": 0,
+      "total": 6
+    },
+    {
+      "key": "trash",
+      "label": "Trash",
+      "passed": 8,
+      "failed": 0,
+      "total": 8
+    },
+    {
+      "key": "prediction",
+      "label": "Prediction",
+      "passed": 6,
+      "failed": 0,
+      "total": 6
+    },
+    {
+      "key": "timeline",
+      "label": "Timeline",
+      "passed": 5,
+      "failed": 0,
+      "total": 5
+    },
+    {
+      "key": "misc",
+      "label": "Misc",
+      "passed": 16,
+      "failed": 0,
+      "total": 16
+    }
+  ]
+}

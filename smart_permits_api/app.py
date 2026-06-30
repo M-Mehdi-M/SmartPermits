@@ -22,7 +22,9 @@ from models import db, User, Permit, Document, Comment, Appointment, PermitEvent
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///smartpermits.db'
+# --- TEST HOOK: allow the test suite to point at an isolated DB via the DATABASE_URL
+# env var. Defaults to the production database, so runtime behavior is unchanged. ---
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///smartpermits.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'smart-permits-secret-key-2026'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(days=30)
@@ -111,6 +113,27 @@ def estimate_wait_days(permit_type):
     return base + extra, base + extra + 2
 
 
+def sweep_expired_permits():
+    try:
+        now = datetime.utcnow()
+        expiring = Permit.query.filter(
+            Permit.status == 'completed',
+            Permit.expires_at.isnot(None),
+            Permit.expires_at < now,
+            Permit.deleted_at.is_(None)
+        ).all()
+        if not expiring:
+            return 0
+        for permit in expiring:
+            permit.status = 'expired'
+            log_permit_event(permit.id, 'Expired', actor_name='System', actor_role='system', notes='Permit validity period ended')
+        db.session.commit()
+        return len(expiring)
+    except Exception:
+        db.session.rollback()
+        return 0
+
+
 def seed_data():
     if User.query.filter_by(username='inspector1').first() is None:
         inspector = User(
@@ -175,6 +198,7 @@ with app.app_context():
     db.create_all()
     run_migrations()
     seed_data()
+    sweep_expired_permits()
 
 
 _connected_users = {}
@@ -295,6 +319,7 @@ def save_fcm_token():
 @jwt_required()
 def get_my_permits():
     user_id = int(get_jwt_identity())
+    sweep_expired_permits()
     search = request.args.get('search', '')
     status_filter = request.args.get('status', '')
     type_filter = request.args.get('type', '')
@@ -314,6 +339,8 @@ def get_my_permits():
 def create_permit():
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
+    if user and user.role == 'inspector':
+        return jsonify({'error': 'Inspectors cannot submit permit applications'}), 403
     data = request.get_json(silent=True) or {}
     permit_type = data.get('permit_type', '')
     description = data.get('description', '')
@@ -610,8 +637,8 @@ def renew_permit(permit_id):
     old_permit = Permit.query.get_or_404(permit_id)
     if old_permit.user_id != user_id:
         return jsonify({'error': 'Unauthorized'}), 403
-    if old_permit.status not in ('completed', 'rejected'):
-        return jsonify({'error': 'Can only renew completed or reapply rejected permits'}), 400
+    if old_permit.status not in ('completed', 'rejected', 'expired'):
+        return jsonify({'error': 'Can only renew completed/expired or reapply rejected permits'}), 400
     fee = FEE_TABLE.get(old_permit.permit_type, 100.0)
     new_permit = Permit(
         user_id=user_id,
@@ -630,6 +657,13 @@ def renew_permit(permit_id):
     return jsonify(new_permit.to_dict()), 201
 
 
+@app.route('/api/permits/expire-check', methods=['POST'])
+@jwt_required()
+def expire_check():
+    count = sweep_expired_permits()
+    return jsonify({'expired': count}), 200
+
+
 @app.route('/api/permits/pending', methods=['GET'])
 @jwt_required()
 def get_pending_permits():
@@ -637,6 +671,7 @@ def get_pending_permits():
     user = User.query.get_or_404(user_id)
     if user.role != 'inspector':
         return jsonify({'error': 'Unauthorized'}), 403
+    sweep_expired_permits()
     search = request.args.get('search', '')
     type_filter = request.args.get('type', '')
     query = Permit.query.filter_by(status='submitted').filter(Permit.deleted_at.is_(None))

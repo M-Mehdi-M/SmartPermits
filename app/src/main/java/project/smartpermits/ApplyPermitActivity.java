@@ -47,6 +47,7 @@ import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.RequestBody;
 import project.smartpermits.api.RetrofitClient;
+import project.smartpermits.models.AiAnalysisResponse;
 import project.smartpermits.models.Document;
 import project.smartpermits.models.Permit;
 import project.smartpermits.models.PermitRequest;
@@ -437,6 +438,9 @@ public class ApplyPermitActivity extends AppCompatActivity {
             if (uploadFailCount > 0) {
                 Toast.makeText(this, getString(R.string.docs_failed_upload, uploadFailCount), Toast.LENGTH_LONG).show();
             }
+            if (!labels.isEmpty()) {
+                triggerAiAnalysis(permitId);
+            }
             onSubmitSuccess();
             return;
         }
@@ -465,6 +469,23 @@ public class ApplyPermitActivity extends AppCompatActivity {
                 });
     }
 
+
+    private void triggerAiAnalysis(int permitId) {
+        String lang = LocaleHelper.getLanguage(this);
+        if (lang == null || lang.isEmpty()) {
+            lang = Locale.getDefault().getLanguage();
+        }
+        RetrofitClient.getInstance(this).getApi()
+                .triggerAiAnalysis(permitId, lang)
+                .enqueue(new Callback<AiAnalysisResponse>() {
+                    @Override
+                    public void onResponse(Call<AiAnalysisResponse> call, Response<AiAnalysisResponse> response) {
+                    }
+                    @Override
+                    public void onFailure(Call<AiAnalysisResponse> call, Throwable t) {
+                    }
+                });
+    }
 
     private void onSubmitSuccess() {
         progressBar.setVisibility(View.GONE);

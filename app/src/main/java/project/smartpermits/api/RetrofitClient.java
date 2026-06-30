@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit;
 
 public class RetrofitClient {
 
-    private static final String BASE_URL = ApiConfig.BASE_API_URL;
     private static RetrofitClient instance;
+    private final String baseUrl;
     private final ApiService apiService;
     private final SharedPreferences prefs;
     private final Context appContext;
@@ -24,6 +24,8 @@ public class RetrofitClient {
         appContext = context.getApplicationContext();
         prefs = appContext
                 .getSharedPreferences("smart_permits_prefs", Context.MODE_PRIVATE);
+
+        baseUrl = ApiConfig.getApiUrl(appContext);
 
         HttpLoggingInterceptor loggingInterceptor = new HttpLoggingInterceptor();
         loggingInterceptor.setLevel(HttpLoggingInterceptor.Level.BASIC);
@@ -45,7 +47,7 @@ public class RetrofitClient {
             if (response.code() == 401) {
                 String token = prefs.getString("auth_token", "");
                 if (token != null && !token.isEmpty()) {
-                    prefs.edit().remove("auth_token").apply();
+                    clearSession();
                     android.content.Intent intent = new android.content.Intent("project.smartpermits.SESSION_EXPIRED");
                     appContext.sendBroadcast(intent);
                 }
@@ -63,7 +65,7 @@ public class RetrofitClient {
                 .build();
 
         Retrofit retrofit = new Retrofit.Builder()
-                .baseUrl(BASE_URL)
+                .baseUrl(baseUrl)
                 .client(client)
                 .addConverterFactory(GsonConverterFactory.create())
                 .build();
@@ -83,7 +85,7 @@ public class RetrofitClient {
     }
 
     public String getBaseUrl() {
-        return BASE_URL;
+        return baseUrl;
     }
 
     public void saveToken(String token) {

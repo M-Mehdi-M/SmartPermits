@@ -54,7 +54,7 @@ public class SocketIOManager {
             options.reconnectionAttempts = Integer.MAX_VALUE;
             options.path = "/socket.io/";
 
-            java.net.URI uri = new java.net.URI(ApiConfig.SOCKET_SERVER_URL + "?user_id=" + userId);
+            java.net.URI uri = new java.net.URI(ApiConfig.getSocketUrl(context) + "?user_id=" + userId);
             socket = IO.socket(uri, options);
 
             socket.on(Socket.EVENT_CONNECT, onConnect);

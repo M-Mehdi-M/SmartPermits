@@ -3,7 +3,6 @@ package project.smartpermits;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
-import android.util.Patterns;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
@@ -34,6 +33,9 @@ public class LoginActivity extends AppCompatActivity {
     private MaterialButtonToggleGroup roleToggle;
     private TextView tvFormTitle, tvSwitchLabel, tvSwitchAction;
     private boolean isRegisterMode = false;
+
+    private static final java.util.regex.Pattern EMAIL_PATTERN =
+            java.util.regex.Pattern.compile("^[a-zA-Z0-9._%+\\-]+@[a-zA-Z0-9.\\-]+\\.[a-zA-Z]{2,}$");
 
     @Override
     protected void attachBaseContext(android.content.Context newBase) {
@@ -149,7 +151,7 @@ public class LoginActivity extends AppCompatActivity {
             Toast.makeText(this, getString(R.string.username_min_chars), Toast.LENGTH_SHORT).show();
             return;
         }
-        if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+        if (!EMAIL_PATTERN.matcher(email).matches()) {
             Toast.makeText(this, getString(R.string.valid_email_required), Toast.LENGTH_SHORT).show();
             return;
         }
