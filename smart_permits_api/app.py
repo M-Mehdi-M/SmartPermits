@@ -22,8 +22,6 @@ from models import db, User, Permit, Document, Comment, Appointment, PermitEvent
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-# --- TEST HOOK: allow the test suite to point at an isolated DB via the DATABASE_URL
-# env var. Defaults to the production database, so runtime behavior is unchanged. ---
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///smartpermits.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['JWT_SECRET_KEY'] = 'smart-permits-secret-key-2026'
