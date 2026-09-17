@@ -39,6 +39,7 @@ smart_permits_api/firebase-service-account.json
 
 # Environment files
 .env
+.env.*
 smart_permits_api/.env
 
 # Python
